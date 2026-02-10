@@ -1,3 +1,9 @@
+export interface Location {
+  lat: number;
+  lng: number;
+  name?: string;
+}
+
 export interface UserProfile {
   uid: string;
   email: string | null;
@@ -7,6 +13,30 @@ export interface UserProfile {
   interests: string[];
   bio?: string;
   createdAt: number;
+  lastLocation?: Location;
+}
+
+export interface Comment {
+  id: string;
+  uid: string;
+  authorName: string;
+  authorPhoto: string;
+  text: string;
+  createdAt: number;
+}
+
+export interface Post {
+  _id?: string;
+  uid: string;
+  authorName: string;
+  authorPhoto: string;
+  content: string;
+  imageURL?: string;
+  likes: number;
+  likedBy?: string[];
+  comments?: Comment[];
+  createdAt: number;
+  location?: Location;
 }
 
 export interface InterestTag {

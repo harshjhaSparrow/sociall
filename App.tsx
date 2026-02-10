@@ -1,16 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { api } from './services/api';
 import AuthPage from './pages/Auth';
 import Onboarding from './pages/Onboarding';
 import Profile from './pages/Profile';
 import EditProfile from './pages/EditProfile';
+import Feed from './pages/Feed';
+import CreatePost from './pages/CreatePost';
+import EditPost from './pages/EditPost';
+import Layout from './components/Layout';
 import { Loader2 } from 'lucide-react';
+import LocationGuard from './components/LocationGaurd';
 
-// Guard component to protect routes
+// Guard component to protect routes and check profile existence
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, status } = useAuth();
+  const location = useLocation();
   const [profileChecked, setProfileChecked] = useState(false);
   const [hasProfile, setHasProfile] = useState(false);
 
@@ -22,6 +28,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
           setHasProfile(!!profile);
         } catch (e) {
           console.error("Error checking profile", e);
+          setHasProfile(false);
         } finally {
           setProfileChecked(true);
         }
@@ -48,6 +55,16 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   if (status === 'unauthenticated') {
     return <Navigate to="/auth" />;
   }
+
+  // Force Onboarding if no profile exists
+  if (status === 'authenticated' && !hasProfile && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  // Prevent accessing Onboarding if profile already exists
+  if (status === 'authenticated' && hasProfile && location.pathname === '/onboarding') {
+    return <Navigate to="/" replace />;
+  }
   
   return <>{children}</>;
 };
@@ -60,23 +77,27 @@ const AppRoutes = () => {
       <Routes>
         <Route path="/auth" element={status === 'authenticated' ? <Navigate to="/" /> : <AuthPage />} />
         
+        {/* Onboarding - Isolated */}
         <Route path="/onboarding" element={
           <ProtectedRoute>
             <Onboarding />
           </ProtectedRoute>
         } />
         
-        <Route path="/edit-profile" element={
+        {/* Main App - Protected by Location & Layout */}
+        <Route element={
           <ProtectedRoute>
-            <EditProfile />
+            <LocationGuard>
+               <Layout />
+            </LocationGuard>
           </ProtectedRoute>
-        } />
-        
-        <Route path="/" element={
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        } />
+        }>
+            <Route path="/" element={<Feed />} />
+            <Route path="/profile/:uid?" element={<Profile />} />
+            <Route path="/create-post" element={<CreatePost />} />
+            <Route path="/edit-post/:id" element={<EditPost />} />
+            <Route path="/edit-profile" element={<EditProfile />} />
+        </Route>
 
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

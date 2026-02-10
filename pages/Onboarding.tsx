@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { Camera, ChevronLeft, Instagram, Sparkles, User as UserIcon } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
-import { UserProfile, POPULAR_INTERESTS, InterestTag } from '../types';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
-import { Camera, Instagram, Sparkles, ChevronLeft, User as UserIcon } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { api } from '../services/api';
+import { InterestTag, POPULAR_INTERESTS, UserProfile } from '../types';
 
 const STEPS = ['Basic Info', 'Socials', 'Interests'];
 
@@ -83,7 +83,8 @@ const Onboarding: React.FC = () => {
       };
 
       await api.profile.createOrUpdate(user.uid, profileData);
-      navigate('/');
+      // Reload to ensure the App guard re-checks the profile existence
+      window.location.reload();
     } catch (err) {
       console.error(err);
       setError("Failed to save profile. Check connection.");

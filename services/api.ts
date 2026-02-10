@@ -1,4 +1,4 @@
-import { UserProfile } from '../types';
+import { UserProfile, Post, Comment } from '../types';
 
 /**
  * API SERVICE (REAL BACKEND)
@@ -84,6 +84,113 @@ export const api = {
         }
       } catch (error) {
         console.error("Update Profile API Error:", error);
+        throw error;
+      }
+    }
+  },
+
+  posts: {
+    create: async (postData: Partial<Post>): Promise<void> => {
+      try {
+        const response = await fetch(`${API_BASE}/posts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(postData),
+        });
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || 'Failed to create post');
+        }
+      } catch (error) {
+        console.error("Create Post Error:", error);
+        throw error;
+      }
+    },
+    getAll: async (): Promise<Post[]> => {
+      try {
+        const response = await fetch(`${API_BASE}/posts`);
+        if (!response.ok) return [];
+        return await response.json();
+      } catch (error) {
+        console.error("Get Posts Error:", error);
+        return [];
+      }
+    },
+    getUserPosts: async (uid: string): Promise<Post[]> => {
+      try {
+        const response = await fetch(`${API_BASE}/posts/user/${uid}`);
+        if (!response.ok) return [];
+        return await response.json();
+      } catch (error) {
+        console.error("Get User Posts Error:", error);
+        return [];
+      }
+    },
+    getPost: async (postId: string): Promise<Post | null> => {
+      try {
+        const response = await fetch(`${API_BASE}/posts/${postId}`);
+        if (!response.ok) return null;
+        return await response.json();
+      } catch (error) {
+        console.error("Get Single Post Error:", error);
+        return null;
+      }
+    },
+    updatePost: async (postId: string, uid: string, content: string, imageURL?: string | null): Promise<void> => {
+      try {
+        const response = await fetch(`${API_BASE}/posts/${postId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uid, content, imageURL }),
+        });
+        if (!response.ok) {
+          throw new Error("Failed to update post");
+        }
+      } catch (error) {
+        console.error("Update Post Error:", error);
+        throw error;
+      }
+    },
+    deletePost: async (postId: string, uid: string): Promise<void> => {
+      try {
+        const response = await fetch(`${API_BASE}/posts/${postId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uid }),
+        });
+        if (!response.ok) {
+          throw new Error("Failed to delete post");
+        }
+      } catch (error) {
+        console.error("Delete Post Error:", error);
+        throw error;
+      }
+    },
+    toggleLike: async (postId: string, uid: string): Promise<{ likes: number, likedBy: string[] }> => {
+      try {
+        const response = await fetch(`${API_BASE}/posts/${postId}/like`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uid }),
+        });
+        if (!response.ok) throw new Error("Failed to toggle like");
+        return await response.json();
+      } catch (error) {
+        console.error("Toggle Like Error:", error);
+        throw error;
+      }
+    },
+    addComment: async (postId: string, uid: string, text: string): Promise<Comment> => {
+      try {
+        const response = await fetch(`${API_BASE}/posts/${postId}/comment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uid, text }),
+        });
+        if (!response.ok) throw new Error("Failed to add comment");
+        return await response.json();
+      } catch (error) {
+        console.error("Add Comment Error:", error);
         throw error;
       }
     }
