@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import 'leaflet/dist/leaflet.css';
 import { api } from './services/api';
 import AuthPage from './pages/Auth';
 import Onboarding from './pages/Onboarding';
@@ -9,6 +10,7 @@ import EditProfile from './pages/EditProfile';
 import Feed from './pages/Feed';
 import CreatePost from './pages/CreatePost';
 import EditPost from './pages/EditPost';
+import MapPage from './pages/MapPage';
 import Layout from './components/Layout';
 import { Loader2 } from 'lucide-react';
 import LocationGuard from './components/LocationGaurd';
@@ -93,6 +95,7 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }>
             <Route path="/" element={<Feed />} />
+            <Route path="/map" element={<MapPage />} />
             <Route path="/profile/:uid?" element={<Profile />} />
             <Route path="/create-post" element={<CreatePost />} />
             <Route path="/edit-post/:id" element={<EditPost />} />

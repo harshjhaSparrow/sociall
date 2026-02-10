@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { UserProfile, POPULAR_INTERESTS, Post } from '../types';
-import { LogOut, Instagram, MapPin, Edit2, Loader2, Sparkles, Navigation } from 'lucide-react';
+import { LogOut, Instagram, MapPin, Edit2, Loader2, Sparkles, Navigation, UserPlus, Check, X, Clock, UserCheck, Users, ChevronRight } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import PostItem from '../components/PostItem';
-import { useUserLocation } from '@/components/LocationGaurd';
 import { calculateDistance } from '@/components/util/location';
+import { useUserLocation } from '@/components/LocationGaurd';
+
 
 const Profile: React.FC = () => {
   const { user, logout } = useAuth();
@@ -17,6 +18,17 @@ const Profile: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [myPosts, setMyPosts] = useState<Post[]>([]);
+  
+  // Friend System State
+  const [friendRequests, setFriendRequests] = useState<UserProfile[]>([]);
+  const [relationship, setRelationship] = useState<'self' | 'friend' | 'sent' | 'received' | 'none'>('none');
+  const [actionLoading, setActionLoading] = useState(false);
+
+  // Friends List Modal State
+  const [isFriendsModalOpen, setIsFriendsModalOpen] = useState(false);
+  const [friendsList, setFriendsList] = useState<UserProfile[]>([]);
+  const [sentRequestsList, setSentRequestsList] = useState<UserProfile[]>([]);
+  const [friendsLoading, setFriendsLoading] = useState(false);
 
   // Determine if we are viewing our own profile
   const isOwnProfile = !uid || (user && user.uid === uid);
@@ -26,10 +38,35 @@ const Profile: React.FC = () => {
     const fetchData = async () => {
       if (targetUid) {
         try {
-          // Fetch Profile
+          // Fetch Target Profile
           const userProfile = await api.profile.get(targetUid);
           if (userProfile) {
             setProfile(userProfile);
+            
+            // If viewing own profile, fetch friend requests details
+            if (isOwnProfile && userProfile.incomingRequests && userProfile.incomingRequests.length > 0) {
+                 const reqs = await api.profile.getBatch(userProfile.incomingRequests);
+                 setFriendRequests(reqs);
+            }
+
+            // If viewing other profile, determine relationship
+            if (!isOwnProfile && user) {
+                // We need to check if *I* am in their friends list or request list
+                // userProfile is the target.
+                const myUid = user.uid;
+                if (userProfile.friends?.includes(myUid)) {
+                    setRelationship('friend');
+                } else if (userProfile.incomingRequests?.includes(myUid)) {
+                    setRelationship('sent');
+                } else if (userProfile.outgoingRequests?.includes(myUid)) {
+                    setRelationship('received');
+                } else {
+                    setRelationship('none');
+                }
+            } else {
+                setRelationship('self');
+            }
+
           } else if (isOwnProfile) {
             navigate('/onboarding');
             return;
@@ -47,12 +84,92 @@ const Profile: React.FC = () => {
       }
     };
     fetchData();
-  }, [targetUid, isOwnProfile, navigate]);
+  }, [targetUid, isOwnProfile, navigate, user]);
 
   const handleLogout = async () => {
     await logout();
     navigate('/');
   };
+
+  // --- Friend Actions ---
+  const handleSendRequest = async () => {
+      if (!user || !profile) return;
+      setActionLoading(true);
+      try {
+          await api.friends.sendRequest(user.uid, profile.uid);
+          setRelationship('sent');
+      } catch (e) { console.error(e); }
+      setActionLoading(false);
+  };
+
+  const handleAcceptRequest = async (requesterUid: string) => {
+      if (!user) return;
+      setActionLoading(true);
+      try {
+          await api.friends.acceptRequest(user.uid, requesterUid);
+          if (isOwnProfile) {
+              setFriendRequests(prev => prev.filter(r => r.uid !== requesterUid));
+              // Also update profile friends list locally to reflect change immediately if modal opened
+              setProfile(prev => prev ? ({
+                  ...prev,
+                  incomingRequests: prev.incomingRequests?.filter(id => id !== requesterUid),
+                  friends: [...(prev.friends || []), requesterUid]
+              }) : null);
+          } else {
+              setRelationship('friend');
+          }
+      } catch (e) { console.error(e); }
+      setActionLoading(false);
+  };
+
+  const handleRejectRequest = async (requesterUid: string) => {
+      if (!user) return;
+      try {
+          await api.friends.rejectRequest(user.uid, requesterUid);
+          if (isOwnProfile) {
+              setFriendRequests(prev => prev.filter(r => r.uid !== requesterUid));
+              setProfile(prev => prev ? ({
+                  ...prev,
+                  incomingRequests: prev.incomingRequests?.filter(id => id !== requesterUid)
+              }) : null);
+          } else {
+              // If we reject on their profile page
+              setRelationship('none'); 
+          }
+      } catch (e) { console.error(e); }
+  };
+
+  const handleRemoveFriend = async () => {
+      if (!user || !profile || !confirm("Remove friend?")) return;
+      setActionLoading(true);
+      try {
+          await api.friends.removeFriend(user.uid, profile.uid);
+          setRelationship('none');
+      } catch (e) { console.error(e); }
+      setActionLoading(false);
+  };
+
+  const handleOpenFriendsList = async () => {
+    if (!profile) return;
+    setIsFriendsModalOpen(true);
+    setFriendsLoading(true);
+    try {
+      const friendsIds = profile.friends || [];
+      const friendsData = await api.profile.getBatch(friendsIds);
+      setFriendsList(friendsData);
+
+      if (isOwnProfile) {
+        const pendingIds = profile.outgoingRequests || [];
+        const pendingData = await api.profile.getBatch(pendingIds);
+        setSentRequestsList(pendingData);
+      }
+    } catch (e) {
+      console.error("Failed to load friends", e);
+    } finally {
+      setFriendsLoading(false);
+    }
+  };
+
 
   // --- Post Interactions ---
 
@@ -176,7 +293,7 @@ const Profile: React.FC = () => {
                    </div>
                 )}
               </div>
-              {/* Online Indicator (Fake for now or based on recent activity if we had it) */}
+              {/* Online Indicator */}
               <div className="absolute bottom-1 right-1 bg-green-500 w-5 h-5 rounded-full border-4 border-white"></div>
             </div>
 
@@ -192,9 +309,21 @@ const Profile: React.FC = () => {
                 <span>{distance} away</span>
               </div>
             )}
+            
+            {/* Friend Stats (Clickable) */}
+            <div className="flex justify-center mt-4">
+                <button 
+                    onClick={handleOpenFriendsList}
+                    className="bg-slate-50 px-4 py-2 rounded-2xl flex items-center gap-2 border border-slate-100 hover:bg-slate-100 transition-colors active:scale-95 group"
+                >
+                    <Users className="w-4 h-4 text-slate-400 group-hover:text-primary-500 transition-colors" />
+                    <span className="font-bold text-slate-900">{profile.friends?.length || 0}</span>
+                    <span className="text-slate-500 text-sm">Friends</span>
+                </button>
+            </div>
 
             {/* Actions */}
-            <div className="flex gap-3 justify-center mt-6">
+            <div className="flex flex-wrap gap-3 justify-center mt-6">
               {profile.instagramHandle && (
                 <a 
                   href={`https://instagram.com/${profile.instagramHandle}`}
@@ -206,7 +335,8 @@ const Profile: React.FC = () => {
                   Instagram
                 </a>
               )}
-              {isOwnProfile && (
+              
+              {isOwnProfile ? (
                 <button 
                   onClick={() => navigate('/edit-profile')}
                   className="inline-flex items-center gap-2 px-5 py-3 bg-slate-100 text-slate-700 rounded-2xl font-semibold text-sm hover:bg-slate-200 transition-colors active:scale-95"
@@ -214,11 +344,94 @@ const Profile: React.FC = () => {
                   <Edit2 className="w-4 h-4" />
                   Edit
                 </button>
+              ) : (
+                 <>
+                   {relationship === 'none' && (
+                       <button 
+                         onClick={handleSendRequest}
+                         disabled={actionLoading}
+                         className="inline-flex items-center gap-2 px-5 py-3 bg-primary-500 text-white rounded-2xl font-semibold text-sm hover:bg-primary-600 transition-colors active:scale-95 shadow-lg shadow-primary-500/20"
+                       >
+                         {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <UserPlus className="w-5 h-5" />}
+                         Add Friend
+                       </button>
+                   )}
+                   {relationship === 'sent' && (
+                       <button disabled className="inline-flex items-center gap-2 px-5 py-3 bg-slate-100 text-slate-400 rounded-2xl font-semibold text-sm">
+                         <Clock className="w-5 h-5" />
+                         Request Sent
+                       </button>
+                   )}
+                   {relationship === 'received' && (
+                        <button 
+                          onClick={() => handleAcceptRequest(profile.uid)}
+                          disabled={actionLoading}
+                          className="inline-flex items-center gap-2 px-5 py-3 bg-green-500 text-white rounded-2xl font-semibold text-sm hover:bg-green-600 transition-colors active:scale-95 shadow-lg shadow-green-500/20"
+                        >
+                          {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <UserCheck className="w-5 h-5" />}
+                          Accept Request
+                        </button>
+                   )}
+                   {relationship === 'friend' && (
+                       <button 
+                         onClick={handleRemoveFriend}
+                         disabled={actionLoading}
+                         className="inline-flex items-center gap-2 px-5 py-3 bg-white border-2 border-primary-500 text-primary-600 rounded-2xl font-semibold text-sm hover:bg-primary-50 transition-colors"
+                       >
+                         <Check className="w-5 h-5" />
+                         Friends
+                       </button>
+                   )}
+                 </>
               )}
             </div>
           </div>
 
           <div className="h-px bg-slate-100 mx-6" />
+
+          {/* Friend Requests (Only visible on own profile) */}
+          {isOwnProfile && friendRequests.length > 0 && (
+             <div className="p-6 bg-orange-50/50">
+                 <div className="flex items-center gap-2 mb-4">
+                     <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                     <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Friend Requests</h2>
+                 </div>
+                 <div className="space-y-3">
+                     {friendRequests.map(reqUser => (
+                         <div key={reqUser.uid} className="flex items-center justify-between bg-white p-3 rounded-2xl shadow-sm border border-orange-100">
+                             <div 
+                               className="flex items-center gap-3 cursor-pointer"
+                               onClick={() => navigate(`/profile/${reqUser.uid}`)}
+                             >
+                                 <div className="w-10 h-10 rounded-full bg-slate-100 overflow-hidden">
+                                     {reqUser.photoURL ? (
+                                         <img src={reqUser.photoURL} alt={reqUser.displayName} className="w-full h-full object-cover" />
+                                     ) : (
+                                         <div className="w-full h-full flex items-center justify-center font-bold text-slate-400">{reqUser.displayName[0]}</div>
+                                     )}
+                                 </div>
+                                 <span className="font-bold text-slate-900 text-sm">{reqUser.displayName}</span>
+                             </div>
+                             <div className="flex gap-2">
+                                 <button 
+                                   onClick={() => handleAcceptRequest(reqUser.uid)}
+                                   className="p-2 bg-primary-500 text-white rounded-xl hover:bg-primary-600 transition-colors"
+                                 >
+                                     <Check className="w-4 h-4" />
+                                 </button>
+                                 <button 
+                                   onClick={() => handleRejectRequest(reqUser.uid)}
+                                   className="p-2 bg-slate-100 text-slate-400 rounded-xl hover:bg-slate-200 transition-colors"
+                                 >
+                                     <X className="w-4 h-4" />
+                                 </button>
+                             </div>
+                         </div>
+                     ))}
+                 </div>
+                 <div className="h-px bg-slate-100 mt-6" />
+             </div>
+          )}
 
           {/* Bio Section */}
           <div className="p-6">
@@ -298,6 +511,91 @@ const Profile: React.FC = () => {
            <p className="text-slate-400 text-xs font-semibold uppercase tracking-widest">Socially v1.1</p>
         </div>
       </div>
+      
+      {/* Friends List Modal */}
+      {isFriendsModalOpen && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 animate-fade-in">
+           <div 
+             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+             onClick={() => setIsFriendsModalOpen(false)}
+           />
+           <div className="bg-white rounded-3xl w-full max-w-sm max-h-[70vh] flex flex-col shadow-2xl relative z-10 animate-slide-up overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                 <h3 className="font-bold text-slate-900 text-lg">Connections</h3>
+                 <button onClick={() => setIsFriendsModalOpen(false)} className="p-2 -mr-2 text-slate-400 hover:text-slate-600">
+                    <X className="w-5 h-5" />
+                 </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                 {friendsLoading ? (
+                   <div className="flex justify-center py-8"><Loader2 className="w-8 h-8 text-primary-500 animate-spin" /></div>
+                 ) : (
+                   <>
+                     {isOwnProfile && sentRequestsList.length > 0 && (
+                       <div>
+                         <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 ml-1">Pending Requests (Sent)</h4>
+                         <div className="space-y-2">
+                           {sentRequestsList.map(u => (
+                             <div key={u.uid} className="flex items-center gap-3 p-2 rounded-xl bg-slate-50 border border-slate-100">
+                                <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden shrink-0">
+                                   {u.photoURL ? (
+                                     <img src={u.photoURL} alt={u.displayName} className="w-full h-full object-cover" />
+                                   ) : (
+                                     <div className="w-full h-full flex items-center justify-center font-bold text-slate-400 text-xs">{u.displayName[0]}</div>
+                                   )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                   <div className="font-bold text-slate-900 text-sm truncate">{u.displayName}</div>
+                                   <div className="text-xs text-slate-500">Request Sent</div>
+                                </div>
+                                <Clock className="w-4 h-4 text-slate-400" />
+                             </div>
+                           ))}
+                         </div>
+                       </div>
+                     )}
+
+                     <div>
+                       <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 ml-1">Friends ({friendsList.length})</h4>
+                       {friendsList.length === 0 ? (
+                         <div className="text-center py-8 text-slate-400 text-sm bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
+                           No friends yet.
+                         </div>
+                       ) : (
+                         <div className="space-y-2">
+                           {friendsList.map(u => (
+                             <div 
+                               key={u.uid} 
+                               onClick={() => {
+                                 setIsFriendsModalOpen(false);
+                                 navigate(`/profile/${u.uid}`);
+                               }}
+                               className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer group"
+                             >
+                                <div className="w-12 h-12 rounded-full bg-slate-200 overflow-hidden shrink-0 border border-slate-100">
+                                   {u.photoURL ? (
+                                     <img src={u.photoURL} alt={u.displayName} className="w-full h-full object-cover" />
+                                   ) : (
+                                     <div className="w-full h-full flex items-center justify-center font-bold text-slate-400">{u.displayName[0]}</div>
+                                   )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                   <div className="font-bold text-slate-900 truncate group-hover:text-primary-600 transition-colors">{u.displayName}</div>
+                                   <div className="text-xs text-slate-500 truncate">{u.bio || "Socially user"}</div>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-slate-300" />
+                             </div>
+                           ))}
+                         </div>
+                       )}
+                     </div>
+                   </>
+                 )}
+              </div>
+           </div>
+        </div>
+      )}
     </div>
   );
 };

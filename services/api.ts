@@ -70,6 +70,31 @@ export const api = {
       }
     },
 
+    getBatch: async (uids: string[]): Promise<UserProfile[]> => {
+      try {
+        const response = await fetch(`${API_BASE}/profiles/batch`, {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ uids })
+        });
+        if (!response.ok) return [];
+        return await response.json();
+      } catch (error) {
+        return [];
+      }
+    },
+
+    getAllWithLocation: async (): Promise<UserProfile[]> => {
+      try {
+        const response = await fetch(`${API_BASE}/profiles`);
+        if (!response.ok) return [];
+        return await response.json();
+      } catch (error) {
+        console.error("Get All Profiles API Error:", error);
+        return [];
+      }
+    },
+
     createOrUpdate: async (uid: string, data: Partial<UserProfile>): Promise<void> => {
       try {
         const response = await fetch(`${API_BASE}/profile/${uid}`, {
@@ -87,6 +112,37 @@ export const api = {
         throw error;
       }
     }
+  },
+
+  friends: {
+      sendRequest: async (fromUid: string, toUid: string) => {
+          await fetch(`${API_BASE}/friends/request`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ fromUid, toUid })
+          });
+      },
+      acceptRequest: async (userUid: string, requesterUid: string) => {
+          await fetch(`${API_BASE}/friends/accept`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userUid, requesterUid })
+          });
+      },
+      rejectRequest: async (userUid: string, requesterUid: string) => {
+          await fetch(`${API_BASE}/friends/reject`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userUid, requesterUid })
+          });
+      },
+      removeFriend: async (uid1: string, uid2: string) => {
+          await fetch(`${API_BASE}/friends/remove`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ uid1, uid2 })
+          });
+      }
   },
 
   posts: {

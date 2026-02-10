@@ -1,11 +1,11 @@
-import { Camera, ChevronLeft, Instagram, Sparkles, User as UserIcon } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
-import { InterestTag, POPULAR_INTERESTS, UserProfile } from '../types';
+import { UserProfile, POPULAR_INTERESTS, InterestTag } from '../types';
+import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
+import { Camera, Instagram, Sparkles, ChevronLeft, User as UserIcon } from 'lucide-react';
 
 const STEPS = ['Basic Info', 'Socials', 'Interests'];
 
@@ -58,6 +58,15 @@ const Onboarding: React.FC = () => {
       setError("Please enter your name.");
       return;
     }
+
+    if (currentStep === 1 && instagram.trim()) {
+      const instagramRegex = /^[a-zA-Z0-9._]+$/;
+      if (!instagramRegex.test(instagram)) {
+        setError("Invalid Instagram handle. Use only letters, numbers, periods, and underscores.");
+        return;
+      }
+    }
+
     setCurrentStep(prev => prev + 1);
   };
 

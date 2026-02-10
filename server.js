@@ -167,6 +167,52 @@ app.get('/api/profile/:uid', async (req, res) => {
   }
 });
 
+// 3b. Get All Profiles (for Map)
+app.get('/api/profiles', async (req, res) => {
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+
+  try {
+    const profiles = db.collection('profiles');
+    // Only return profiles that have a location
+    const users = await profiles.find({ 
+      lastLocation: { $exists: true, $ne: null } 
+    }).project({ 
+      uid: 1, 
+      displayName: 1, 
+      photoURL: 1, 
+      lastLocation: 1,
+      interests: 1,
+      bio: 1,
+      instagramHandle: 1,
+      friends: 1
+    }).limit(100).toArray();
+    
+    res.json(users);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch profiles" });
+  }
+});
+
+// 3c. Get Batch Profiles (For Friend Requests list)
+app.post('/api/profiles/batch', async (req, res) => {
+    if (!db) return res.status(503).json({ error: "Database not connected" });
+    try {
+        const { uids } = req.body;
+        if (!Array.isArray(uids) || uids.length === 0) return res.json([]);
+
+        const profiles = db.collection('profiles');
+        const users = await profiles.find({ uid: { $in: uids } }).project({
+            uid: 1, 
+            displayName: 1, 
+            photoURL: 1
+        }).toArray();
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch batch profiles" });
+    }
+});
+
 // 4. Create/Update Profile
 app.post('/api/profile/:uid', async (req, res) => {
   if (!db) return res.status(503).json({ error: "Database not connected" });
@@ -189,7 +235,100 @@ app.post('/api/profile/:uid', async (req, res) => {
   }
 });
 
-// 5. Create Post
+// 5. Friend Request Logic
+app.post('/api/friends/request', async (req, res) => {
+    if (!db) return res.status(503).json({ error: "Database not connected" });
+    try {
+        const { fromUid, toUid } = req.body;
+        const profiles = db.collection('profiles');
+
+        // Add to outgoing of sender
+        await profiles.updateOne(
+            { uid: fromUid },
+            { $addToSet: { outgoingRequests: toUid } }
+        );
+        // Add to incoming of receiver
+        await profiles.updateOne(
+            { uid: toUid },
+            { $addToSet: { incomingRequests: fromUid } }
+        );
+
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to send request" });
+    }
+});
+
+app.post('/api/friends/accept', async (req, res) => {
+    if (!db) return res.status(503).json({ error: "Database not connected" });
+    try {
+        const { userUid, requesterUid } = req.body;
+        const profiles = db.collection('profiles');
+
+        // Update User (Accepter)
+        await profiles.updateOne(
+            { uid: userUid },
+            { 
+                $pull: { incomingRequests: requesterUid },
+                $addToSet: { friends: requesterUid }
+            }
+        );
+
+        // Update Requester
+        await profiles.updateOne(
+            { uid: requesterUid },
+            { 
+                $pull: { outgoingRequests: userUid },
+                $addToSet: { friends: userUid }
+            }
+        );
+
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to accept request" });
+    }
+});
+
+app.post('/api/friends/reject', async (req, res) => {
+    if (!db) return res.status(503).json({ error: "Database not connected" });
+    try {
+        const { userUid, requesterUid } = req.body;
+        const profiles = db.collection('profiles');
+
+        await profiles.updateOne(
+            { uid: userUid },
+            { $pull: { incomingRequests: requesterUid } }
+        );
+        
+        // Also remove from requester's outgoing
+        await profiles.updateOne(
+            { uid: requesterUid },
+            { $pull: { outgoingRequests: userUid } }
+        );
+
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to reject request" });
+    }
+});
+
+app.post('/api/friends/remove', async (req, res) => {
+    if (!db) return res.status(503).json({ error: "Database not connected" });
+    try {
+        const { uid1, uid2 } = req.body;
+        const profiles = db.collection('profiles');
+
+        await profiles.updateOne({ uid: uid1 }, { $pull: { friends: uid2 } });
+        await profiles.updateOne({ uid: uid2 }, { $pull: { friends: uid1 } });
+
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to remove friend" });
+    }
+});
+
+
+// 6. Create Post
 app.post('/api/posts', async (req, res) => {
   if (!db) return res.status(503).json({ error: "Database not connected" });
   try {
@@ -209,7 +348,7 @@ app.post('/api/posts', async (req, res) => {
   }
 });
 
-// 6. Get All Posts
+// 7. Get All Posts
 app.get('/api/posts', async (req, res) => {
   if (!db) return res.status(503).json({ error: "Database not connected" });
   try {
@@ -222,7 +361,7 @@ app.get('/api/posts', async (req, res) => {
   }
 });
 
-// 6b. Get User Posts - API to fetch posts created by a particular user
+// 8. Get User Posts - API to fetch posts created by a particular user
 app.get('/api/posts/user/:uid', async (req, res) => {
   if (!db) return res.status(503).json({ error: "Database not connected" });
   try {
@@ -235,7 +374,7 @@ app.get('/api/posts/user/:uid', async (req, res) => {
   }
 });
 
-// 6c. Get Single Post
+// 9. Get Single Post
 app.get('/api/posts/:id', async (req, res) => {
   if (!db) return res.status(503).json({ error: "Database not connected" });
   try {
@@ -252,7 +391,7 @@ app.get('/api/posts/:id', async (req, res) => {
   }
 });
 
-// 6d. Update Post
+// 10. Update Post
 app.put('/api/posts/:id', async (req, res) => {
   if (!db) return res.status(503).json({ error: "Database not connected" });
   try {
@@ -282,7 +421,7 @@ app.put('/api/posts/:id', async (req, res) => {
   }
 });
 
-// 6e. Delete Post
+// 11. Delete Post
 app.delete('/api/posts/:id', async (req, res) => {
   if (!db) return res.status(503).json({ error: "Database not connected" });
   try {
@@ -304,7 +443,7 @@ app.delete('/api/posts/:id', async (req, res) => {
   }
 });
 
-// 7. Toggle Like
+// 12. Toggle Like
 app.post('/api/posts/:id/like', async (req, res) => {
   if (!db) return res.status(503).json({ error: "Database not connected" });
   try {
@@ -350,7 +489,7 @@ app.post('/api/posts/:id/like', async (req, res) => {
   }
 });
 
-// 8. Add Comment
+// 13. Add Comment
 app.post('/api/posts/:id/comment', async (req, res) => {
   if (!db) return res.status(503).json({ error: "Database not connected" });
   try {

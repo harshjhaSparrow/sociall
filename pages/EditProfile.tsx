@@ -75,6 +75,14 @@ const EditProfile: React.FC = () => {
       return;
     }
 
+    if (instagram.trim()) {
+      const instagramRegex = /^[a-zA-Z0-9._]+$/;
+      if (!instagramRegex.test(instagram)) {
+        setError("Invalid Instagram handle. Use only letters, numbers, periods, and underscores.");
+        return;
+      }
+    }
+
     setLoading(true);
     setError(null);
 

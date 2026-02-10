@@ -24,7 +24,7 @@ const Layout: React.FC = () => {
       </div>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 inset-x-0 bg-white border-t border-slate-100 pb-[env(safe-area-inset-bottom)] z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+      <div className="fixed bottom-0 inset-x-0 bg-white border-t border-slate-100 pb-[env(safe-area-inset-bottom)] z-[2000] shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
         <div className="flex justify-around items-center h-16 max-w-md mx-auto px-2">
           
           {/* Feed Tab */}

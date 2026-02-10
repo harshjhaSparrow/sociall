@@ -14,6 +14,9 @@ export interface UserProfile {
   bio?: string;
   createdAt: number;
   lastLocation?: Location;
+  friends?: string[];
+  incomingRequests?: string[];
+  outgoingRequests?: string[];
 }
 
 export interface Comment {
