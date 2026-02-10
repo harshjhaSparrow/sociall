@@ -1,4 +1,4 @@
-import { UserProfile, Post, Comment } from '../types';
+import { UserProfile, Post, Comment, Notification } from '../types';
 
 /**
  * API SERVICE (REAL BACKEND)
@@ -141,6 +141,25 @@ export const api = {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ uid1, uid2 })
+          });
+      }
+  },
+
+  notifications: {
+      get: async (uid: string): Promise<Notification[]> => {
+          try {
+              const response = await fetch(`${API_BASE}/notifications/${uid}`);
+              if (!response.ok) return [];
+              return await response.json();
+          } catch (error) {
+              return [];
+          }
+      },
+      markRead: async (notificationIds: string[]) => {
+          await fetch(`${API_BASE}/notifications/mark-read`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ notificationIds })
           });
       }
   },

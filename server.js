@@ -1,7 +1,7 @@
 import cors from 'cors';
 import express from 'express';
 import { MongoClient, ObjectId, ServerApiVersion } from 'mongodb';
-// const { MongoClient, ServerApiVersion, ObjectId } = mongodb;
+
 
 const app = express();
 const port = 5000;
@@ -25,6 +25,33 @@ const client = new MongoClient(uri, {
 
 let db;
 const DB_NAME = "socially_db";
+
+// Helper to create notification
+async function createNotification(type, fromUid, toUid, postId = null) {
+  if (!db || fromUid === toUid) return;
+  
+  try {
+    const notifications = db.collection('notifications');
+    const profiles = db.collection('profiles');
+    
+    const sender = await profiles.findOne({ uid: fromUid });
+    const senderName = sender ? sender.displayName : "Someone";
+    const senderPhoto = sender ? sender.photoURL : "";
+
+    await notifications.insertOne({
+      type,
+      fromUid,
+      fromName: senderName,
+      fromPhoto: senderPhoto,
+      toUid,
+      postId,
+      read: false,
+      createdAt: Date.now()
+    });
+  } catch (e) {
+    console.error("Error creating notification", e);
+  }
+}
 
 const DUMMY_POSTS = [
   {
@@ -253,6 +280,9 @@ app.post('/api/friends/request', async (req, res) => {
             { $addToSet: { incomingRequests: fromUid } }
         );
 
+        // Notify Receiver
+        await createNotification('friend_request', fromUid, toUid);
+
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: "Failed to send request" });
@@ -282,6 +312,9 @@ app.post('/api/friends/accept', async (req, res) => {
                 $addToSet: { friends: userUid }
             }
         );
+
+        // Notify Requester that their request was accepted
+        await createNotification('friend_accept', userUid, requesterUid);
 
         res.json({ success: true });
     } catch (error) {
@@ -480,6 +513,11 @@ app.post('/api/posts/:id/like', async (req, res) => {
     await posts.updateOne({ _id: new ObjectId(postId) }, update);
     const updatedPost = await posts.findOne({ _id: new ObjectId(postId) });
     
+    // Notify post owner of like (if not self)
+    if (!isLiked && post.uid !== uid) {
+      await createNotification('like', uid, post.uid, postId);
+    }
+    
     if (!updatedPost) return res.status(404).json({ error: "Post not found after update" });
 
     res.json({ likes: updatedPost.likes, likedBy: updatedPost.likedBy || [] });
@@ -522,11 +560,52 @@ app.post('/api/posts/:id/comment', async (req, res) => {
       { $push: { comments: newComment } }
     );
     
+    // Notify post owner of comment (if not self)
+    const post = await posts.findOne({ _id: new ObjectId(postId) });
+    if (post && post.uid !== uid) {
+      await createNotification('comment', uid, post.uid, postId);
+    }
+    
     res.json(newComment);
   } catch (error) {
     console.error("Add Comment Error:", error);
     res.status(500).json({ error: "Failed to add comment" });
   }
+});
+
+// 14. Get Notifications
+app.get('/api/notifications/:uid', async (req, res) => {
+    if (!db) return res.status(503).json({ error: "Database not connected" });
+    try {
+        const notifications = db.collection('notifications');
+        const list = await notifications
+            .find({ toUid: req.params.uid })
+            .sort({ createdAt: -1 })
+            .limit(50)
+            .toArray();
+        res.json(list);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+});
+
+// 15. Mark Notifications Read
+app.post('/api/notifications/mark-read', async (req, res) => {
+    if (!db) return res.status(503).json({ error: "Database not connected" });
+    try {
+        const { notificationIds } = req.body;
+        const notifications = db.collection('notifications');
+        
+        const ids = notificationIds.map(id => new ObjectId(id));
+        
+        await notifications.updateMany(
+            { _id: { $in: ids } },
+            { $set: { read: true } }
+        );
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to mark read" });
+    }
 });
 
 app.listen(port, () => {

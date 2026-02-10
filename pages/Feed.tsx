@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { api } from '../services/api';
-import { Post } from '../types';
+import { Post, Notification } from '../types';
 import { useAuth } from '../context/AuthContext';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { Loader2, RefreshCw, Bell, Heart, MessageCircle, UserPlus, X, Check } from 'lucide-react';
 import PostItem from '../components/PostItem';
+import { useNavigate } from 'react-router-dom';
 
 const PostSkeleton = () => (
   <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm animate-pulse">
@@ -24,9 +25,15 @@ const PostSkeleton = () => (
 
 const Feed: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   
+  // Notification State
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
   // Pull to refresh state
   const [refreshing, setRefreshing] = useState(false);
   const [pullY, setPullY] = useState(0);
@@ -44,13 +51,29 @@ const Feed: React.FC = () => {
     }
   };
 
+  const fetchNotifications = async () => {
+      if (user) {
+          try {
+              const data = await api.notifications.get(user.uid);
+              setNotifications(data);
+              setUnreadCount(data.filter(n => !n.read).length);
+          } catch (e) {
+              console.error("Failed to load notifications", e);
+          }
+      }
+  };
+
   useEffect(() => {
     fetchPosts();
-  }, []);
+    fetchNotifications();
+    // Poll for notifications every 30s
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await fetchPosts();
+    await Promise.all([fetchPosts(), fetchNotifications()]);
     setRefreshing(false);
     setPullY(0);
   };
@@ -140,6 +163,64 @@ const Feed: React.FC = () => {
     }
   };
 
+  const handleNotificationClick = async (n: Notification) => {
+      // Mark all visible as read for simplicity when opening list, 
+      // but here we can mark specific one too if we want better tracking.
+      setShowNotifications(false);
+      
+      // Redirect logic
+      if (n.type === 'friend_request') {
+          navigate(`/profile/${n.fromUid}`);
+      } else if (n.type === 'friend_accept') {
+          navigate(`/profile/${n.fromUid}`);
+      } else if ((n.type === 'like' || n.type === 'comment') && n.postId) {
+          navigate(`/post/${n.postId}`);
+      }
+  };
+
+  const openNotifications = async () => {
+      setShowNotifications(true);
+      if (unreadCount > 0) {
+          const unreadIds = notifications.filter(n => !n.read).map(n => n._id);
+          if (unreadIds.length > 0) {
+              await api.notifications.markRead(unreadIds);
+              setUnreadCount(0);
+              // Optimistically update local state
+              setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+          }
+      }
+  };
+
+  const getNotificationIcon = (type: string) => {
+      switch(type) {
+          case 'friend_request': return <UserPlus className="w-4 h-4 text-white" />;
+          case 'friend_accept': return <Check className="w-4 h-4 text-white" />;
+          case 'like': return <Heart className="w-4 h-4 text-white fill-current" />;
+          case 'comment': return <MessageCircle className="w-4 h-4 text-white" />;
+          default: return <Bell className="w-4 h-4 text-white" />;
+      }
+  };
+
+  const getNotificationColor = (type: string) => {
+      switch(type) {
+          case 'friend_request': return 'bg-blue-500';
+          case 'friend_accept': return 'bg-green-500';
+          case 'like': return 'bg-red-500';
+          case 'comment': return 'bg-indigo-500';
+          default: return 'bg-slate-500';
+      }
+  };
+
+  const getNotificationText = (n: Notification) => {
+      switch(n.type) {
+          case 'friend_request': return <>sent you a <span className="font-bold text-slate-900">friend request</span></>;
+          case 'friend_accept': return <>accepted your <span className="font-bold text-slate-900">friend request</span></>;
+          case 'like': return <>liked your <span className="font-bold text-slate-900">post</span></>;
+          case 'comment': return <>commented on your <span className="font-bold text-slate-900">post</span></>;
+          default: return 'New notification';
+      }
+  };
+
   return (
     <div 
       className="max-w-md mx-auto bg-slate-50 min-h-screen relative"
@@ -170,10 +251,26 @@ const Feed: React.FC = () => {
         style={{ transform: `translateY(${pullY * 0.5}px)` }}
       >
         <h1 className="text-xl font-bold text-slate-900 tracking-tight">Socially</h1>
-        <div className="w-8 h-8 rounded-full bg-slate-100 overflow-hidden">
-           {/* Placeholder for user avatar or small icon */}
-           {user && <div className="w-full h-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold text-xs">{user.email?.[0]?.toUpperCase()}</div>}
-        </div> 
+        
+        <div className="flex items-center gap-3">
+             {/* Notification Bell */}
+             <button 
+               onClick={openNotifications}
+               className="relative p-2 rounded-full hover:bg-slate-100 transition-colors"
+             >
+                 <Bell className="w-6 h-6 text-slate-600" />
+                 {unreadCount > 0 && (
+                     <div className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white flex items-center justify-center text-[9px] font-bold text-white">
+                         {unreadCount > 9 ? '9+' : unreadCount}
+                     </div>
+                 )}
+             </button>
+
+             {/* User Avatar */}
+             <div className="w-8 h-8 rounded-full bg-slate-100 overflow-hidden">
+                {user && <div className="w-full h-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold text-xs">{user.email?.[0]?.toUpperCase()}</div>}
+             </div> 
+        </div>
       </div>
 
       {/* Content Container */}
@@ -208,6 +305,64 @@ const Feed: React.FC = () => {
           ))
         )}
       </div>
+
+      {/* Notifications Modal */}
+      {showNotifications && (
+         <div className="fixed inset-0 z-[2000] flex flex-col justify-end sm:justify-center sm:items-center p-0 sm:p-4 animate-fade-in">
+            <div 
+               className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+               onClick={() => setShowNotifications(false)}
+            />
+            <div className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl relative z-10 flex flex-col max-h-[80vh] animate-slide-up overflow-hidden">
+               <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                  <h3 className="font-bold text-slate-900 text-lg">Notifications</h3>
+                  <button onClick={() => setShowNotifications(false)} className="p-2 -mr-2 text-slate-400 hover:text-slate-600">
+                     <X className="w-5 h-5" />
+                  </button>
+               </div>
+               
+               <div className="flex-1 overflow-y-auto p-2 no-scrollbar">
+                   {notifications.length === 0 ? (
+                       <div className="text-center py-12 text-slate-400 text-sm">
+                           No notifications yet.
+                       </div>
+                   ) : (
+                       <div className="space-y-1">
+                           {notifications.map(n => (
+                               <div 
+                                 key={n._id}
+                                 onClick={() => handleNotificationClick(n)}
+                                 className={`flex items-center gap-3 p-3 rounded-xl transition-colors cursor-pointer ${n.read ? 'bg-white hover:bg-slate-50' : 'bg-blue-50/50 hover:bg-blue-50'}`}
+                               >
+                                   <div className="relative">
+                                       <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden shrink-0">
+                                           {n.fromPhoto ? (
+                                               <img src={n.fromPhoto} alt={n.fromName} className="w-full h-full object-cover" />
+                                           ) : (
+                                               <div className="w-full h-full flex items-center justify-center font-bold text-slate-400 text-xs">{n.fromName[0]}</div>
+                                           )}
+                                       </div>
+                                       <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center ${getNotificationColor(n.type)}`}>
+                                           {getNotificationIcon(n.type)}
+                                       </div>
+                                   </div>
+                                   <div className="flex-1 min-w-0">
+                                       <p className="text-sm text-slate-600 leading-snug">
+                                           <span className="font-bold text-slate-900 mr-1">{n.fromName}</span>
+                                           {getNotificationText(n)}
+                                       </p>
+                                       <span className="text-[10px] text-slate-400 font-medium">
+                                           {new Date(n.createdAt).toLocaleDateString()}
+                                       </span>
+                                   </div>
+                               </div>
+                           ))}
+                       </div>
+                   )}
+               </div>
+            </div>
+         </div>
+      )}
     </div>
   );
 };

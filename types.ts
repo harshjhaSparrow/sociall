@@ -42,6 +42,18 @@ export interface Post {
   location?: Location;
 }
 
+export interface Notification {
+  _id: string;
+  type: 'friend_request' | 'friend_accept' | 'like' | 'comment';
+  fromUid: string;
+  fromName: string;
+  fromPhoto: string;
+  toUid: string;
+  postId?: string;
+  read: boolean;
+  createdAt: number;
+}
+
 export interface InterestTag {
   id: string;
   label: string;
