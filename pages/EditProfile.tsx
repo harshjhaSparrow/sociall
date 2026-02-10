@@ -14,7 +14,6 @@ const EditProfile: React.FC = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Form State
   const [displayName, setDisplayName] = useState('');
   const [photoURL, setPhotoURL] = useState('');
   const [instagram, setInstagram] = useState('');
@@ -109,25 +108,25 @@ const EditProfile: React.FC = () => {
 
   if (initialLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
         <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-950 flex flex-col">
       {/* Sticky Header */}
-      <div className="bg-white/90 backdrop-blur-md px-4 py-3 shadow-sm z-30 sticky top-0 border-b border-slate-100">
+      <div className="bg-slate-900/90 backdrop-blur-md px-4 py-3 shadow-sm z-30 sticky top-0 border-b border-slate-800">
         <div className="max-w-md mx-auto flex items-center justify-between">
             <button 
               onClick={() => navigate('/')} 
-              className="p-2 -ml-2 text-slate-500 hover:text-slate-900 rounded-full hover:bg-slate-100 transition-colors"
+              className="p-2 -ml-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-800 transition-colors"
             >
                  <ChevronLeft className="w-7 h-7" />
             </button>
-             <span className="font-bold text-slate-900 text-lg">Edit Profile</span>
-             <div className="w-10"></div> {/* Spacer */}
+             <span className="font-bold text-white text-lg">Edit Profile</span>
+             <div className="w-10"></div> 
         </div>
       </div>
 
@@ -137,14 +136,14 @@ const EditProfile: React.FC = () => {
             {/* Photo */}
             <div className="flex flex-col items-center justify-center space-y-4">
               <div className="relative group cursor-pointer">
-                <div className={`w-36 h-36 rounded-full border-[6px] border-white shadow-2xl overflow-hidden bg-slate-100 flex items-center justify-center`}>
+                <div className={`w-36 h-36 rounded-full border-[6px] border-slate-900 shadow-2xl overflow-hidden bg-slate-800 flex items-center justify-center`}>
                   {photoURL ? (
                     <img src={photoURL} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
-                    <UserIcon className="w-16 h-16 text-slate-300" />
+                    <UserIcon className="w-16 h-16 text-slate-600" />
                   )}
                 </div>
-                <label className="absolute bottom-1 right-1 p-3.5 bg-slate-900 text-white rounded-full shadow-lg cursor-pointer hover:bg-slate-800 transition-transform hover:scale-105 active:scale-95">
+                <label className="absolute bottom-1 right-1 p-3.5 bg-slate-800 text-white rounded-full shadow-lg cursor-pointer hover:bg-slate-700 transition-transform hover:scale-105 active:scale-95 border border-slate-600">
                   <Camera className="w-6 h-6" />
                   <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                 </label>
@@ -161,11 +160,11 @@ const EditProfile: React.FC = () => {
                 />
 
                 <div className="w-full space-y-2">
-                    <label className="block text-sm font-semibold text-slate-700 ml-1">
+                    <label className="block text-sm font-semibold text-slate-300 ml-1">
                       Bio
                     </label>
                     <textarea
-                      className="w-full rounded-2xl border-2 border-slate-100 bg-white px-4 py-4 text-base text-slate-900 placeholder-slate-400 outline-none transition-all duration-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 resize-none min-h-[120px]"
+                      className="w-full rounded-2xl border-2 border-slate-800 bg-slate-900 px-4 py-4 text-base text-white placeholder-slate-500 outline-none transition-all duration-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 focus:bg-slate-800 resize-none min-h-[120px]"
                       placeholder="Tell us about yourself..."
                       value={bio}
                       onChange={(e) => setBio(e.target.value)}
@@ -175,7 +174,7 @@ const EditProfile: React.FC = () => {
                 <Input 
                   label="Instagram" 
                   placeholder="@username"
-                  icon={<span className="text-slate-400 font-bold">@</span>}
+                  icon={<span className="text-slate-500 font-bold">@</span>}
                   value={instagram}
                   onChange={(e) => setInstagram(e.target.value.replace('@', ''))}
                 />
@@ -183,7 +182,7 @@ const EditProfile: React.FC = () => {
 
             {/* Interests */}
             <div>
-                 <label className="block text-sm font-semibold text-slate-700 ml-1 mb-4">
+                 <label className="block text-sm font-semibold text-slate-300 ml-1 mb-4">
                     Edit Interests
                 </label>
                 <div className="flex flex-wrap gap-2.5">
@@ -198,8 +197,8 @@ const EditProfile: React.FC = () => {
                         px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 border-2
                         flex items-center gap-2
                         ${isSelected 
-                            ? 'bg-primary-50 border-primary-500 text-primary-700 shadow-md scale-105' 
-                            : 'bg-white border-slate-100 text-slate-600 hover:border-slate-200 hover:bg-slate-50'}
+                            ? 'bg-primary-500/10 border-primary-500 text-primary-400 shadow-md scale-105' 
+                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700 hover:bg-slate-800'}
                         `}
                     >
                         <span>{interest.emoji}</span>
@@ -211,7 +210,7 @@ const EditProfile: React.FC = () => {
             </div>
             
             {error && (
-              <div className="p-4 bg-red-50 text-red-600 text-sm font-medium rounded-2xl border border-red-100 text-center animate-slide-up">
+              <div className="p-4 bg-red-500/10 text-red-400 text-sm font-medium rounded-2xl border border-red-500/20 text-center animate-slide-up">
                   {error}
               </div>
             )}
@@ -219,7 +218,7 @@ const EditProfile: React.FC = () => {
       </div>
 
       {/* Sticky Save Button */}
-      <div className="fixed bottom-0 inset-x-0 p-6 bg-white/80 backdrop-blur-xl border-t border-slate-100 z-40">
+      <div className="fixed bottom-0 inset-x-0 p-6 bg-slate-900/80 backdrop-blur-xl border-t border-slate-800 z-40">
         <div className="max-w-md mx-auto">
           <Button 
             onClick={handleSave} 

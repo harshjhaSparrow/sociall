@@ -22,7 +22,6 @@ const LocationGuard: React.FC<LocationGuardProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
 
-  // Helper to fetch/update location
   const updateLocation = async () => {
     if (!navigator.geolocation) return;
 
@@ -37,11 +36,8 @@ const LocationGuard: React.FC<LocationGuardProps> = ({ children }) => {
           setHasPermission(true);
           setLoading(false);
 
-          // Update backend if user is logged in
           if (user) {
             try {
-              // We'll reverse geocode lazily or just send coords.
-              // For now, let's just send coords to profile.
               await api.profile.createOrUpdate(user.uid, {
                  lastLocation: loc
               });
@@ -54,8 +50,6 @@ const LocationGuard: React.FC<LocationGuardProps> = ({ children }) => {
         (error) => {
           console.error("Location error:", error);
           setLoading(false);
-          // If already has permission from previous check, we might want to be lenient?
-          // But strict mode says we need it.
           reject(error);
         }
       );
@@ -63,7 +57,6 @@ const LocationGuard: React.FC<LocationGuardProps> = ({ children }) => {
   };
 
   useEffect(() => {
-    // Check permission status
     navigator.permissions.query({ name: 'geolocation' }).then((result) => {
       if (result.state === 'granted') {
         updateLocation();
@@ -71,8 +64,7 @@ const LocationGuard: React.FC<LocationGuardProps> = ({ children }) => {
         setLoading(false);
       }
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]); // Re-run if user changes to ensure we sync location to new user
+  }, [user]);
 
   const requestLocation = () => {
     setLoading(true);
@@ -89,10 +81,10 @@ const LocationGuard: React.FC<LocationGuardProps> = ({ children }) => {
 
   if (loading) {
      return (
-        <div className="h-screen w-screen flex items-center justify-center bg-white">
+        <div className="h-screen w-screen flex items-center justify-center bg-slate-950">
            <div className="animate-pulse flex flex-col items-center">
-              <MapPin className="w-10 h-10 text-slate-300 mb-2" />
-              <p className="text-slate-400 font-medium">Checking permissions...</p>
+              <MapPin className="w-10 h-10 text-slate-700 mb-2" />
+              <p className="text-slate-500 font-medium">Checking permissions...</p>
            </div>
         </div>
      );
@@ -100,13 +92,13 @@ const LocationGuard: React.FC<LocationGuardProps> = ({ children }) => {
 
   if (!hasPermission) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col p-6 items-center justify-center text-center">
-        <div className="w-24 h-24 bg-primary-100 rounded-full flex items-center justify-center mb-8 animate-fade-in">
+      <div className="min-h-screen bg-slate-950 flex flex-col p-6 items-center justify-center text-center">
+        <div className="w-24 h-24 bg-slate-900 rounded-full flex items-center justify-center mb-8 animate-fade-in border border-slate-800">
           <MapPin className="w-12 h-12 text-primary-500" />
         </div>
         
-        <h1 className="text-2xl font-bold text-slate-900 mb-3">Enable Location</h1>
-        <p className="text-slate-500 mb-8 max-w-xs leading-relaxed">
+        <h1 className="text-2xl font-bold text-white mb-3">Enable Location</h1>
+        <p className="text-slate-400 mb-8 max-w-xs leading-relaxed">
           To connect with people nearby and get the full Socially experience, we need access to your location.
         </p>
         
@@ -115,7 +107,7 @@ const LocationGuard: React.FC<LocationGuardProps> = ({ children }) => {
           <ArrowRight className="w-5 h-5 ml-2" />
         </Button>
         
-        <p className="mt-6 text-xs text-slate-400">
+        <p className="mt-6 text-xs text-slate-600">
           We prioritize your privacy and only use this to show relevant content.
         </p>
       </div>

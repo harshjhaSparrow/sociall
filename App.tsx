@@ -13,7 +13,7 @@ import PostDetail from './pages/PostDetail';
 import MapPage from './pages/MapPage';
 import Layout from './components/Layout';
 import { Loader2 } from 'lucide-react';
-import LocationGuard from './components/LocationGaurd';
+import LocationGuard from './components/LocationGuard';
 
 // Guard component to protect routes and check profile existence
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {

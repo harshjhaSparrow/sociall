@@ -7,18 +7,18 @@ import PostItem from '../components/PostItem';
 import { useNavigate } from 'react-router-dom';
 
 const PostSkeleton = () => (
-  <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm animate-pulse">
+  <div className="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden shadow-sm animate-pulse">
     <div className="p-4 flex items-center gap-3">
-      <div className="w-10 h-10 rounded-full bg-slate-200" />
+      <div className="w-10 h-10 rounded-full bg-slate-800" />
       <div className="space-y-2 flex-1">
-        <div className="h-4 w-24 bg-slate-200 rounded" />
-        <div className="h-3 w-16 bg-slate-200 rounded" />
+        <div className="h-4 w-24 bg-slate-800 rounded" />
+        <div className="h-3 w-16 bg-slate-800 rounded" />
       </div>
     </div>
-    <div className="w-full h-64 bg-slate-200" />
+    <div className="w-full h-64 bg-slate-800" />
     <div className="p-4 space-y-3">
-      <div className="h-4 w-3/4 bg-slate-200 rounded" />
-      <div className="h-4 w-1/2 bg-slate-200 rounded" />
+      <div className="h-4 w-3/4 bg-slate-800 rounded" />
+      <div className="h-4 w-1/2 bg-slate-800 rounded" />
     </div>
   </div>
 );
@@ -66,7 +66,6 @@ const Feed: React.FC = () => {
   useEffect(() => {
     fetchPosts();
     fetchNotifications();
-    // Poll for notifications every 30s
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
   }, [user]);
@@ -87,13 +86,10 @@ const Feed: React.FC = () => {
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isDragging.current) return;
-    
     if (window.scrollY === 0) {
       const currentY = e.touches[0].clientY;
       const diff = currentY - startY.current;
-      
       if (diff > 0) {
-        // Add resistance to the pull
         const damped = Math.min(diff * 0.4, 150);
         setPullY(damped);
       }
@@ -114,8 +110,6 @@ const Feed: React.FC = () => {
 
   const handleLike = async (post: Post) => {
     if (!user || !post._id) return;
-    
-    // Optimistic Update
     const isLiked = post.likedBy?.includes(user.uid);
     const newLikes = isLiked ? post.likes - 1 : post.likes + 1;
     const newLikedBy = isLiked 
@@ -136,8 +130,6 @@ const Feed: React.FC = () => {
           : p
       ));
     } catch (error) {
-      console.error("Failed to like post", error);
-      // Revert optimistic update on error
       setPosts(currentPosts => currentPosts.map(p => 
         p._id === post._id ? post : p
       ));
@@ -164,11 +156,7 @@ const Feed: React.FC = () => {
   };
 
   const handleNotificationClick = async (n: Notification) => {
-      // Mark all visible as read for simplicity when opening list, 
-      // but here we can mark specific one too if we want better tracking.
       setShowNotifications(false);
-      
-      // Redirect logic
       if (n.type === 'friend_request') {
           navigate(`/profile/${n.fromUid}`);
       } else if (n.type === 'friend_accept') {
@@ -185,7 +173,6 @@ const Feed: React.FC = () => {
           if (unreadIds.length > 0) {
               await api.notifications.markRead(unreadIds);
               setUnreadCount(0);
-              // Optimistically update local state
               setNotifications(prev => prev.map(n => ({ ...n, read: true })));
           }
       }
@@ -203,27 +190,27 @@ const Feed: React.FC = () => {
 
   const getNotificationColor = (type: string) => {
       switch(type) {
-          case 'friend_request': return 'bg-blue-500';
-          case 'friend_accept': return 'bg-green-500';
-          case 'like': return 'bg-red-500';
-          case 'comment': return 'bg-indigo-500';
+          case 'friend_request': return 'bg-blue-500 shadow-lg shadow-blue-500/30';
+          case 'friend_accept': return 'bg-green-500 shadow-lg shadow-green-500/30';
+          case 'like': return 'bg-red-500 shadow-lg shadow-red-500/30';
+          case 'comment': return 'bg-indigo-500 shadow-lg shadow-indigo-500/30';
           default: return 'bg-slate-500';
       }
   };
 
   const getNotificationText = (n: Notification) => {
       switch(n.type) {
-          case 'friend_request': return <>sent you a <span className="font-bold text-slate-900">friend request</span></>;
-          case 'friend_accept': return <>accepted your <span className="font-bold text-slate-900">friend request</span></>;
-          case 'like': return <>liked your <span className="font-bold text-slate-900">post</span></>;
-          case 'comment': return <>commented on your <span className="font-bold text-slate-900">post</span></>;
+          case 'friend_request': return <>sent you a <span className="font-bold text-slate-100">friend request</span></>;
+          case 'friend_accept': return <>accepted your <span className="font-bold text-slate-100">friend request</span></>;
+          case 'like': return <>liked your <span className="font-bold text-slate-100">post</span></>;
+          case 'comment': return <>commented on your <span className="font-bold text-slate-100">post</span></>;
           default: return 'New notification';
       }
   };
 
   return (
     <div 
-      className="max-w-md mx-auto bg-slate-50 min-h-screen relative"
+      className="max-w-md mx-auto bg-slate-950 min-h-screen relative"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -234,7 +221,7 @@ const Feed: React.FC = () => {
         style={{ opacity: pullY > 20 ? 1 : 0 }}
       >
         <div 
-          className="bg-white rounded-full p-2 shadow-md border border-slate-100"
+          className="bg-slate-900 rounded-full p-2 shadow-md border border-slate-800"
           style={{ transform: `rotate(${pullY * 2}deg)` }}
         >
           {refreshing ? (
@@ -247,28 +234,28 @@ const Feed: React.FC = () => {
 
       {/* Header */}
       <div 
-        className="bg-white/80 backdrop-blur-md sticky top-0 z-30 px-4 py-3 border-b border-slate-100 flex justify-between items-center transition-transform duration-200 ease-out"
+        className="bg-slate-900/80 backdrop-blur-xl sticky top-0 z-30 px-4 py-3 border-b border-slate-800 flex justify-between items-center transition-transform duration-200 ease-out"
         style={{ transform: `translateY(${pullY * 0.5}px)` }}
       >
-        <h1 className="text-xl font-bold text-slate-900 tracking-tight">Socially</h1>
+        <h1 className="text-xl font-bold text-white tracking-tight">Socially</h1>
         
         <div className="flex items-center gap-3">
              {/* Notification Bell */}
              <button 
                onClick={openNotifications}
-               className="relative p-2 rounded-full hover:bg-slate-100 transition-colors"
+               className="relative p-2 rounded-full hover:bg-slate-800 transition-colors"
              >
-                 <Bell className="w-6 h-6 text-slate-600" />
+                 <Bell className="w-6 h-6 text-slate-400" />
                  {unreadCount > 0 && (
-                     <div className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white flex items-center justify-center text-[9px] font-bold text-white">
+                     <div className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-slate-900 flex items-center justify-center text-[9px] font-bold text-white shadow-sm">
                          {unreadCount > 9 ? '9+' : unreadCount}
                      </div>
                  )}
              </button>
 
              {/* User Avatar */}
-             <div className="w-8 h-8 rounded-full bg-slate-100 overflow-hidden">
-                {user && <div className="w-full h-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold text-xs">{user.email?.[0]?.toUpperCase()}</div>}
+             <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden border border-slate-700">
+                {user && <div className="w-full h-full bg-slate-800 flex items-center justify-center text-primary-500 font-bold text-xs">{user.email?.[0]?.toUpperCase()}</div>}
              </div> 
         </div>
       </div>
@@ -285,7 +272,7 @@ const Feed: React.FC = () => {
              <PostSkeleton />
           </div>
         ) : posts.length === 0 ? (
-          <div className="text-center py-20 text-slate-400 animate-fade-in">
+          <div className="text-center py-20 text-slate-500 animate-fade-in">
             <p>No posts yet. Be the first to share something!</p>
           </div>
         ) : (
@@ -310,20 +297,20 @@ const Feed: React.FC = () => {
       {showNotifications && (
          <div className="fixed inset-0 z-[2000] flex flex-col justify-end sm:justify-center sm:items-center p-0 sm:p-4 animate-fade-in">
             <div 
-               className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
                onClick={() => setShowNotifications(false)}
             />
-            <div className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl relative z-10 flex flex-col max-h-[80vh] animate-slide-up overflow-hidden">
-               <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                  <h3 className="font-bold text-slate-900 text-lg">Notifications</h3>
-                  <button onClick={() => setShowNotifications(false)} className="p-2 -mr-2 text-slate-400 hover:text-slate-600">
+            <div className="bg-slate-900 w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl shadow-black relative z-10 flex flex-col max-h-[80vh] animate-slide-up overflow-hidden border border-slate-800">
+               <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
+                  <h3 className="font-bold text-white text-lg">Notifications</h3>
+                  <button onClick={() => setShowNotifications(false)} className="p-2 -mr-2 text-slate-400 hover:text-white">
                      <X className="w-5 h-5" />
                   </button>
                </div>
                
                <div className="flex-1 overflow-y-auto p-2 no-scrollbar">
                    {notifications.length === 0 ? (
-                       <div className="text-center py-12 text-slate-400 text-sm">
+                       <div className="text-center py-12 text-slate-500 text-sm">
                            No notifications yet.
                        </div>
                    ) : (
@@ -332,26 +319,26 @@ const Feed: React.FC = () => {
                                <div 
                                  key={n._id}
                                  onClick={() => handleNotificationClick(n)}
-                                 className={`flex items-center gap-3 p-3 rounded-xl transition-colors cursor-pointer ${n.read ? 'bg-white hover:bg-slate-50' : 'bg-blue-50/50 hover:bg-blue-50'}`}
+                                 className={`flex items-center gap-3 p-3 rounded-xl transition-colors cursor-pointer ${n.read ? 'bg-transparent hover:bg-slate-800' : 'bg-slate-800/60 hover:bg-slate-800'}`}
                                >
                                    <div className="relative">
-                                       <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden shrink-0">
+                                       <div className="w-10 h-10 rounded-full bg-slate-800 overflow-hidden shrink-0 border border-slate-700">
                                            {n.fromPhoto ? (
                                                <img src={n.fromPhoto} alt={n.fromName} className="w-full h-full object-cover" />
                                            ) : (
-                                               <div className="w-full h-full flex items-center justify-center font-bold text-slate-400 text-xs">{n.fromName[0]}</div>
+                                               <div className="w-full h-full flex items-center justify-center font-bold text-slate-500 text-xs">{n.fromName[0]}</div>
                                            )}
                                        </div>
-                                       <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center ${getNotificationColor(n.type)}`}>
+                                       <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-slate-900 flex items-center justify-center ${getNotificationColor(n.type)}`}>
                                            {getNotificationIcon(n.type)}
                                        </div>
                                    </div>
                                    <div className="flex-1 min-w-0">
-                                       <p className="text-sm text-slate-600 leading-snug">
-                                           <span className="font-bold text-slate-900 mr-1">{n.fromName}</span>
+                                       <p className="text-sm text-slate-400 leading-snug">
+                                           <span className="font-bold text-slate-200 mr-1">{n.fromName}</span>
                                            {getNotificationText(n)}
                                        </p>
-                                       <span className="text-[10px] text-slate-400 font-medium">
+                                       <span className="text-[10px] text-slate-600 font-medium">
                                            {new Date(n.createdAt).toLocaleDateString()}
                                        </span>
                                    </div>

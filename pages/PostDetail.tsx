@@ -70,19 +70,19 @@ const PostDetail: React.FC = () => {
 
   if (loading) {
      return (
-        <div className="flex items-center justify-center h-screen bg-slate-50">
+        <div className="flex items-center justify-center h-screen bg-slate-950">
            <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
         </div>
      );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-       <div className="bg-white px-4 py-3 shadow-sm sticky top-0 z-20 flex items-center">
-          <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-slate-500 hover:text-slate-900 rounded-full">
+    <div className="min-h-screen bg-slate-950">
+       <div className="bg-slate-900/80 backdrop-blur-md px-4 py-3 shadow-sm sticky top-0 z-20 flex items-center border-b border-slate-800">
+          <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-slate-400 hover:text-white rounded-full">
              <ChevronLeft className="w-6 h-6" />
           </button>
-          <h2 className="font-bold text-lg text-slate-900 ml-2">Post</h2>
+          <h2 className="font-bold text-lg text-white ml-2">Post</h2>
        </div>
 
        <div className="max-w-md mx-auto p-4">

@@ -16,7 +16,6 @@ const Onboarding: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form State
   const [displayName, setDisplayName] = useState('');
   const [photoURL, setPhotoURL] = useState('');
   const [instagram, setInstagram] = useState('');
@@ -33,7 +32,7 @@ const Onboarding: React.FC = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 500000) { // Limit 500KB
+      if (file.size > 500000) { 
          setError("Image too large (Max 500KB).");
          return;
       }
@@ -58,7 +57,6 @@ const Onboarding: React.FC = () => {
       setError("Please enter your name.");
       return;
     }
-
     if (currentStep === 1 && instagram.trim()) {
       const instagramRegex = /^[a-zA-Z0-9._]+$/;
       if (!instagramRegex.test(instagram)) {
@@ -66,7 +64,6 @@ const Onboarding: React.FC = () => {
         return;
       }
     }
-
     setCurrentStep(prev => prev + 1);
   };
 
@@ -92,7 +89,6 @@ const Onboarding: React.FC = () => {
       };
 
       await api.profile.createOrUpdate(user.uid, profileData);
-      // Reload to ensure the App guard re-checks the profile existence
       window.location.reload();
     } catch (err) {
       console.error(err);
@@ -102,28 +98,27 @@ const Onboarding: React.FC = () => {
     }
   };
 
-  // Render Steps
   const renderStep = () => {
     switch (currentStep) {
-      case 0: // Basic Info
+      case 0:
         return (
           <div className="space-y-8 animate-fade-in">
             <div className="flex flex-col items-center justify-center space-y-4">
               <div className="relative group cursor-pointer">
-                <div className={`w-36 h-36 rounded-full border-[6px] border-white shadow-2xl overflow-hidden bg-slate-100 flex items-center justify-center ${!photoURL ? 'bg-slate-50' : ''}`}>
+                <div className={`w-36 h-36 rounded-full border-[6px] border-slate-900 shadow-2xl overflow-hidden bg-slate-800 flex items-center justify-center ${!photoURL ? 'bg-slate-800' : ''}`}>
                   {photoURL ? (
                     <img src={photoURL} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
-                    <UserIcon className="w-16 h-16 text-slate-300" />
+                    <UserIcon className="w-16 h-16 text-slate-600" />
                   )}
                 </div>
-                <label className="absolute bottom-1 right-1 p-3.5 bg-slate-900 text-white rounded-full shadow-lg cursor-pointer hover:bg-slate-800 transition-transform hover:scale-105 active:scale-95">
+                <label className="absolute bottom-1 right-1 p-3.5 bg-slate-800 text-white rounded-full shadow-lg cursor-pointer hover:bg-slate-700 transition-transform hover:scale-105 active:scale-95 border border-slate-600">
                   <Camera className="w-6 h-6" />
                   <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                 </label>
               </div>
               <div className="text-center">
-                <h3 className="font-semibold text-slate-900">Profile Photo</h3>
+                <h3 className="font-semibold text-white">Profile Photo</h3>
                 <p className="text-sm text-slate-400">Make a great first impression</p>
               </div>
             </div>
@@ -137,11 +132,11 @@ const Onboarding: React.FC = () => {
               />
 
               <div className="w-full space-y-2">
-                  <label className="block text-sm font-semibold text-slate-700 ml-1">
-                    Bio <span className="text-slate-400 font-normal ml-1">(Optional)</span>
+                  <label className="block text-sm font-semibold text-slate-300 ml-1">
+                    Bio <span className="text-slate-500 font-normal ml-1">(Optional)</span>
                   </label>
                   <textarea
-                    className="w-full rounded-2xl border-2 border-slate-100 bg-white px-4 py-4 text-slate-900 placeholder-slate-400 outline-none transition-all duration-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 resize-none min-h-[120px]"
+                    className="w-full rounded-2xl border-2 border-slate-800 bg-slate-900 px-4 py-4 text-white placeholder-slate-500 outline-none transition-all duration-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 focus:bg-slate-800 resize-none min-h-[120px]"
                     placeholder="Tell us a bit about yourself..."
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
@@ -151,7 +146,7 @@ const Onboarding: React.FC = () => {
           </div>
         );
 
-      case 1: // Socials
+      case 1:
         return (
           <div className="space-y-8 animate-fade-in pt-4">
             <div className="text-center space-y-4 mb-8">
@@ -159,27 +154,27 @@ const Onboarding: React.FC = () => {
                 <Instagram className="w-10 h-10" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-slate-900">Instagram</h3>
-                <p className="text-slate-500 text-base mt-1">Let others find you on socials</p>
+                <h3 className="text-xl font-bold text-white">Instagram</h3>
+                <p className="text-slate-400 text-base mt-1">Let others find you on socials</p>
               </div>
             </div>
 
             <Input 
               label="Username" 
               placeholder="@username"
-              icon={<span className="text-slate-400 font-bold">@</span>}
+              icon={<span className="text-slate-500 font-bold">@</span>}
               value={instagram}
               onChange={(e) => setInstagram(e.target.value.replace('@', ''))}
             />
           </div>
         );
 
-      case 2: // Interests
+      case 2:
         return (
           <div className="space-y-6 animate-fade-in">
             <div className="text-center mb-6">
-              <h3 className="text-xl font-bold text-slate-900">Your Vibe</h3>
-              <p className="text-slate-500 text-base">Select at least 3 interests</p>
+              <h3 className="text-xl font-bold text-white">Your Vibe</h3>
+              <p className="text-slate-400 text-base">Select at least 3 interests</p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -193,8 +188,8 @@ const Onboarding: React.FC = () => {
                       relative overflow-hidden px-4 py-4 rounded-2xl text-sm font-bold transition-all duration-200 border-2 text-left
                       flex items-center gap-3
                       ${isSelected 
-                        ? 'bg-primary-50 border-primary-500 text-primary-700 shadow-md scale-[1.02]' 
-                        : 'bg-white border-slate-100 text-slate-600 hover:border-slate-200 hover:bg-slate-50'}
+                        ? 'bg-primary-500/10 border-primary-500 text-primary-400 shadow-md scale-[1.02]' 
+                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700 hover:bg-slate-800'}
                     `}
                   >
                     <span className="text-2xl">{interest.emoji}</span>
@@ -214,24 +209,24 @@ const Onboarding: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-950 flex flex-col">
       {/* Header / Progress */}
-      <div className="bg-white/80 backdrop-blur-md px-6 py-4 shadow-sm z-20 sticky top-0">
+      <div className="bg-slate-900/80 backdrop-blur-md px-6 py-4 shadow-sm z-20 sticky top-0 border-b border-slate-800">
         <div className="max-w-md mx-auto">
           <div className="flex justify-between items-center mb-4">
              {currentStep > 0 ? (
-               <button onClick={handleBack} className="p-2 -ml-2 text-slate-400 hover:text-slate-900 transition-colors">
+               <button onClick={handleBack} className="p-2 -ml-2 text-slate-400 hover:text-white transition-colors">
                  <ChevronLeft className="w-7 h-7" />
                </button>
              ) : (
                <div className="w-10" />
              )}
-             <span className="font-bold text-slate-900 text-lg">Step {currentStep + 1} of {STEPS.length}</span>
+             <span className="font-bold text-white text-lg">Step {currentStep + 1} of {STEPS.length}</span>
              <div className="w-10" />
           </div>
-          <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+          <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-primary-500 transition-all duration-500 ease-out rounded-full"
+              className="h-full bg-primary-500 transition-all duration-500 ease-out rounded-full shadow-[0_0_10px_rgba(244,63,94,0.5)]"
               style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}
             />
           </div>
@@ -245,14 +240,14 @@ const Onboarding: React.FC = () => {
         </div>
 
         {error && (
-          <div className="mt-6 p-4 bg-red-50 text-red-600 font-medium text-sm rounded-2xl border border-red-100 text-center animate-slide-up">
+          <div className="mt-6 p-4 bg-red-500/10 text-red-400 font-medium text-sm rounded-2xl border border-red-500/20 text-center animate-slide-up">
             {error}
           </div>
         )}
       </div>
 
       {/* Floating Footer */}
-      <div className="fixed bottom-0 inset-x-0 p-6 bg-gradient-to-t from-white via-white to-white/0 z-30">
+      <div className="fixed bottom-0 inset-x-0 p-6 bg-gradient-to-t from-slate-950 via-slate-950 to-slate-950/0 z-30">
         <div className="max-w-md mx-auto">
           {currentStep < STEPS.length - 1 ? (
             <Button onClick={handleNext} fullWidth className="shadow-xl shadow-primary-500/20">
