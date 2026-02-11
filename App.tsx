@@ -16,6 +16,7 @@ import Inbox from './pages/Inbox';
 import Layout from './components/Layout';
 import LocationGuard from './components/LocationGuard';
 import { Loader2 } from 'lucide-react';
+import DesktopLanding from './pages/DeskTopLandingPage';
 
 // Guard component to protect routes and check profile existence
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -53,7 +54,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   if (status === 'loading' || (status === 'authenticated' && !profileChecked)) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-slate-50">
+      <div className="h-screen w-screen flex items-center justify-center bg-slate-950">
         <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
       </div>
     );
@@ -125,6 +126,21 @@ const AppRoutes = () => {
 };
 
 const App: React.FC = () => {
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth > 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  if (isDesktop) {
+    return <DesktopLanding />;
+  }
+
   return (
     <AuthProvider>
       <Router>

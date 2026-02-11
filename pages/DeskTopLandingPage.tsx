@@ -1,20 +1,9 @@
-import {
-  ArrowRight,
-  ChevronDown,
-  Globe,
-  Heart,
-  MapPin,
-  Menu,
-  MessageCircle,
-  QrCode,
-  Shield,
-  Sparkles,
-  Star,
-  Users,
-  X,
-  Zap
-} from 'lucide-react';
 import React, { useState } from 'react';
+import { 
+  MapPin, Heart, Users, Sparkles, Smartphone, ArrowRight, 
+  Shield, Globe, Zap, MessageCircle, ChevronDown, CheckCircle, 
+  Menu, X, Star, QrCode
+} from 'lucide-react';
 import Button from '../components/ui/Button';
 
 const DesktopLanding: React.FC = () => {
