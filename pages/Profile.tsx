@@ -1,5 +1,5 @@
 import { calculateDistance } from '@/util/location';
-import { Check, ChevronRight, Clock, Edit2, Instagram, Loader2, LogOut, MapPin, MessageCircle, Navigation, Sparkles, UserCheck, UserPlus, Users, X } from 'lucide-react';
+import { Ban, Check, ChevronRight, Clock, Edit2, Flag, Instagram, Loader2, LogOut, MapPin, MessageCircle, MoreVertical, Navigation, ShieldAlert, Sparkles, UserCheck, UserPlus, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useUserLocation } from '../components/LocationGuard';
@@ -8,11 +8,13 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { POPULAR_INTERESTS, Post, UserProfile } from '../types';
 
- const Profile=()=>{
+
+export default function Profile() {
   const { user, logout } = useAuth();
   const { uid } = useParams<{ uid: string }>();
   const navigate = useNavigate();
   const { location: myLocation } = useUserLocation();
+  
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [myPosts, setMyPosts] = useState<Post[]>([]);
@@ -24,12 +26,18 @@ import { POPULAR_INTERESTS, Post, UserProfile } from '../types';
   const [friendRequests, setFriendRequests] = useState<UserProfile[]>([]);
   const [relationship, setRelationship] = useState<'self' | 'friend' | 'sent' | 'received' | 'none'>('none');
   const [actionLoading, setActionLoading] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
 
   // Friends List Modal State
   const [isFriendsModalOpen, setIsFriendsModalOpen] = useState(false);
   const [friendsList, setFriendsList] = useState<UserProfile[]>([]);
   const [sentRequestsList, setSentRequestsList] = useState<UserProfile[]>([]);
   const [friendsLoading, setFriendsLoading] = useState(false);
+  
+  // Menu State
+  const [showMenu, setShowMenu] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportReason, setReportReason] = useState('');
 
   const isOwnProfile = !uid || (user && user.uid === uid);
   const targetUid = uid || user?.uid;
@@ -39,7 +47,26 @@ import { POPULAR_INTERESTS, Post, UserProfile } from '../types';
       if (targetUid) {
         try {
           const userProfile = await api.profile.get(targetUid);
+          
           if (userProfile) {
+            // Check if blocked
+            if (user && userProfile.blockedUsers?.includes(user.uid)) {
+                // They blocked me (server usually filters this, but just in case)
+                navigate('/');
+                return;
+            }
+
+            if (user && user.uid !== targetUid) {
+                // Check if I blocked them
+                const myProfile = await api.profile.get(user.uid);
+                if (myProfile?.blockedUsers?.includes(targetUid)) {
+                    setIsBlocked(true);
+                    setProfile({ ...userProfile, bio: '', photoURL: '', displayName: 'Blocked User' }); // Mask data
+                    setLoading(false);
+                    return;
+                }
+            }
+
             setProfile(userProfile);
             
             if (isOwnProfile && userProfile.incomingRequests && userProfile.incomingRequests.length > 0) {
@@ -62,13 +89,14 @@ import { POPULAR_INTERESTS, Post, UserProfile } from '../types';
                 setRelationship('self');
             }
 
+            // Only fetch posts if not blocked
+            const posts = await api.posts.getUserPosts(targetUid);
+            setMyPosts(posts);
+
           } else if (isOwnProfile) {
             navigate('/onboarding');
             return;
           }
-
-          const posts = await api.posts.getUserPosts(targetUid);
-          setMyPosts(posts);
 
         } catch (error) {
           console.error("Error fetching data:", error);
@@ -174,6 +202,33 @@ import { POPULAR_INTERESTS, Post, UserProfile } from '../types';
       } catch (e) { console.error(e); }
       setActionLoading(false);
   };
+  
+  const handleBlockUser = async () => {
+      if (!user || !profile || !confirm(`Block ${profile.displayName}? You won't see each other on the map or feed.`)) return;
+      try {
+          await api.userAction.block(user.uid, profile.uid);
+          setIsBlocked(true);
+          setShowMenu(false);
+      } catch (e) { alert("Failed to block user"); }
+  };
+  
+  const handleUnblockUser = async () => {
+      if (!user || !targetUid) return;
+      try {
+          await api.userAction.unblock(user.uid, targetUid);
+          window.location.reload(); // Reload to fetch fresh data
+      } catch (e) { alert("Failed to unblock user"); }
+  };
+
+  const handleSubmitReport = async () => {
+      if (!user || !profile) return;
+      try {
+          await api.userAction.report(user.uid, profile.uid, reportReason);
+          alert("Report submitted. We will review this user.");
+          setReportModalOpen(false);
+          setShowMenu(false);
+      } catch (e) { alert("Failed to submit report"); }
+  };
 
   const handleOpenFriendsList = async () => {
     if (!profile) return;
@@ -269,6 +324,31 @@ import { POPULAR_INTERESTS, Post, UserProfile } from '../types';
     <div className="p-8 text-center text-slate-400">User not found</div>
   );
 
+  // If blocked, show limited view
+  if (isBlocked) {
+      return (
+          <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
+              <div className="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center mb-4 border border-slate-800">
+                  <Ban className="w-10 h-10 text-red-500" />
+              </div>
+              <h1 className="text-xl font-bold text-white mb-2">You blocked this user</h1>
+              <p className="text-slate-400 mb-6 max-w-xs">You won't see their posts or profile details, and they won't see yours.</p>
+              <button 
+                onClick={handleUnblockUser}
+                className="px-6 py-3 bg-slate-800 text-white rounded-xl font-bold border border-slate-700 hover:bg-slate-700 transition-colors"
+              >
+                  Unblock User
+              </button>
+              <button 
+                onClick={() => navigate('/')}
+                className="mt-4 text-slate-500 hover:text-white"
+              >
+                  Go Home
+              </button>
+          </div>
+      );
+  }
+
   const distance = (profile.lastLocation && myLocation) 
     ? calculateDistance(myLocation.lat, myLocation.lng, profile.lastLocation.lat, profile.lastLocation.lng)
     : null;
@@ -280,17 +360,48 @@ import { POPULAR_INTERESTS, Post, UserProfile } from '../types';
         {/* Abstract shapes */}
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary-900/40 via-purple-900/20 to-slate-950 opacity-60"></div>
         
-        {isOwnProfile && (
-          <div className="absolute top-0 inset-x-0 p-4 flex justify-end z-10">
-             <button 
-               onClick={handleLogout}
-               className="p-3 bg-slate-900/50 backdrop-blur-md text-white rounded-full hover:bg-slate-800 transition-all active:scale-95 shadow-lg border border-slate-700"
-               title="Logout"
-             >
-               <LogOut className="w-5 h-5" />
-             </button>
-          </div>
-        )}
+        {/* Top Actions */}
+        <div className="absolute top-0 inset-x-0 p-4 flex justify-between z-10">
+            <div className="w-10"></div> {/* Spacer */}
+            
+            <div className="flex gap-3">
+                {!isOwnProfile && (
+                    <div className="relative">
+                        <button 
+                            onClick={() => setShowMenu(!showMenu)}
+                            className="p-3 bg-slate-900/50 backdrop-blur-md text-white rounded-full hover:bg-slate-800 transition-all active:scale-95 shadow-lg border border-slate-700"
+                        >
+                            <MoreVertical className="w-5 h-5" />
+                        </button>
+                        {showMenu && (
+                            <div className="absolute right-0 top-12 w-40 bg-slate-900 rounded-xl shadow-xl border border-slate-800 py-1 overflow-hidden animate-slide-up z-50">
+                                <button 
+                                    onClick={() => setReportModalOpen(true)}
+                                    className="w-full text-left px-4 py-3 text-sm text-yellow-400 hover:bg-slate-800 flex items-center gap-2"
+                                >
+                                    <Flag className="w-4 h-4" /> Report
+                                </button>
+                                <button 
+                                    onClick={handleBlockUser}
+                                    className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-slate-800 flex items-center gap-2"
+                                >
+                                    <Ban className="w-4 h-4" /> Block
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
+                {isOwnProfile && (
+                    <button 
+                    onClick={handleLogout}
+                    className="p-3 bg-slate-900/50 backdrop-blur-md text-white rounded-full hover:bg-slate-800 transition-all active:scale-95 shadow-lg border border-slate-700"
+                    title="Logout"
+                    >
+                    <LogOut className="w-5 h-5" />
+                    </button>
+                )}
+            </div>
+        </div>
       </div>
 
       {/* Main Content Container */}
@@ -533,6 +644,40 @@ import { POPULAR_INTERESTS, Post, UserProfile } from '../types';
            )}
         </div>
 
+        {/* Report Modal */}
+        {reportModalOpen && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in">
+                <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setReportModalOpen(false)}></div>
+                <div className="bg-slate-900 w-full max-w-sm rounded-2xl shadow-2xl relative z-10 p-6 border border-slate-800">
+                    <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                        <ShieldAlert className="w-5 h-5 text-yellow-500" /> Report User
+                    </h3>
+                    <p className="text-slate-400 text-sm mb-4">Why are you reporting this user?</p>
+                    <textarea 
+                        className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm outline-none focus:border-primary-500 mb-4 h-24 resize-none"
+                        placeholder="e.g. Inappropriate behavior, spam..."
+                        value={reportReason}
+                        onChange={(e) => setReportReason(e.target.value)}
+                    ></textarea>
+                    <div className="flex justify-end gap-2">
+                        <button 
+                            onClick={() => setReportModalOpen(false)}
+                            className="px-4 py-2 text-slate-400 font-medium text-sm hover:text-white"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            onClick={handleSubmitReport}
+                            disabled={!reportReason.trim()}
+                            className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium text-sm hover:bg-red-500 disabled:opacity-50"
+                        >
+                            Submit Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
         {/* Friends List Modal */}
         {isFriendsModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in">
@@ -631,9 +776,7 @@ import { POPULAR_INTERESTS, Post, UserProfile } from '../types';
             </div>
           </div>
         )}
-        </div>
+    </div>
     </div>
   );
 }
-
-export default Profile;

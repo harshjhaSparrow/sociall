@@ -17,6 +17,9 @@ export interface UserProfile {
   friends?: string[];
   incomingRequests?: string[];
   outgoingRequests?: string[];
+  blockedUsers?: string[]; // List of UIDs this user has blocked
+  dob?: string;
+  isGhostMode?: boolean;
 }
 
 export interface Comment {

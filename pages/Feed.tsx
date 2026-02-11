@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { api } from '../services/api';
 import { Post, Notification } from '../types';
 import { useAuth } from '../context/AuthContext';
-import { Loader2, RefreshCw, Bell, Heart, MessageCircle, UserPlus, X, Check } from 'lucide-react';
+import { Loader2, RefreshCw, Bell, Heart, MessageCircle, UserPlus, X, Check, Settings } from 'lucide-react';
 import PostItem from '../components/PostItem';
 import { useNavigate } from 'react-router-dom';
 
@@ -42,7 +42,8 @@ const Feed: React.FC = () => {
 
   const fetchPosts = async () => {
     try {
-      const data = await api.posts.getAll();
+      // Pass user UID so backend can filter blocked content
+      const data = await api.posts.getAll(user?.uid);
       setPosts(data);
     } catch (error) {
       console.error(error);
@@ -239,7 +240,15 @@ const Feed: React.FC = () => {
       >
         <h1 className="text-xl font-bold text-white tracking-tight">Socially</h1>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+             {/* Settings Button */}
+             <button 
+               onClick={() => navigate('/settings')}
+               className="p-2 rounded-full hover:bg-slate-800 transition-colors text-slate-400 hover:text-white"
+             >
+                 <Settings className="w-6 h-6" />
+             </button>
+
              {/* Notification Bell */}
              <button 
                onClick={openNotifications}
@@ -254,7 +263,7 @@ const Feed: React.FC = () => {
              </button>
 
              {/* User Avatar */}
-             <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden border border-slate-700">
+             <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden border border-slate-700 ml-1">
                 {user && <div className="w-full h-full bg-slate-800 flex items-center justify-center text-primary-500 font-bold text-xs">{user.email?.[0]?.toUpperCase()}</div>}
              </div> 
         </div>

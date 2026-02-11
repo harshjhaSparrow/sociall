@@ -15,6 +15,7 @@ import Chat from './pages/Chat';
 import Inbox from './pages/Inbox';
 import Layout from './components/Layout';
 import LocationGuard from './components/LocationGuard';
+import Settings from './pages/Settings';
 import { Loader2 } from 'lucide-react';
 import DesktopLanding from './pages/DeskTopLandingPage';
 
@@ -98,6 +99,13 @@ const AppRoutes = () => {
             <LocationGuard>
                <Chat />
             </LocationGuard>
+          </ProtectedRoute>
+        } />
+
+        {/* Settings - Isolated */}
+        <Route path="/settings" element={
+          <ProtectedRoute>
+            <Settings />
           </ProtectedRoute>
         } />
         

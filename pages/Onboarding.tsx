@@ -1,13 +1,13 @@
-import { Camera, ChevronLeft, Instagram, Sparkles, User as UserIcon } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
-import { InterestTag, POPULAR_INTERESTS, UserProfile } from '../types';
+import { UserProfile, POPULAR_INTERESTS, InterestTag } from '../types';
+import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
+import { Camera, Instagram, Sparkles, ChevronLeft, User as UserIcon, Calendar, Shield, MapPin, CheckCircle, FileText } from 'lucide-react';
 
-const STEPS = ['Basic Info', 'Socials', 'Interests'];
+const STEPS = ['Legal', 'Basic Info', 'Socials', 'Interests'];
 
 const Onboarding: React.FC = () => {
   const { user } = useAuth();
@@ -16,8 +16,15 @@ const Onboarding: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Legal Step State
+  const [agreedTerms, setAgreedTerms] = useState(false);
+  const [agreedLocation, setAgreedLocation] = useState(false);
+  const [agreedAge, setAgreedAge] = useState(false);
+
+  // Profile Data State
   const [displayName, setDisplayName] = useState('');
   const [photoURL, setPhotoURL] = useState('');
+  const [dob, setDob] = useState('');
   const [instagram, setInstagram] = useState('');
   const [bio, setBio] = useState('');
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
@@ -32,8 +39,8 @@ const Onboarding: React.FC = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 10000000) { 
-         setError("Image too large (Max 10mb).");
+      if (file.size > 500000) { 
+         setError("Image too large (Max 500KB).");
          return;
       }
       const reader = new FileReader();
@@ -51,19 +58,62 @@ const Onboarding: React.FC = () => {
     );
   };
 
+  const calculateAge = (dateString: string) => {
+    const birthDate = new Date(dateString);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
   const handleNext = () => {
     setError(null);
-    if (currentStep === 0 && !displayName.trim()) {
-      setError("Please enter your name.");
-      return;
+
+    // Step 0: Legal & Privacy
+    if (currentStep === 0) {
+        if (!agreedTerms) {
+            setError("You must agree to the Terms of Service and Privacy Policy.");
+            return;
+        }
+        if (!agreedLocation) {
+            setError("Location consent is required to use this app.");
+            return;
+        }
+        if (!agreedAge) {
+            setError("You must confirm you are at least 18 years old.");
+            return;
+        }
     }
-    if (currentStep === 1 && instagram.trim()) {
+
+    // Step 1: Basic Info
+    if (currentStep === 1) {
+        if (!displayName.trim()) {
+            setError("Please enter your name.");
+            return;
+        }
+        if (!dob) {
+            setError("Date of birth is required.");
+            return;
+        }
+        const age = calculateAge(dob);
+        if (age < 18) {
+            setError("You must be at least 18 years old to use Socially.");
+            return;
+        }
+    }
+    
+    // Step 2: Socials
+    if (currentStep === 2 && instagram.trim()) {
       const instagramRegex = /^[a-zA-Z0-9._]+$/;
       if (!instagramRegex.test(instagram)) {
         setError("Invalid Instagram handle. Use only letters, numbers, periods, and underscores.");
         return;
       }
     }
+
     setCurrentStep(prev => prev + 1);
   };
 
@@ -82,6 +132,7 @@ const Onboarding: React.FC = () => {
         email: user.email,
         displayName,
         photoURL,
+        dob,
         instagramHandle: instagram,
         bio: bio.trim(),
         interests: selectedInterests,
@@ -100,7 +151,74 @@ const Onboarding: React.FC = () => {
 
   const renderStep = () => {
     switch (currentStep) {
-      case 0:
+      case 0: // Legal
+        return (
+          <div className="space-y-8 animate-fade-in">
+             <div className="text-center mb-6">
+                <div className="w-20 h-20 bg-slate-900 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-slate-800 shadow-xl shadow-black/50 transform -rotate-3">
+                   <Shield className="w-10 h-10 text-primary-500" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">Welcome to Socially</h2>
+                <p className="text-slate-400">Please review and accept our community policies to continue.</p>
+             </div>
+
+             <div className="bg-slate-900/50 rounded-3xl p-6 border border-slate-800 space-y-6">
+                 {/* Terms */}
+                 <label className="flex items-start gap-4 cursor-pointer group">
+                     <div className="pt-0.5">
+                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors ${agreedTerms ? 'bg-primary-500 border-primary-500' : 'border-slate-600 group-hover:border-primary-400'}`}>
+                           {agreedTerms && <CheckCircle className="w-4 h-4 text-white" />}
+                        </div>
+                        <input type="checkbox" className="hidden" checked={agreedTerms} onChange={e => setAgreedTerms(e.target.checked)} />
+                     </div>
+                     <div className="flex-1">
+                        <p className="text-sm font-semibold text-slate-200">Terms & Privacy</p>
+                        <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                            I agree to the <span className="text-primary-400 underline">Terms of Service</span> and <span className="text-primary-400 underline">Privacy Policy</span>.
+                        </p>
+                     </div>
+                 </label>
+                 
+                 <div className="h-px bg-slate-800/50" />
+
+                 {/* Location */}
+                 <label className="flex items-start gap-4 cursor-pointer group">
+                     <div className="pt-0.5">
+                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors ${agreedLocation ? 'bg-primary-500 border-primary-500' : 'border-slate-600 group-hover:border-primary-400'}`}>
+                           {agreedLocation && <CheckCircle className="w-4 h-4 text-white" />}
+                        </div>
+                        <input type="checkbox" className="hidden" checked={agreedLocation} onChange={e => setAgreedLocation(e.target.checked)} />
+                     </div>
+                     <div className="flex-1">
+                        <p className="text-sm font-semibold text-slate-200">Location Access</p>
+                        <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                            I consent to sharing my location to find people nearby. I can change this in settings later.
+                        </p>
+                     </div>
+                 </label>
+
+                 <div className="h-px bg-slate-800/50" />
+
+                 {/* Age */}
+                 <label className="flex items-start gap-4 cursor-pointer group">
+                     <div className="pt-0.5">
+                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors ${agreedAge ? 'bg-primary-500 border-primary-500' : 'border-slate-600 group-hover:border-primary-400'}`}>
+                           {agreedAge && <CheckCircle className="w-4 h-4 text-white" />}
+                        </div>
+                        <input type="checkbox" className="hidden" checked={agreedAge} onChange={e => setAgreedAge(e.target.checked)} />
+                     </div>
+                     <div className="flex-1">
+                        <p className="text-sm font-semibold text-slate-200">Age Confirmation</p>
+                        <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                            I confirm that I am at least 18 years old.
+                        </p>
+                     </div>
+                 </label>
+             </div>
+          </div>
+        );
+
+      case 1: // Basic Info
         return (
           <div className="space-y-8 animate-fade-in">
             <div className="flex flex-col items-center justify-center space-y-4">
@@ -131,6 +249,18 @@ const Onboarding: React.FC = () => {
                 onChange={(e) => setDisplayName(e.target.value)}
               />
 
+              <div>
+                  <Input 
+                    label="Date of Birth"
+                    type="date"
+                    icon={<Calendar className="w-5 h-5" />}
+                    value={dob}
+                    onChange={(e) => setDob(e.target.value)}
+                    max={new Date().toISOString().split('T')[0]}
+                  />
+                  <p className="text-xs text-slate-500 mt-2 ml-1">You must be 18+ to join.</p>
+              </div>
+
               <div className="w-full space-y-2">
                   <label className="block text-sm font-semibold text-slate-300 ml-1">
                     Bio <span className="text-slate-500 font-normal ml-1">(Optional)</span>
@@ -146,7 +276,7 @@ const Onboarding: React.FC = () => {
           </div>
         );
 
-      case 1:
+      case 2: // Socials
         return (
           <div className="space-y-8 animate-fade-in pt-4">
             <div className="text-center space-y-4 mb-8">
@@ -161,7 +291,7 @@ const Onboarding: React.FC = () => {
 
             <Input 
               label="Username" 
-              placeholder="username"
+              placeholder="@username"
               icon={<span className="text-slate-500 font-bold">@</span>}
               value={instagram}
               onChange={(e) => setInstagram(e.target.value.replace('@', ''))}
@@ -169,7 +299,7 @@ const Onboarding: React.FC = () => {
           </div>
         );
 
-      case 2:
+      case 3: // Interests
         return (
           <div className="space-y-6 animate-fade-in">
             <div className="text-center mb-6">
@@ -251,7 +381,7 @@ const Onboarding: React.FC = () => {
         <div className="max-w-md mx-auto">
           {currentStep < STEPS.length - 1 ? (
             <Button onClick={handleNext} fullWidth className="shadow-xl shadow-primary-500/20">
-              Continue
+              {currentStep === 0 ? 'Accept & Continue' : 'Continue'}
             </Button>
           ) : (
             <Button 

@@ -1,439 +1,386 @@
-import {
-  ArrowRight,
-  ChevronDown,
-  Globe,
-  Heart,
-  MapPin,
-  Menu,
-  MessageCircle,
-  QrCode,
-  Shield,
-  Sparkles,
-  Star,
-  Users,
-  X,
-  Zap
-} from 'lucide-react';
-import React, { useState } from 'react';
-import Button from '../components/ui/Button';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import L from 'leaflet';
+import { api } from '../services/api';
+import { useUserLocation } from '../components/LocationGuard';
+import { UserProfile, POPULAR_INTERESTS } from '../types';
+import { Loader2, X, MapPin, ChevronRight, Users, User, Instagram } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { calculateDistance } from '@/util/location';
 
-const DesktopLanding: React.FC = () => {
-  const [activeFaq, setActiveFaq] = useState<number | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+const getDistanceMeters = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+  const R = 6371e3; 
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+};
 
-  const toggleFaq = (index: number) => {
-    setActiveFaq(activeFaq === index ? null : index);
-  };
+const MapPage: React.FC = () => {
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const mapInstance = useRef<L.Map | null>(null);
+  const { location: myLocation } = useUserLocation();
+  const { user: currentUser } = useAuth();
+  const navigate = useNavigate();
+  
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isListOpen, setIsListOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<(UserProfile & { distDisplay: string }) | null>(null);
 
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        // Pass currentUser.uid to filter out blocked users
+        const data = await api.profile.getAllWithLocation(currentUser?.uid);
+        setUsers(data);
+      } catch (e) {
+        console.error("Failed to load map users", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUsers();
+  }, [currentUser]);
+
+  const nearbyUsers = useMemo(() => {
+    if (!myLocation) return [];
+    
+    return users
+      .filter(u => u.uid !== currentUser?.uid && u.lastLocation)
+      .map(u => {
+        const distMeters = getDistanceMeters(
+          myLocation.lat, myLocation.lng, 
+          u.lastLocation!.lat, u.lastLocation!.lng
+        );
+        const distDisplay = calculateDistance(
+          myLocation.lat, myLocation.lng, 
+          u.lastLocation!.lat, u.lastLocation!.lng
+        );
+        return { ...u, distMeters, distDisplay };
+      })
+      .sort((a, b) => a.distMeters - b.distMeters);
+  }, [users, myLocation, currentUser]);
+
+  useEffect(() => {
+    if (!mapContainer.current || !myLocation || mapInstance.current) return;
+
+    const map = L.map(mapContainer.current, {
+        zoomControl: false,
+        attributionControl: false
+    }).setView([myLocation.lat, myLocation.lng], 14);
+
+    mapInstance.current = map;
+
+    // CartoDB Dark Matter Tile Layer for Dark Mode
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 20,
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    const myIcon = L.divIcon({
+      className: 'bg-transparent',
+      html: `<div class="relative w-6 h-6">
+               <div class="absolute inset-0 bg-primary-500 rounded-full animate-ping opacity-75"></div>
+               <div class="absolute inset-0 bg-primary-600 rounded-full border-2 border-slate-900 shadow-lg shadow-primary-500/50"></div>
+             </div>`,
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    });
+
+    L.marker([myLocation.lat, myLocation.lng], { icon: myIcon, zIndexOffset: 1000 })
+      .addTo(map)
+      .bindPopup("<b>You are here</b>");
+    
+    map.on('click', () => {
+        setSelectedUser(null);
+    });
+
+    setTimeout(() => { map.invalidateSize(); }, 200);
+
+    return () => {
+        map.remove();
+        mapInstance.current = null;
+    };
+  }, [myLocation]);
+
+  useEffect(() => {
+    if (!mapInstance.current || nearbyUsers.length === 0) return;
+    
+    const map = mapInstance.current;
+    const markers: L.Marker[] = [];
+
+    nearbyUsers.forEach(u => {
+       if (u.lastLocation) {
+         const icon = L.divIcon({
+           className: 'bg-transparent',
+           html: `
+             <div class="w-12 h-12 relative group transition-transform duration-300 hover:scale-110 hover:z-[9999] cursor-pointer">
+                <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-slate-800 filter drop-shadow-sm"></div>
+                <div class="absolute bottom-1.5 left-0 right-0 top-0 rounded-full bg-slate-800 p-0.5 shadow-md overflow-hidden border border-slate-700">
+                    ${u.photoURL 
+                      ? `<img src="${u.photoURL}" class="w-full h-full object-cover rounded-full" />`
+                      : `<div class="w-full h-full bg-slate-900 flex items-center justify-center font-bold text-slate-500 text-[10px]">${u.displayName.charAt(0)}</div>`
+                    }
+                </div>
+             </div>
+           `,
+           iconSize: [48, 48],
+           iconAnchor: [24, 48],
+           popupAnchor: [0, -48]
+         });
+
+         const marker = L.marker([u.lastLocation.lat, u.lastLocation.lng], { icon })
+           .addTo(map);
+           
+          marker.on('click', (e) => {
+             L.DomEvent.stopPropagation(e);
+             setSelectedUser(u);
+             setIsListOpen(false);
+             map.flyTo([u.lastLocation!.lat, u.lastLocation!.lng], 16, {
+                 animate: true,
+                 duration: 1.0
+             });
+          });
+
+          markers.push(marker);
+       }
+    });
+
+    return () => {
+      markers.forEach(m => map.removeLayer(m));
+    };
+  }, [nearbyUsers]);
+
+
+  if (loading) {
+     return (
+        <div className="flex items-center justify-center h-full min-h-screen bg-slate-950">
+           <Loader2 className="w-10 h-10 text-primary-500 animate-spin" />
+        </div>
+     );
+  }
+
+  // Use h-[calc(100dvh-64px)] to perfectly fill available space above navigation
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50 overflow-x-hidden selection:bg-primary-500/30 font-sans">
-      
-      {/* Navigation */}
-      <nav className="fixed top-0 inset-x-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-lg shadow-primary-500/20">
-               <Heart className="w-6 h-6 text-white fill-current" />
-            </div>
-            <span className="text-2xl font-bold tracking-tight text-white">Socially</span>
-          </div>
-
-          {/* Desktop Menu */}
-          <div className="hidden md:flex gap-8 text-slate-400 text-sm font-medium items-center">
-            <a href="#features" className="hover:text-white transition-colors">Features</a>
-            <a href="#how-it-works" className="hover:text-white transition-colors">How it Works</a>
-            <a href="#safety" className="hover:text-white transition-colors">Safety</a>
-            <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
-            <Button variant="primary" className="rounded-full px-6 h-10 text-sm ml-4">
-              Get the App
-            </Button>
-          </div>
-
-          {/* Mobile Menu Button (Visible on tablet/small laptops that trigger desktop view but have narrow screens) */}
-          <button className="md:hidden text-slate-300" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            {mobileMenuOpen ? <X /> : <Menu />}
-          </button>
-        </div>
-      </nav>
-
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl pointer-events-none">
-           <div className="absolute top-[20%] left-[10%] w-72 h-72 bg-purple-600/20 rounded-full blur-[100px] animate-pulse"></div>
-           <div className="absolute top-[30%] right-[10%] w-96 h-96 bg-primary-600/20 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '1s' }}></div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-6 flex flex-col lg:flex-row items-center gap-16 relative z-10">
-          <div className="flex-1 space-y-8 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-primary-400 text-xs font-bold uppercase tracking-wider animate-fade-in">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>The #1 Social Discovery App</span>
-            </div>
-            
-            <h1 className="text-5xl lg:text-7xl font-bold leading-[1.1] tracking-tight text-white">
-              Your World, <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 via-pink-500 to-purple-500">
-                Connected Live.
-              </span>
-            </h1>
-            
-            <p className="text-xl text-slate-400 leading-relaxed max-w-2xl mx-auto lg:mx-0">
-              Socially bridges the gap between digital interactions and real-world connections. Discover who's nearby, join local conversations, and make meaningful friendships instantly.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-6 justify-center lg:justify-start pt-4">
-               <div className="flex items-center gap-4 p-1 pr-6 bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800 hover:border-slate-700 transition-colors group cursor-pointer">
-                  <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center">
-                      <QrCode className="w-10 h-10 text-slate-900" />
-                  </div>
-                  <div className="text-left">
-                      <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Scan to Launch</p>
-                      <p className="font-bold text-white text-lg group-hover:text-primary-400 transition-colors">Open Web App</p>
-                  </div>
-               </div>
-               
-               <div className="flex flex-col justify-center text-left space-y-2">
-                   <div className="flex -space-x-2">
-                      {[1,2,3,4].map(i => (
-                        <div key={i} className={`w-8 h-8 rounded-full border-2 border-slate-950 bg-slate-800 overflow-hidden`}>
-                           <img src={`https://i.pravatar.cc/100?img=${10+i}`} alt="User" className="w-full h-full object-cover" />
+    <div className="h-[calc(100dvh-64px)] w-full relative bg-slate-950">
+        <div ref={mapContainer} className="w-full h-full z-0" style={{ isolation: 'isolate' }} />
+        
+        {/* SELECTED USER CARD OVERLAY */}
+        {selectedUser && (
+            <div className="absolute bottom-6 left-4 right-4 z-[1002] bg-slate-900 rounded-2xl p-4 shadow-2xl shadow-black border border-slate-800 animate-slide-up">
+                <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-full bg-slate-800 border-2 border-slate-700 overflow-hidden shrink-0 shadow-sm relative">
+                        {selectedUser.photoURL ? (
+                            <img src={selectedUser.photoURL} alt={selectedUser.displayName} className="w-full h-full object-cover" />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-500">
+                               <User className="w-8 h-8" />
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-white text-lg truncate">{selectedUser.displayName}</h3>
+                        <div className="flex items-center gap-1.5 text-slate-400 text-sm mt-0.5">
+                            <div className="bg-primary-500/10 p-1 rounded-full text-primary-500">
+                                 <MapPin className="w-3 h-3" />
+                            </div>
+                            <span className="font-medium">{selectedUser.distDisplay} away</span>
                         </div>
-                      ))}
-                      <div className="w-8 h-8 rounded-full border-2 border-slate-950 bg-slate-800 flex items-center justify-center text-[10px] font-bold text-white">
-                        +2k
-                      </div>
-                   </div>
-                   <p className="text-sm text-slate-500">Join 2,000+ people exploring today</p>
-               </div>
-            </div>
-          </div>
+                    </div>
 
-          {/* Phone Mockup with floating elements */}
-          <div className="flex-1 relative w-full max-w-[400px] lg:max-w-none">
-             <div className="relative mx-auto border-slate-800 bg-slate-950 border-[8px] rounded-[3rem] h-[700px] w-[350px] shadow-2xl flex flex-col overflow-hidden ring-1 ring-slate-700/50">
-                {/* Notch */}
-                <div className="absolute top-0 inset-x-0 h-6 bg-slate-950 z-20 rounded-b-xl w-40 mx-auto"></div>
+                    <button 
+                        onClick={() => navigate(`/profile/${selectedUser.uid}`)}
+                        className="h-12 w-12 bg-primary-600 hover:bg-primary-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/20 active:scale-95 transition-all"
+                    >
+                        <ChevronRight className="w-6 h-6" />
+                    </button>
+                </div>
                 
-                <div className="rounded-[2.5rem] overflow-hidden w-full h-full bg-slate-900 relative">
-                    {/* Mock Map UI */}
-                    <div className="absolute inset-0 bg-slate-800">
-                        {/* Map Background Pattern */}
-                        <div className="w-full h-full opacity-30" style={{ backgroundImage: 'radial-gradient(#475569 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-                        
-                        {/* Mock Pins */}
-                        <div className="absolute top-1/4 left-1/4 animate-bounce duration-[3000ms]">
-                            <div className="w-12 h-12 rounded-full border-2 border-white bg-blue-500 overflow-hidden shadow-lg relative z-10">
-                                <img src="https://i.pravatar.cc/100?img=33" alt="User" className="w-full h-full object-cover" />
-                            </div>
-                            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-white"></div>
-                        </div>
-
-                        <div className="absolute top-1/2 right-1/3 animate-bounce duration-[2500ms]">
-                            <div className="w-12 h-12 rounded-full border-2 border-white bg-primary-500 overflow-hidden shadow-lg relative z-10">
-                                <img src="https://i.pravatar.cc/100?img=47" alt="User" className="w-full h-full object-cover" />
-                            </div>
-                            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-white"></div>
-                        </div>
-
-                         {/* Bottom Card Mock */}
-                        <div className="absolute bottom-6 left-4 right-4 bg-slate-900/90 backdrop-blur-md p-4 rounded-2xl border border-slate-700 shadow-xl">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-primary-500/20 flex items-center justify-center text-primary-500">
-                                    <MapPin className="w-5 h-5 fill-current" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-white text-sm">3 Friends Nearby</h4>
-                                    <p className="text-xs text-slate-400">Within 2km range</p>
-                                </div>
-                                <div className="ml-auto px-3 py-1.5 bg-primary-600 rounded-lg text-xs font-bold text-white">
-                                    View
-                                </div>
-                            </div>
-                        </div>
+                {selectedUser.bio && (
+                    <div className="mt-3 pt-3 border-t border-slate-800 text-slate-400 text-sm truncate">
+                        "{selectedUser.bio}"
                     </div>
-                </div>
-             </div>
+                )}
 
-             {/* Floating Badge */}
-             <div className="absolute top-20 -right-12 bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-xl animate-slide-up" style={{ animationDelay: '0.5s' }}>
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-500">
-                        <MessageCircle className="w-5 h-5 fill-current" />
-                    </div>
-                    <div>
-                        <p className="font-bold text-white text-sm">New Message</p>
-                        <p className="text-xs text-slate-400">Sarah wants to connect</p>
-                    </div>
-                </div>
-             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="border-y border-slate-800 bg-slate-900/30">
-        <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
-            {[
-                { label: "Active Users", value: "50k+", icon: Users },
-                { label: "Cities Covered", value: "120+", icon: Globe },
-                { label: "Daily Connections", value: "15k+", icon: Zap },
-                { label: "App Rating", value: "4.9/5", icon: Star },
-            ].map((stat, i) => (
-                <div key={i} className="flex items-center gap-4 justify-center md:justify-start">
-                    <div className="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400">
-                        <stat.icon className="w-6 h-6" />
-                    </div>
-                    <div>
-                        <div className="text-2xl font-bold text-white">{stat.value}</div>
-                        <div className="text-sm text-slate-500 font-medium">{stat.label}</div>
-                    </div>
-                </div>
-            ))}
-        </div>
-      </section>
-
-      {/* Features Grid */}
-      <section id="features" className="py-24 relative">
-        <div className="max-w-7xl mx-auto px-6">
-           <div className="text-center mb-16 max-w-3xl mx-auto">
-              <h2 className="text-sm font-bold text-primary-500 uppercase tracking-wider mb-2">Why Socially?</h2>
-              <h3 className="text-3xl md:text-5xl font-bold text-white mb-6">Designed for real life.</h3>
-              <p className="text-slate-400 text-lg">Most social apps keep you glued to your screen. Socially uses technology to get you out into the world and meeting people face-to-face.</p>
-           </div>
-
-           <div className="grid md:grid-cols-3 gap-8">
-              {[
-                {
-                    icon: MapPin,
-                    title: "Live Location Map",
-                    desc: "See who's hanging out at your favorite coffee shop or park in real-time. Privacy controls ensure you're only visible when you want to be."
-                },
-                {
-                    icon: Users,
-                    title: "Instant Connections",
-                    desc: "Break the ice easily. Send a wave to someone nearby or join a public group chat based on your location."
-                },
-                {
-                    icon: Shield,
-                    title: "Verified Profiles",
-                    desc: "Safety first. We use advanced verification to ensure everyone on the map is real, keeping the community authentic and safe."
-                },
-                {
-                    icon: Heart,
-                    title: "Interest Matching",
-                    desc: "Find your tribe. Filter the map to show people who share your passion for hiking, photography, or gaming."
-                },
-                {
-                    icon: MessageCircle,
-                    title: "Ephemeral Chat",
-                    desc: "Chats that encourage meeting up. Share your live location temporarily to meet up with friends easily."
-                },
-                {
-                    icon: Globe,
-                    title: "Local Events",
-                    desc: "Discover impromptu gatherings and events happening right now around you. Never miss out on the action."
-                }
-              ].map((feat, i) => (
-                  <div key={i} className="bg-slate-900/50 p-8 rounded-3xl border border-slate-800 hover:border-primary-500/30 transition-all hover:bg-slate-800 hover:-translate-y-1 group">
-                      <div className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center mb-6 border border-slate-700 group-hover:bg-primary-500/10 group-hover:border-primary-500/50 transition-colors">
-                          <feat.icon className="w-7 h-7 text-slate-300 group-hover:text-primary-500 transition-colors" />
-                      </div>
-                      <h3 className="text-xl font-bold mb-3 text-white">{feat.title}</h3>
-                      <p className="text-slate-400 leading-relaxed">{feat.desc}</p>
-                  </div>
-              ))}
-           </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section id="how-it-works" className="py-24 bg-slate-900 border-y border-slate-800">
-         <div className="max-w-7xl mx-auto px-6">
-            <div className="flex flex-col md:flex-row items-center gap-16">
-               <div className="flex-1 space-y-12">
-                   <div>
-                       <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Start connecting in minutes</h2>
-                       <p className="text-slate-400">No complicated setup. Just create a profile and start exploring your neighborhood.</p>
-                   </div>
-                   
-                   <div className="space-y-8">
-                       {[
-                           { step: "01", title: "Create your profile", desc: "Sign up, add a photo, and select your interests." },
-                           { step: "02", title: "Enable location", desc: "Let us know where you are to find people nearby." },
-                           { step: "03", title: "Start exploring", desc: "Browse the map, send requests, and meet up!" }
-                       ].map((item, i) => (
-                           <div key={i} className="flex gap-6">
-                               <div className="flex-shrink-0 w-12 h-12 rounded-full border border-slate-700 bg-slate-800 flex items-center justify-center font-bold text-slate-500">
-                                   {item.step}
-                               </div>
-                               <div>
-                                   <h4 className="text-xl font-bold text-white mb-2">{item.title}</h4>
-                                   <p className="text-slate-400">{item.desc}</p>
-                               </div>
-                           </div>
-                       ))}
-                   </div>
-               </div>
-               <div className="flex-1 relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-primary-500 to-purple-500 rounded-3xl blur-2xl opacity-20 transform rotate-3"></div>
-                    <img 
-                        src="https://images.unsplash.com/photo-1543269865-cbf427effbad?q=80&w=1000&auto=format&fit=crop" 
-                        alt="Friends meeting" 
-                        className="relative rounded-3xl shadow-2xl border border-slate-700 grayscale hover:grayscale-0 transition-all duration-500"
-                    />
-               </div>
+                <button 
+                    onClick={(e) => { e.stopPropagation(); setSelectedUser(null); }}
+                    className="absolute -top-3 -right-3 bg-slate-800 text-slate-400 p-1.5 rounded-full shadow-md border border-slate-700 hover:text-white transition-colors"
+                >
+                    <X className="w-4 h-4" />
+                </button>
             </div>
-         </div>
-      </section>
+        )}
 
-      {/* Testimonials */}
-      <section className="py-24">
-         <div className="max-w-7xl mx-auto px-6">
-             <h2 className="text-3xl font-bold text-center mb-16">Loved by explorers everywhere</h2>
-             <div className="grid md:grid-cols-3 gap-8">
-                 {[
-                     {
-                         text: "I moved to a new city and didn't know anyone. Socially helped me find a hiking group within my first week!",
-                         author: "Elena R.",
-                         role: "Digital Nomad",
-                         image: "https://i.pravatar.cc/100?img=5"
-                     },
-                     {
-                         text: "Finally, a social app that actually gets you off your phone. The real-time map is a game changer for spontaneous meetups.",
-                         author: "Marcus T.",
-                         role: "Photographer",
-                         image: "https://i.pravatar.cc/100?img=11"
-                     },
-                     {
-                         text: "The safety features make me feel comfortable meeting new people. Verified profiles give peace of mind.",
-                         author: "Sarah J.",
-                         role: "Student",
-                         image: "https://i.pravatar.cc/100?img=9"
-                     }
-                 ].map((t, i) => (
-                     <div key={i} className="bg-slate-900 p-8 rounded-3xl border border-slate-800 relative">
-                         <div className="flex gap-1 mb-4 text-yellow-500">
-                             {[1,2,3,4,5].map(s => <Star key={s} className="w-4 h-4 fill-current" />)}
-                         </div>
-                         <p className="text-slate-300 mb-6 leading-relaxed">"{t.text}"</p>
-                         <div className="flex items-center gap-4">
-                             <img src={t.image} alt={t.author} className="w-10 h-10 rounded-full" />
-                             <div>
-                                 <p className="font-bold text-white text-sm">{t.author}</p>
-                                 <p className="text-xs text-slate-500">{t.role}</p>
-                             </div>
-                         </div>
+        {/* BOTTOM LEFT TRIGGER (Users Nearby) - Hidden if card is open */}
+        {!isListOpen && !selectedUser && nearbyUsers.length > 0 && (
+          <button 
+            onClick={() => setIsListOpen(true)}
+            className="absolute bottom-6 left-4 z-[1001] bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-xl shadow-black p-2 pr-4 flex items-center gap-3 transition-transform active:scale-95 border border-slate-800"
+          >
+            {/* Stacked Avatars */}
+            <div className="flex -space-x-3 items-center">
+              {nearbyUsers.slice(0, 3).map((u, i) => (
+                <div key={u.uid} className={`w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-800 overflow-hidden relative z-[${3-i}]`}>
+                   {u.photoURL ? (
+                     <img src={u.photoURL} alt={u.displayName} className="w-full h-full object-cover" />
+                   ) : (
+                     <div className="w-full h-full flex items-center justify-center text-xs font-bold text-slate-500">
+                       {u.displayName[0]}
                      </div>
-                 ))}
-             </div>
-         </div>
-      </section>
-
-      {/* FAQ */}
-      <section id="faq" className="py-24 bg-slate-900 border-t border-slate-800">
-          <div className="max-w-3xl mx-auto px-6">
-              <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
-              <div className="space-y-4">
-                  {[
-                      { q: "Is Socially free to use?", a: "Yes! Socially is completely free to download and use. We may introduce premium features in the future, but the core experience will always be free." },
-                      { q: "How does the location privacy work?", a: "Your privacy is our priority. You can choose to be visible only to friends, or go into 'Ghost Mode' to be completely invisible on the map whenever you want." },
-                      { q: "Is it available on iOS and Android?", a: "Currently, Socially is a Progressive Web App (PWA). This means you can add it to your home screen on both iOS and Android directly from your browser without visiting an app store." },
-                      { q: "How do you verify users?", a: "We use a combination of email verification and community reporting. We are also rolling out photo verification to ensure profiles are authentic." }
-                  ].map((item, i) => (
-                      <div key={i} className="border border-slate-800 rounded-2xl bg-slate-950 overflow-hidden">
-                          <button 
-                            className="w-full flex items-center justify-between p-6 text-left hover:bg-slate-900 transition-colors"
-                            onClick={() => toggleFaq(i)}
-                          >
-                              <span className="font-bold text-white">{item.q}</span>
-                              <ChevronDown className={`w-5 h-5 text-slate-500 transition-transform ${activeFaq === i ? 'rotate-180' : ''}`} />
-                          </button>
-                          {activeFaq === i && (
-                              <div className="px-6 pb-6 text-slate-400 leading-relaxed animate-fade-in">
-                                  {item.a}
-                              </div>
-                          )}
-                      </div>
-                  ))}
-              </div>
-          </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-24 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-950 to-primary-900/20"></div>
-          <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
-              <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Ready to explore your world?</h2>
-              <p className="text-xl text-slate-400 mb-10 max-w-2xl mx-auto">Join the fastest growing social discovery community today. Your next adventure is just around the corner.</p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button variant="primary" className="rounded-full px-8 h-12 text-base shadow-xl shadow-primary-500/25">
-                      Launch Web App
-                      <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
-              </div>
-              <p className="mt-6 text-sm text-slate-500">No download required • Works on all devices</p>
-          </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-slate-950 border-t border-slate-800 pt-16 pb-8">
-         <div className="max-w-7xl mx-auto px-6">
-             <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-16">
-                 <div className="col-span-2 md:col-span-1">
-                     <div className="flex items-center gap-2 mb-4">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
-                           <Heart className="w-4 h-4 text-white fill-current" />
-                        </div>
-                        <span className="text-xl font-bold text-white">Socially</span>
-                     </div>
-                     <p className="text-slate-500 text-sm leading-relaxed">
-                         Connecting the world, one neighborhood at a time. Built for the mobile generation.
-                     </p>
+                   )}
+                </div>
+              ))}
+              {nearbyUsers.length > 3 && (
+                 <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-400 relative z-0">
+                    +{nearbyUsers.length - 3}
                  </div>
-                 
-                 <div>
-                     <h4 className="font-bold text-white mb-6">Product</h4>
-                     <ul className="space-y-4 text-sm text-slate-400">
-                         <li><a href="#" className="hover:text-primary-400 transition-colors">Features</a></li>
-                         <li><a href="#" className="hover:text-primary-400 transition-colors">Safety</a></li>
-                         <li><a href="#" className="hover:text-primary-400 transition-colors">Integrations</a></li>
-                         <li><a href="#" className="hover:text-primary-400 transition-colors">Download</a></li>
-                     </ul>
-                 </div>
+              )}
+            </div>
+            
+            <div className="text-left">
+              <p className="font-bold text-white text-sm">{nearbyUsers.length} Nearby</p>
+              <p className="text-[10px] text-primary-400 font-medium">Tap to view list</p>
+            </div>
+          </button>
+        )}
 
-                 <div>
-                     <h4 className="font-bold text-white mb-6">Company</h4>
-                     <ul className="space-y-4 text-sm text-slate-400">
-                         <li><a href="#" className="hover:text-primary-400 transition-colors">About Us</a></li>
-                         <li><a href="#" className="hover:text-primary-400 transition-colors">Careers</a></li>
-                         <li><a href="#" className="hover:text-primary-400 transition-colors">Blog</a></li>
-                         <li><a href="#" className="hover:text-primary-400 transition-colors">Contact</a></li>
-                     </ul>
-                 </div>
-
-                 <div>
-                     <h4 className="font-bold text-white mb-6">Legal</h4>
-                     <ul className="space-y-4 text-sm text-slate-400">
-                         <li><a href="#" className="hover:text-primary-400 transition-colors">Privacy Policy</a></li>
-                         <li><a href="#" className="hover:text-primary-400 transition-colors">Terms of Service</a></li>
-                         <li><a href="#" className="hover:text-primary-400 transition-colors">Cookie Policy</a></li>
-                         <li><a href="#" className="hover:text-primary-400 transition-colors">Guidelines</a></li>
-                     </ul>
-                 </div>
-             </div>
+        {/* BOTTOM DRAWER (User List) */}
+        {isListOpen && (
+          <div className="fixed inset-0 z-[2050] flex flex-col justify-end animate-fade-in">
+             {/* Backdrop */}
+             <div 
+               className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
+               onClick={() => setIsListOpen(false)}
+             />
              
-             <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-600">
-                 <p>&copy; {new Date().getFullYear()} Socially Inc. All rights reserved.</p>
-                 <div className="flex gap-6">
-                     <a href="#" className="hover:text-slate-400">Twitter</a>
-                     <a href="#" className="hover:text-slate-400">Instagram</a>
-                     <a href="#" className="hover:text-slate-400">LinkedIn</a>
-                 </div>
+             {/* Drawer Content */}
+             <div className="bg-slate-900 rounded-t-3xl shadow-2xl relative z-10 max-h-[85vh] flex flex-col animate-slide-up border-t border-slate-800">
+                {/* Handle / Header */}
+                <div className="px-6 py-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0 rounded-t-3xl">
+                   <div className="flex items-center gap-2">
+                      <div className="p-2 bg-primary-500/10 rounded-full text-primary-500">
+                        <Users className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h2 className="text-lg font-bold text-white">People Nearby</h2>
+                        <p className="text-xs text-slate-400">Sorted by distance</p>
+                      </div>
+                   </div>
+                   <button 
+                     onClick={() => setIsListOpen(false)}
+                     className="p-2 bg-slate-800 rounded-full text-slate-400 hover:bg-slate-700 hover:text-white transition-colors"
+                   >
+                     <X className="w-5 h-5" />
+                   </button>
+                </div>
+
+                {/* List */}
+                <div className="overflow-y-auto p-4 space-y-3 no-scrollbar h-full bg-slate-950">
+                  {nearbyUsers.map(u => (
+                    <div
+                      key={u.uid}
+                      className="w-full bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-sm flex flex-col gap-3 relative overflow-hidden"
+                    >
+                      <div className="flex gap-4">
+                          {/* Avatar Side */}
+                          <div className="shrink-0 flex flex-col items-center gap-2">
+                              <div 
+                                className="w-14 h-14 rounded-full bg-slate-800 overflow-hidden border border-slate-700 shadow-sm cursor-pointer"
+                                onClick={() => navigate(`/profile/${u.uid}`)}
+                              >
+                                  {u.photoURL ? (
+                                      <img src={u.photoURL} alt={u.displayName} className="w-full h-full object-cover" />
+                                  ) : (
+                                      <div className="w-full h-full flex items-center justify-center font-bold text-slate-500 text-lg">
+                                          {u.displayName[0]}
+                                      </div>
+                                  )}
+                              </div>
+                              <div className="flex items-center gap-1 text-[10px] font-bold text-primary-400 bg-primary-500/10 px-2 py-0.5 rounded-full whitespace-nowrap border border-primary-500/20">
+                                  <MapPin className="w-3 h-3 fill-current" />
+                                  {u.distDisplay}
+                              </div>
+                          </div>
+
+                          {/* Info Side */}
+                          <div className="flex-1 min-w-0 flex flex-col">
+                              <div className="flex justify-between items-start">
+                                  <div>
+                                      <h3 
+                                        className="font-bold text-white text-lg leading-tight cursor-pointer hover:text-primary-400 transition-colors"
+                                        onClick={() => navigate(`/profile/${u.uid}`)}
+                                      >
+                                          {u.displayName}
+                                      </h3>
+                                      {u.lastLocation?.name ? (
+                                          <p className="text-xs text-slate-400 mt-0.5">{u.lastLocation.name}</p>
+                                      ) : (
+                                          <p className="text-xs text-slate-500 mt-0.5 italic">Unknown location</p>
+                                      )}
+                                  </div>
+                                  {u.instagramHandle && (
+                                      <a 
+                                        href={`https://instagram.com/${u.instagramHandle}`} 
+                                        target="_blank" 
+                                        rel="noreferrer" 
+                                        className="text-pink-400 hover:text-pink-300 p-1.5 bg-pink-500/10 rounded-lg transition-colors"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                          <Instagram className="w-4 h-4" />
+                                      </a>
+                                  )}
+                              </div>
+                              
+                              {/* Bio */}
+                              <p className="text-sm text-slate-400 mt-2 line-clamp-2 leading-relaxed">
+                                  {u.bio || "No bio available."}
+                              </p>
+
+                              {/* Interests Chips */}
+                              {u.interests && u.interests.length > 0 && (
+                                  <div className="flex flex-wrap gap-1.5 mt-3">
+                                      {u.interests.slice(0, 3).map(iid => {
+                                          const tag = POPULAR_INTERESTS.find(p => p.id === iid);
+                                          return (
+                                              <span key={iid} className="inline-flex items-center px-2 py-1 rounded-md bg-slate-800 border border-slate-700 text-[10px] font-medium text-slate-300">
+                                                  {tag ? <span className="mr-1">{tag.emoji}</span> : null}
+                                                  {tag ? tag.label : iid}
+                                              </span>
+                                          )
+                                      })}
+                                      {u.interests.length > 3 && (
+                                          <span className="inline-flex items-center px-2 py-1 rounded-md bg-slate-800 border border-slate-700 text-[10px] font-medium text-slate-500">
+                                              +{u.interests.length - 3}
+                                          </span>
+                                      )}
+                                  </div>
+                              )}
+                          </div>
+                      </div>
+
+                      {/* Action Button */}
+                      <button 
+                          onClick={() => navigate(`/profile/${u.uid}`)}
+                          className="w-full py-2.5 bg-slate-800 text-white rounded-xl text-xs font-bold shadow-md hover:bg-slate-700 transition-colors flex items-center justify-center gap-1 mt-1 active:scale-[0.98] border border-slate-700"
+                      >
+                          View Full Profile <ChevronRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  
+                  {/* Bottom Spacer for safe area */}
+                  <div className="h-6" />
+                </div>
              </div>
-         </div>
-      </footer>
+          </div>
+        )}
     </div>
   );
 };
 
-export default DesktopLanding;
+export default MapPage;

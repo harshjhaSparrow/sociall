@@ -5,7 +5,7 @@ import { api } from '../services/api';
 import { UserProfile, POPULAR_INTERESTS, InterestTag } from '../types';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
-import { Camera, ChevronLeft, Save, Loader2, User as UserIcon } from 'lucide-react';
+import { Camera, ChevronLeft, Save, Loader2, User as UserIcon, Calendar } from 'lucide-react';
 
 const EditProfile: React.FC = () => {
   const { user } = useAuth();
@@ -18,6 +18,7 @@ const EditProfile: React.FC = () => {
   const [photoURL, setPhotoURL] = useState('');
   const [instagram, setInstagram] = useState('');
   const [bio, setBio] = useState('');
+  const [dob, setDob] = useState('');
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
 
   useEffect(() => {
@@ -30,6 +31,7 @@ const EditProfile: React.FC = () => {
             setPhotoURL(profile.photoURL || '');
             setInstagram(profile.instagramHandle || '');
             setBio(profile.bio || '');
+            setDob(profile.dob || '');
             setSelectedInterests(profile.interests || []);
           }
         } catch (err) {
@@ -65,6 +67,17 @@ const EditProfile: React.FC = () => {
     );
   };
 
+  const calculateAge = (dateString: string) => {
+    const birthDate = new Date(dateString);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -72,6 +85,14 @@ const EditProfile: React.FC = () => {
     if (!displayName.trim()) {
       setError("Display Name is required.");
       return;
+    }
+
+    if (dob) {
+      const age = calculateAge(dob);
+      if (age < 18) {
+          setError("You must be at least 18 years old.");
+          return;
+      }
     }
 
     if (instagram.trim()) {
@@ -93,6 +114,7 @@ const EditProfile: React.FC = () => {
         photoURL,
         instagramHandle: instagram,
         bio: bio.trim(),
+        dob,
         interests: selectedInterests,
       };
 
@@ -157,6 +179,14 @@ const EditProfile: React.FC = () => {
                   label="Display Name" 
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
+                />
+
+                <Input 
+                  label="Date of Birth"
+                  type="date"
+                  icon={<Calendar className="w-5 h-5" />}
+                  value={dob}
+                  onChange={(e) => setDob(e.target.value)}
                 />
 
                 <div className="w-full space-y-2">
