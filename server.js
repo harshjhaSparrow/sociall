@@ -2,6 +2,7 @@ import cors from "cors";
 import express from "express";
 import { MongoClient, ObjectId, ServerApiVersion } from "mongodb";
 
+
 const app = express();
 const port = 5000;
 
@@ -25,6 +26,7 @@ const client = new MongoClient(uri, {
 
 let db;
 const DB_NAME = "socially_db";
+let clients = {}; // Map to store active SSE connections: uid -> [res, res, ...]
 
 // Helper to create notification
 async function createNotification(type, fromUid, toUid, postId = null) {
@@ -150,6 +152,38 @@ async function run() {
 run().catch(console.dir);
 
 // --- API ROUTES ---
+
+// Real-time Stream Endpoint (SSE)
+app.get("/api/realtime/:uid", (req, res) => {
+  const { uid } = req.params;
+
+  // Set headers for SSE
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  if (!clients[uid]) {
+    clients[uid] = [];
+  }
+  clients[uid].push(res);
+
+  // Send a heartbeat comment every 25s to keep connection open
+  const interval = setInterval(() => {
+    res.write(": keep-alive\n\n");
+  }, 25000);
+
+  req.on("close", () => {
+    clearInterval(interval);
+    // Remove this specific response object
+    if (clients[uid]) {
+      clients[uid] = clients[uid].filter((c) => c !== res);
+      if (clients[uid].length === 0) {
+        delete clients[uid];
+      }
+    }
+  });
+});
 
 // 1. Sign Up
 app.post("/api/auth/signup", async (req, res) => {
@@ -703,6 +737,162 @@ app.post("/api/notifications/mark-read", async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: "Failed to mark read" });
+  }
+});
+
+// 16. Chat - Send Message
+app.post("/api/chat/send", async (req, res) => {
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { fromUid, toUid, text } = req.body;
+    const messages = db.collection("messages");
+
+    const newMessage = {
+      fromUid,
+      toUid,
+      text,
+      read: false,
+      createdAt: Date.now(),
+    };
+
+    const result = await messages.insertOne(newMessage);
+    const fullMessage = { ...newMessage, _id: result.insertedId };
+
+    // Broadcast to SSE clients
+    if (clients[toUid]) {
+      clients[toUid].forEach((client) =>
+        client.write(`data: ${JSON.stringify(fullMessage)}\n\n`),
+      );
+    }
+    if (clients[fromUid]) {
+      clients[fromUid].forEach((client) =>
+        client.write(`data: ${JSON.stringify(fullMessage)}\n\n`),
+      );
+    }
+
+    res.json(fullMessage);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to send message" });
+  }
+});
+
+// 17. Chat - Get History
+app.get("/api/chat/history/:uid1/:uid2", async (req, res) => {
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { uid1, uid2 } = req.params;
+    const messages = db.collection("messages");
+
+    // Find messages where (from=uid1 AND to=uid2) OR (from=uid2 AND to=uid1)
+    const history = await messages
+      .find({
+        $or: [
+          { fromUid: uid1, toUid: uid2 },
+          { fromUid: uid2, toUid: uid1 },
+        ],
+      })
+      .sort({ createdAt: 1 })
+      .toArray(); // Oldest first for chat log
+
+    res.json(history);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch history" });
+  }
+});
+
+// 18. Chat - Get Inbox (Recent conversations with unread count)
+app.get("/api/chat/inbox/:uid", async (req, res) => {
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { uid } = req.params;
+    const messages = db.collection("messages");
+
+    const pipeline = [
+      {
+        $match: {
+          $or: [{ fromUid: uid }, { toUid: uid }],
+        },
+      },
+      { $sort: { createdAt: -1 } },
+      {
+        $group: {
+          _id: {
+            $cond: [{ $eq: ["$fromUid", uid] }, "$toUid", "$fromUid"],
+          },
+          lastMessage: { $first: "$$ROOT" },
+          unreadCount: {
+            $sum: {
+              $cond: [
+                { $and: [{ $eq: ["$toUid", uid] }, { $eq: ["$read", false] }] },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "profiles",
+          localField: "_id",
+          foreignField: "uid",
+          as: "otherUser",
+        },
+      },
+      { $unwind: "$otherUser" },
+      {
+        $project: {
+          _id: 0,
+          partner: "$otherUser",
+          lastMessage: 1,
+          unreadCount: 1,
+        },
+      },
+      { $sort: { "lastMessage.createdAt": -1 } },
+    ];
+
+    const inbox = await messages.aggregate(pipeline).toArray();
+    res.json(inbox);
+  } catch (error) {
+    console.error("Inbox Error", error);
+    res.status(500).json({ error: "Failed to fetch inbox" });
+  }
+});
+
+// 19. Chat - Mark Read
+app.post("/api/chat/mark-read", async (req, res) => {
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { myUid, partnerUid } = req.body;
+    const messages = db.collection("messages");
+
+    await messages.updateMany(
+      {
+        toUid: myUid,
+        fromUid: partnerUid,
+        read: false,
+      },
+      { $set: { read: true } },
+    );
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: "Failed to mark messages as read" });
+  }
+});
+
+// 20. Chat - Get Total Unread Count
+app.get("/api/chat/unread-count/:uid", async (req, res) => {
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { uid } = req.params;
+    const messages = db.collection("messages");
+    const count = await messages.countDocuments({
+      toUid: uid,
+      read: false,
+    });
+    res.json({ count });
+  } catch (e) {
+    res.status(500).json({ error: "Failed to get unread count" });
   }
 });
 

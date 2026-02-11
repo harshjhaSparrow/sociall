@@ -11,9 +11,11 @@ import CreatePost from './pages/CreatePost';
 import EditPost from './pages/EditPost';
 import PostDetail from './pages/PostDetail';
 import MapPage from './pages/MapPage';
+import Chat from './pages/Chat';
+import Inbox from './pages/Inbox';
 import Layout from './components/Layout';
-import { Loader2 } from 'lucide-react';
 import LocationGuard from './components/LocationGuard';
+import { Loader2 } from 'lucide-react';
 
 // Guard component to protect routes and check profile existence
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -27,7 +29,10 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
       if (user) {
         try {
           const profile = await api.profile.get(user.uid);
-          setHasProfile(!!profile);
+          // A profile is considered "complete" (onboarded) if it exists AND has interests selected.
+          // Signup creates a skeletal profile with empty interests.
+          const isOnboarded = !!profile && Array.isArray(profile.interests) && profile.interests.length > 0;
+          setHasProfile(isOnboarded);
         } catch (e) {
           console.error("Error checking profile", e);
           setHasProfile(false);
@@ -58,12 +63,12 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     return <Navigate to="/auth" />;
   }
 
-  // Force Onboarding if no profile exists
+  // Force Onboarding if profile is incomplete
   if (status === 'authenticated' && !hasProfile && location.pathname !== '/onboarding') {
     return <Navigate to="/onboarding" replace />;
   }
 
-  // Prevent accessing Onboarding if profile already exists
+  // Prevent accessing Onboarding if profile is already completed
   if (status === 'authenticated' && hasProfile && location.pathname === '/onboarding') {
     return <Navigate to="/" replace />;
   }
@@ -85,6 +90,15 @@ const AppRoutes = () => {
             <Onboarding />
           </ProtectedRoute>
         } />
+
+        {/* Chat - Isolated (No Bottom Menu) */}
+        <Route path="/chat/:uid" element={
+          <ProtectedRoute>
+            <LocationGuard>
+               <Chat />
+            </LocationGuard>
+          </ProtectedRoute>
+        } />
         
         {/* Main App - Protected by Location & Layout */}
         <Route element={
@@ -96,6 +110,7 @@ const AppRoutes = () => {
         }>
             <Route path="/" element={<Feed />} />
             <Route path="/map" element={<MapPage />} />
+            <Route path="/inbox" element={<Inbox />} />
             <Route path="/profile/:uid?" element={<Profile />} />
             <Route path="/create-post" element={<CreatePost />} />
             <Route path="/edit-post/:id" element={<EditPost />} />

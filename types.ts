@@ -54,6 +54,15 @@ export interface Notification {
   createdAt: number;
 }
 
+export interface Message {
+  _id: string;
+  fromUid: string;
+  toUid: string;
+  text: string;
+  read?: boolean;
+  createdAt: number;
+}
+
 export interface InterestTag {
   id: string;
   label: string;

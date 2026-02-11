@@ -1,4 +1,4 @@
-import { UserProfile, Post, Comment, Notification } from "../types";
+import { UserProfile, Post, Comment, Notification, Message } from "../types";
 
 /**
  * API SERVICE (REAL BACKEND)
@@ -9,7 +9,7 @@ import { UserProfile, Post, Comment, Notification } from "../types";
 
 const API_BASE = "http://localhost:5000/api";
 
-export const api:any = {
+export const api: any = {
   auth: {
     signup: async (
       email: string,
@@ -176,6 +176,79 @@ export const api:any = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid1, uid2 }),
       });
+    },
+  },
+
+  chat: {
+    send: async (
+      fromUid: string,
+      toUid: string,
+      text: string,
+    ): Promise<Message> => {
+      try {
+        const response = await fetch(`${API_BASE}/chat/send`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fromUid, toUid, text }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error("Failed to send");
+        return data;
+      } catch (error: any) {
+        throw error;
+      }
+    },
+    getHistory: async (uid1: string, uid2: string): Promise<Message[]> => {
+      try {
+        const response = await fetch(
+          `${API_BASE}/chat/history/${uid1}/${uid2}`,
+        );
+        if (!response.ok) return [];
+        return await response.json();
+      } catch (error: any) {
+        return [];
+      }
+    },
+    getInbox: async (uid: string) => {
+      try {
+        const response = await fetch(`${API_BASE}/chat/inbox/${uid}`);
+        if (!response.ok) return [];
+        return await response.json();
+      } catch (e: any) {
+        return [];
+      }
+    },
+    markRead: async (myUid: string, partnerUid: string) => {
+      try {
+        await fetch(`${API_BASE}/chat/mark-read`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ myUid, partnerUid }),
+        });
+      } catch (e: any) {}
+    },
+    getUnreadCount: async (uid: string): Promise<number> => {
+      try {
+        const response = await fetch(`${API_BASE}/chat/unread-count/${uid}`);
+        if (!response.ok) return 0;
+        const data = await response.json();
+        return data.count || 0;
+      } catch (e: any) {
+        return 0;
+      }
+    },
+    subscribe: (uid: string, onMessage: (msg: Message) => void) => {
+      // Real SSE
+      const eventSource = new EventSource(`${API_BASE}/realtime/${uid}`);
+      eventSource.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          onMessage(msg);
+        } catch (e) {
+          console.error("SSE Parse Error", e);
+        }
+      };
+      return () => eventSource.close();
     },
   },
 
