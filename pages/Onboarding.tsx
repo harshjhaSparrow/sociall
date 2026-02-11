@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { Camera, ChevronLeft, Instagram, Sparkles, User as UserIcon } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
-import { UserProfile, POPULAR_INTERESTS, InterestTag } from '../types';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
-import { Camera, Instagram, Sparkles, ChevronLeft, User as UserIcon } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { api } from '../services/api';
+import { InterestTag, POPULAR_INTERESTS, UserProfile } from '../types';
 
 const STEPS = ['Basic Info', 'Socials', 'Interests'];
 
@@ -32,8 +32,8 @@ const Onboarding: React.FC = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 500000) { 
-         setError("Image too large (Max 500KB).");
+      if (file.size > 10000000) { 
+         setError("Image too large (Max 10mb).");
          return;
       }
       const reader = new FileReader();
@@ -161,7 +161,7 @@ const Onboarding: React.FC = () => {
 
             <Input 
               label="Username" 
-              placeholder="@username"
+              placeholder="username"
               icon={<span className="text-slate-500 font-bold">@</span>}
               value={instagram}
               onChange={(e) => setInstagram(e.target.value.replace('@', ''))}

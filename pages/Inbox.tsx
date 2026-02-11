@@ -1,13 +1,14 @@
-import {
-  ChevronRight,
-  Loader2,
-  MessageCircle
-} from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";
-import { Message, UserProfile } from "../types";
+import { UserProfile, Message } from "../types";
+import {
+  Loader2,
+  MessageCircle,
+  ChevronRight,
+  User as UserIcon,
+} from "lucide-react";
 
 interface InboxItem {
   partner: UserProfile;
@@ -26,7 +27,8 @@ const Inbox: React.FC = () => {
       if (!user) return;
       try {
         const data = await api.chat.getInbox(user.uid);
-        setConversations(data);
+        // Filter out any conversations where partner might be null (e.g. deleted users)
+        setConversations(data.filter((conv: any) => !!conv.partner));
       } catch (e) {
         console.error("Failed to load inbox", e);
       } finally {
@@ -65,6 +67,7 @@ const Inbox: React.FC = () => {
         ) : (
           <div className="space-y-2">
             {conversations.map((conv) => {
+              if (!conv.partner) return null; // Double safety check
               const isUnread = (conv.unreadCount || 0) > 0;
               return (
                 <div
@@ -85,7 +88,7 @@ const Inbox: React.FC = () => {
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-slate-500 font-bold">
-                          {conv.partner.displayName[0]}
+                          {conv.partner.displayName?.[0] || "U"}
                         </div>
                       )}
                     </div>
@@ -99,7 +102,7 @@ const Inbox: React.FC = () => {
                       <h3
                         className={`text-base truncate ${isUnread ? "font-black text-white" : "font-bold text-slate-200"}`}
                       >
-                        {conv.partner.displayName}
+                        {conv.partner.displayName || "Unknown User"}
                       </h3>
                       <span
                         className={`text-[10px] whitespace-nowrap ml-2 ${isUnread ? "text-blue-400 font-bold" : "text-slate-500"}`}

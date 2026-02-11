@@ -4,12 +4,7 @@ import http from "http";
 import WebSocket, { WebSocketServer } from "ws";
 import { MongoClient, ObjectId, ServerApiVersion } from "mongodb";
 
-// const express = require('express');
-// const cors = require('cors');
-// const http = require('http');
-// const WebSocket = require('ws'); // Requires 'npm install ws'
-// const mongodb = require('mongodb');
-// const { MongoClient, ServerApiVersion, ObjectId } = mongodb;
+
 
 const app = express();
 const port = 5000;
@@ -302,7 +297,19 @@ app.post('/api/auth/google', async (req, res) => {
         });
       } else {
         uid = user._id.toString();
-        // Optional: Update profile photo if it changed
+        // Sync profile data if it has changed (e.g. new photo from Google)
+        // Only update if not explicitly set by user in app (naively we just overwrite here for sync)
+        if (photoURL || displayName) {
+             const updateFields = {};
+             if (photoURL) updateFields.photoURL = photoURL;
+             // We don't overwrite displayName usually to respect user choice, 
+             // but if the profile name is default (email), we might update it. 
+             // For now, let's only sync photoURL to be safe.
+             
+             if (Object.keys(updateFields).length > 0) {
+                 await profiles.updateOne({ uid }, { $set: updateFields });
+             }
+        }
       }
   
       res.json({ user: { uid, email } });
