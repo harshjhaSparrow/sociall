@@ -19,6 +19,9 @@ const Profile: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [myPosts, setMyPosts] = useState<Post[]>([]);
   
+  // Location Name State
+  const [locationName, setLocationName] = useState<string>("Unknown Location");
+  
   // Friend System State
   const [friendRequests, setFriendRequests] = useState<UserProfile[]>([]);
   const [relationship, setRelationship] = useState<'self' | 'friend' | 'sent' | 'received' | 'none'>('none');
@@ -78,6 +81,41 @@ const Profile: React.FC = () => {
     };
     fetchData();
   }, [targetUid, isOwnProfile, navigate, user]);
+
+  // Effect to determine Location Name (either from profile or fetch on fly)
+  useEffect(() => {
+    if (profile?.lastLocation) {
+        if (profile.lastLocation.name && profile.lastLocation.name !== "Unknown Location") {
+            setLocationName(profile.lastLocation.name);
+        } else if (profile.lastLocation.lat && profile.lastLocation.lng) {
+            // Fallback: Fetch name using lat/lng if name is missing or invalid
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${profile.lastLocation.lat}&lon=${profile.lastLocation.lng}`)
+              .then(res => res.json())
+              .then(data => {
+                  const addr = data.address;
+                  const city = addr?.city || addr?.town || addr?.village || addr?.county;
+                  const state = addr?.state;
+                  const country = addr?.country;
+                  
+                  let name = "Unknown Location";
+                  if (city) {
+                      name = state ? `${city}, ${state}` : `${city}, ${country || ''}`;
+                  } else if (state) {
+                      name = `${state}, ${country || ''}`;
+                  } else if (country) {
+                      name = country;
+                  }
+                  
+                  // Clean up trailing commas/spaces
+                  name = name.replace(/,\s*$/, "");
+                  setLocationName(name);
+              })
+              .catch(err => console.warn("Failed to fetch location name", err));
+        }
+    } else {
+        setLocationName("Unknown Location");
+    }
+  }, [profile]);
 
   const handleLogout = async () => {
     await logout();
@@ -281,7 +319,7 @@ const Profile: React.FC = () => {
             <h1 className="text-3xl font-bold text-white tracking-tight">{profile.displayName}</h1>
             <div className="flex items-center justify-center gap-1.5 mt-2 text-slate-400 font-medium">
               <MapPin className="w-4 h-4 text-primary-500" />
-              <span>{profile.lastLocation?.name || "Unknown Location"}</span>
+              <span>{locationName}</span>
             </div>
             
             {!isOwnProfile && distance && (
@@ -457,124 +495,120 @@ const Profile: React.FC = () => {
         <div className="mt-8 mb-4">
            <h2 className="text-xl font-bold text-white px-2 mb-4">{isOwnProfile ? "My Posts" : "Posts"}</h2>
            {myPosts.length === 0 ? (
-             <div className="bg-slate-900 rounded-3xl p-8 text-center border border-slate-800 shadow-sm">
-                <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-500">
-                   <Edit2 className="w-8 h-8" />
-                </div>
-                <p className="text-slate-500 font-medium">No posts yet.</p>
-                {isOwnProfile && (
-                  <button 
-                    onClick={() => navigate('/create-post')}
-                    className="mt-4 text-primary-400 font-bold text-sm hover:text-primary-300"
-                  >
-                    Create your first post
-                  </button>
-                )}
+             <div className="bg-slate-900 rounded-3xl p-8 text-center border border-slate-800">
+               <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                 <Edit2 className="w-8 h-8 text-slate-600" />
+               </div>
+               <p className="text-slate-400 font-medium">No posts yet</p>
+               {isOwnProfile && (
+                 <button 
+                   onClick={() => navigate('/create-post')}
+                   className="mt-4 text-primary-500 font-bold hover:text-primary-400 text-sm"
+                 >
+                   Create your first post
+                 </button>
+               )}
              </div>
            ) : (
              <div className="space-y-6">
-               {myPosts.map((post) => (
-                 <PostItem
-                   key={post._id}
-                   post={post}
-                   currentUserId={user?.uid}
-                   onLike={handleLike}
-                   onAddComment={handleAddComment}
-                   onDelete={isOwnProfile ? handleDeletePost : undefined}
-                   onEdit={isOwnProfile ? handleEditPost : undefined}
-                 />
-               ))}
+                {myPosts.map(post => (
+                  <PostItem 
+                    key={post._id} 
+                    post={post} 
+                    currentUserId={user?.uid}
+                    onLike={handleLike}
+                    onAddComment={handleAddComment}
+                    onDelete={isOwnProfile ? handleDeletePost : undefined}
+                    onEdit={isOwnProfile ? handleEditPost : undefined}
+                  />
+                ))}
              </div>
            )}
         </div>
-
-        <div className="text-center mt-12 pb-6">
-           <p className="text-slate-600 text-xs font-semibold uppercase tracking-widest">Socially v2.0</p>
-        </div>
       </div>
-      
+
       {/* Friends List Modal */}
       {isFriendsModalOpen && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 animate-fade-in">
-           <div 
-             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-             onClick={() => setIsFriendsModalOpen(false)}
-           />
-           <div className="bg-slate-900 rounded-3xl w-full max-w-sm max-h-[70vh] flex flex-col shadow-2xl relative z-10 animate-slide-up overflow-hidden border border-slate-800">
-              <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
-                 <h3 className="font-bold text-white text-lg">Connections</h3>
-                 <button onClick={() => setIsFriendsModalOpen(false)} className="p-2 -mr-2 text-slate-400 hover:text-white">
-                    <X className="w-5 h-5" />
-                 </button>
-              </div>
-              
-              <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                 {friendsLoading ? (
-                   <div className="flex justify-center py-8"><Loader2 className="w-8 h-8 text-primary-500 animate-spin" /></div>
-                 ) : (
-                   <>
-                     {isOwnProfile && sentRequestsList.length > 0 && (
-                       <div>
-                         <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 ml-1">Pending Requests (Sent)</h4>
-                         <div className="space-y-2">
-                           {sentRequestsList.map(u => (
-                             <div key={u.uid} className="flex items-center gap-3 p-2 rounded-xl bg-slate-800/50 border border-slate-800">
-                                <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden shrink-0">
-                                   {u.photoURL ? (
-                                     <img src={u.photoURL} alt={u.displayName} className="w-full h-full object-cover" />
-                                   ) : (
-                                     <div className="w-full h-full flex items-center justify-center font-bold text-slate-500 text-xs">{u.displayName[0]}</div>
-                                   )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                   <div className="font-bold text-white text-sm truncate">{u.displayName}</div>
-                                   <div className="text-xs text-slate-500">Request Sent</div>
-                                </div>
-                                <Clock className="w-4 h-4 text-slate-500" />
-                             </div>
-                           ))}
-                         </div>
-                       </div>
-                     )}
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsFriendsModalOpen(false)}></div>
+          <div className="bg-slate-900 w-full max-w-sm rounded-3xl shadow-2xl relative z-10 flex flex-col max-h-[80vh] animate-slide-up border border-slate-800">
+             
+             {/* Header */}
+             <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+                <h3 className="font-bold text-xl text-white">Friends</h3>
+                <button onClick={() => setIsFriendsModalOpen(false)} className="p-2 -mr-2 text-slate-400 hover:text-white">
+                  <X className="w-6 h-6" />
+                </button>
+             </div>
 
-                     <div>
-                       <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 ml-1">Friends ({friendsList.length})</h4>
-                       {friendsList.length === 0 ? (
-                         <div className="text-center py-8 text-slate-500 text-sm bg-slate-800/20 rounded-2xl border border-slate-800 border-dashed">
-                           No friends yet.
-                         </div>
-                       ) : (
+             {/* Content */}
+             <div className="overflow-y-auto p-4 flex-1 no-scrollbar">
+                {friendsLoading ? (
+                  <div className="flex justify-center py-8">
+                     <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
+                  </div>
+                ) : (
+                  <>
+                    {/* Sent Requests Section (Only Own Profile) */}
+                    {isOwnProfile && sentRequestsList.length > 0 && (
+                      <div className="mb-6">
+                         <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-2">Pending Requests</h4>
                          <div className="space-y-2">
-                           {friendsList.map(u => (
-                             <div 
-                               key={u.uid} 
-                               onClick={() => {
-                                 setIsFriendsModalOpen(false);
-                                 navigate(`/profile/${u.uid}`);
-                               }}
-                               className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-800 transition-colors cursor-pointer group"
-                             >
-                                <div className="w-12 h-12 rounded-full bg-slate-800 overflow-hidden shrink-0 border border-slate-700">
-                                   {u.photoURL ? (
-                                     <img src={u.photoURL} alt={u.displayName} className="w-full h-full object-cover" />
+                            {sentRequestsList.map(friend => (
+                               <div key={friend.uid} className="flex items-center gap-3 p-3 rounded-2xl bg-slate-800/50 border border-slate-800 opacity-75">
+                                   <div className="w-10 h-10 rounded-full bg-slate-800 overflow-hidden shrink-0">
+                                      {friend.photoURL ? (
+                                        <img src={friend.photoURL} className="w-full h-full object-cover" />
+                                      ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-slate-500 font-bold">{friend.displayName[0]}</div>
+                                      )}
+                                   </div>
+                                   <span className="text-slate-300 font-bold text-sm flex-1">{friend.displayName}</span>
+                                   <span className="text-xs text-slate-500 italic">Sent</span>
+                               </div>
+                            ))}
+                         </div>
+                      </div>
+                    )}
+
+                    {/* Friends List */}
+                    {friendsList.length === 0 ? (
+                      <div className="text-center py-10 text-slate-500">
+                        <Users className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                        <p>No friends yet</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                         {friendsList.map(friend => (
+                            <div 
+                              key={friend.uid} 
+                              className="flex items-center gap-3 p-3 rounded-2xl bg-slate-800 border border-slate-700 cursor-pointer hover:bg-slate-700 transition-colors"
+                              onClick={() => {
+                                setIsFriendsModalOpen(false);
+                                navigate(`/profile/${friend.uid}`);
+                              }}
+                            >
+                                <div className="w-12 h-12 rounded-full bg-slate-900 overflow-hidden shrink-0 border border-slate-600">
+                                   {friend.photoURL ? (
+                                     <img src={friend.photoURL} className="w-full h-full object-cover" />
                                    ) : (
-                                     <div className="w-full h-full flex items-center justify-center font-bold text-slate-500">{u.displayName[0]}</div>
+                                     <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold text-lg">{friend.displayName[0]}</div>
                                    )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                   <div className="font-bold text-white truncate group-hover:text-primary-400 transition-colors">{u.displayName}</div>
-                                   <div className="text-xs text-slate-500 truncate">{u.bio || "Socially user"}</div>
+                                   <h4 className="font-bold text-white text-base truncate">{friend.displayName}</h4>
+                                   <p className="text-xs text-slate-400 truncate">{friend.bio || "No bio"}</p>
                                 </div>
-                                <ChevronRight className="w-4 h-4 text-slate-600" />
-                             </div>
-                           ))}
-                         </div>
-                       )}
-                     </div>
-                   </>
-                 )}
-              </div>
-           </div>
+                                <ChevronRight className="w-5 h-5 text-slate-500" />
+                            </div>
+                         ))}
+                      </div>
+                    )}
+                  </>
+                )}
+             </div>
+
+          </div>
         </div>
       )}
     </div>

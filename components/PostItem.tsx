@@ -5,7 +5,6 @@ import { Link } from 'react-router-dom';
 import { useUserLocation } from './LocationGuard';
 import { calculateDistance } from '@/util/location';
 
-
 interface PostItemProps {
   post: Post;
   currentUserId?: string;
@@ -24,12 +23,20 @@ const PostItem: React.FC<PostItemProps> = ({
   onEdit 
 }) => {
   const { location: myLocation } = useUserLocation();
-  const [showComments, setShowComments] = useState(false);
+  const [showAllComments, setShowAllComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
 
   const isLiked = currentUserId && post.likedBy?.includes(currentUserId);
   const commentCount = post.comments?.length || 0;
+  
+  // Logic to determine which comments to show:
+  // If showAll is false, show ONLY the last comment (if exists).
+  // If showAll is true, show all.
+  const hasComments = commentCount > 0;
+  const commentsToShow = showAllComments 
+      ? post.comments 
+      : (hasComments ? [post.comments![post.comments!.length - 1]] : []);
 
   const handleSubmitComment = async () => {
     if (!post._id || !commentText.trim()) return;
@@ -37,6 +44,8 @@ const PostItem: React.FC<PostItemProps> = ({
     try {
       await onAddComment(post._id, commentText);
       setCommentText('');
+      // If we add a comment, expand to show all so the user sees theirs
+      setShowAllComments(true);
     } catch (error) {
       console.error("Failed to add comment", error);
     } finally {
@@ -124,7 +133,7 @@ const PostItem: React.FC<PostItemProps> = ({
         </p>
         
         {/* Actions */}
-        <div className="flex items-center gap-4 pt-2 border-t border-slate-800 mt-4">
+        <div className="flex items-center gap-4 pt-2 border-t border-slate-800 mt-4 mb-3">
           <button 
             onClick={() => onLike(post)}
             className={`flex items-center gap-1.5 transition-colors group py-2 ${isLiked ? 'text-primary-500' : 'text-slate-500 hover:text-primary-500'}`}
@@ -133,50 +142,56 @@ const PostItem: React.FC<PostItemProps> = ({
             <span className="text-sm font-medium">{post.likes}</span>
           </button>
           <button 
-            onClick={() => setShowComments(!showComments)}
-            className={`flex items-center gap-1.5 transition-colors py-2 ${showComments ? 'text-blue-400' : 'text-slate-500 hover:text-blue-400'}`}
+            onClick={() => setShowAllComments(!showAllComments)}
+            className={`flex items-center gap-1.5 transition-colors py-2 ${showAllComments ? 'text-blue-400' : 'text-slate-500 hover:text-blue-400'}`}
           >
-            <MessageCircle className={`w-6 h-6 ${showComments ? 'fill-current' : ''}`} />
+            <MessageCircle className={`w-6 h-6 ${showAllComments ? 'fill-current' : ''}`} />
             <span className="text-sm font-medium">{commentCount}</span>
           </button>
         </div>
 
         {/* Comments Section */}
-        {showComments && (
-          <div className="pt-4 mt-2 animate-fade-in border-t border-slate-800/50">
-            <div className="space-y-4 mb-4">
-              {post.comments && post.comments.length > 0 ? (
-                post.comments.map((comment, idx) => (
-                  <div key={idx} className="flex gap-3">
-                      <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden shrink-0 mt-0.5 border border-slate-700">
-                        {comment.authorPhoto ? (
-                          <img src={comment.authorPhoto} alt={comment.authorName} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-500">
-                            {comment.authorName?.[0]}
-                          </div>
-                        )}
-                      </div>
-                      <div className="bg-slate-800/50 p-3 rounded-2xl rounded-tl-none text-sm w-full border border-slate-800">
-                        <span className="font-bold text-slate-200 mr-2">{comment.authorName}</span>
-                        <span className="text-slate-400">{comment.text}</span>
-                      </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center text-slate-500 text-sm py-2 italic">
-                  No comments yet.
-                </div>
-              )}
-            </div>
+        <div className="space-y-3">
+            {/* View All Button */}
+            {!showAllComments && commentCount > 1 && (
+                <button 
+                    onClick={() => setShowAllComments(true)}
+                    className="text-slate-500 text-xs font-semibold hover:text-slate-300 ml-1"
+                >
+                    View all {commentCount} comments
+                </button>
+            )}
 
-            {/* Input */}
-            <div className="flex items-center gap-2">
+            {/* Comment List (Shows only latest if !showAllComments) */}
+            {commentsToShow && commentsToShow.length > 0 && (
+                <div className="space-y-3">
+                    {commentsToShow.map((comment, idx) => (
+                        <div key={idx} className="flex gap-2.5 animate-fade-in">
+                            <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden shrink-0 mt-0.5 border border-slate-700">
+                                {comment.authorPhoto ? (
+                                <img src={comment.authorPhoto} alt={comment.authorName} className="w-full h-full object-cover" />
+                                ) : (
+                                <div className="w-full h-full bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-500">
+                                    {comment.authorName?.[0]}
+                                </div>
+                                )}
+                            </div>
+                            <div className="bg-slate-800/80 px-4 py-2.5 rounded-2xl text-sm border border-slate-800 flex-1">
+                                <span className="font-bold text-slate-200 text-xs mr-2 block mb-0.5">{comment.authorName}</span>
+                                <span className="text-slate-400 text-xs leading-relaxed">{comment.text}</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Input - Always visible if user wants to engage */}
+            <div className="flex items-center gap-2 pt-2">
                 <input 
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  placeholder="Write a comment..."
-                  className="flex-1 bg-slate-950 border border-slate-800 rounded-full px-4 py-2.5 text-sm text-white focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 outline-none placeholder-slate-600"
+                  placeholder="Add a comment..."
+                  className="flex-1 bg-transparent border-b border-slate-800 py-2 text-sm text-white focus:border-primary-500 outline-none placeholder-slate-600 transition-colors"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
@@ -187,7 +202,7 @@ const PostItem: React.FC<PostItemProps> = ({
                 <button 
                   onClick={handleSubmitComment}
                   disabled={!commentText.trim() || submittingComment}
-                  className="p-2.5 bg-primary-500 text-white rounded-full hover:bg-primary-600 disabled:opacity-50 disabled:bg-slate-800 transition-colors shadow-lg shadow-primary-500/20"
+                  className="p-2 text-primary-500 hover:text-primary-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {submittingComment ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -196,8 +211,7 @@ const PostItem: React.FC<PostItemProps> = ({
                   )}
                 </button>
             </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

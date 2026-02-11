@@ -1,9 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
-import { Mail, Lock, Heart, ArrowRight } from 'lucide-react';
+import { Mail, Lock, Heart, ArrowRight, Loader2 } from 'lucide-react';
+
+declare global {
+  interface Window {
+    google: any;
+  }
+}
 
 const AuthPage: React.FC = () => {
   const { login } = useAuth();
@@ -36,6 +42,75 @@ const AuthPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const decodeJwt = (token: string) => {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    } catch(e) {
+      return null;
+    }
+  };
+
+  const handleCredentialResponse = async (response: any) => {
+    if (response.credential) {
+      const payload = decodeJwt(response.credential);
+      if (payload) {
+        try {
+          // Send profile info to backend to create/login user
+          const apiResponse = await api.auth.googleLogin(
+            payload.email,
+            payload.name,
+            payload.picture
+          );
+          login(apiResponse.user);
+        } catch (err) {
+          setError("Google login failed.");
+        }
+      }
+    }
+  };
+
+  useEffect(() => {
+    // Initialize Google Sign-In
+    const initializeGoogle = () => {
+      if (window.google) {
+        window.google.accounts.id.initialize({
+          client_id: "793742543220-aggmdtptgpbns7vrem2ftpelnv73g4e4.apps.googleusercontent.com",
+          callback: handleCredentialResponse
+        });
+        
+        window.google.accounts.id.renderButton(
+          document.getElementById("googleBtn"),
+          { 
+            theme: "outline", 
+            size: "large", 
+            width: "100%", // Will span the container
+            text: "continue_with",
+            shape: "pill",
+            logo_alignment: "left"
+          } 
+        );
+      }
+    };
+
+    // Check if script is loaded, if not wait a bit
+    if (window.google) {
+      initializeGoogle();
+    } else {
+      const interval = setInterval(() => {
+        if (window.google) {
+          initializeGoogle();
+          clearInterval(interval);
+        }
+      }, 100);
+      return () => clearInterval(interval);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 relative overflow-hidden">
@@ -94,11 +169,20 @@ const AuthPage: React.FC = () => {
               </div>
             )}
 
-            <div className="pt-4">
+            <div className="pt-4 space-y-4">
               <Button type="submit" fullWidth isLoading={loading} className="shadow-xl shadow-primary-500/20">
                 {isLogin ? 'Sign In' : 'Create Account'}
                 {!loading && <ArrowRight className="w-5 h-5 ml-2" />}
               </Button>
+              
+              <div className="relative flex py-2 items-center">
+                  <div className="flex-grow border-t border-slate-800"></div>
+                  <span className="flex-shrink-0 mx-4 text-slate-500 text-sm font-medium">Or continue with</span>
+                  <div className="flex-grow border-t border-slate-800"></div>
+              </div>
+
+              {/* Google Button Container */}
+              <div id="googleBtn" className="w-full flex justify-center min-h-[48px]"></div>
             </div>
           </form>
 

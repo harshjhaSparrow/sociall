@@ -1,28 +1,31 @@
-import { UserProfile, Post, Comment, Notification } from '../types';
+import { UserProfile, Post, Comment, Notification } from "../types";
 
 /**
  * API SERVICE (REAL BACKEND)
- * 
+ *
  * connects to the local Node.js server running on port 5000
  * which connects to MongoDB Atlas.
  */
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = "http://localhost:5000/api";
 
-export const api = {
+export const api:any = {
   auth: {
-    signup: async (email: string, password: string): Promise<{ user: { uid: string, email: string } }> => {
+    signup: async (
+      email: string,
+      password: string,
+    ): Promise<{ user: { uid: string; email: string } }> => {
       try {
         const response = await fetch(`${API_BASE}/auth/signup`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
         });
 
         const data = await response.json();
-        
+
         if (!response.ok) {
-          throw new Error(data.error || 'Signup failed');
+          throw new Error(data.error || "Signup failed");
         }
 
         return data;
@@ -32,18 +35,21 @@ export const api = {
       }
     },
 
-    login: async (email: string, password: string): Promise<{ user: { uid: string, email: string } }> => {
+    login: async (
+      email: string,
+      password: string,
+    ): Promise<{ user: { uid: string; email: string } }> => {
       try {
         const response = await fetch(`${API_BASE}/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || 'Login failed');
+          throw new Error(data.error || "Login failed");
         }
 
         return data;
@@ -51,7 +57,32 @@ export const api = {
         console.error("Login API Error:", error);
         throw error; // Re-throw to be handled by UI
       }
-    }
+    },
+
+    googleLogin: async (
+      email: string,
+      displayName: string,
+      photoURL: string,
+    ): Promise<{ user: { uid: string; email: string } }> => {
+      try {
+        const response = await fetch(`${API_BASE}/auth/google`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, displayName, photoURL }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Google Login failed");
+        }
+
+        return data;
+      } catch (error) {
+        console.error("Google Login API Error:", error);
+        throw error;
+      }
+    },
   },
 
   profile: {
@@ -73,9 +104,9 @@ export const api = {
     getBatch: async (uids: string[]): Promise<UserProfile[]> => {
       try {
         const response = await fetch(`${API_BASE}/profiles/batch`, {
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ uids })
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ uids }),
         });
         if (!response.ok) return [];
         return await response.json();
@@ -95,86 +126,89 @@ export const api = {
       }
     },
 
-    createOrUpdate: async (uid: string, data: Partial<UserProfile>): Promise<void> => {
+    createOrUpdate: async (
+      uid: string,
+      data: Partial<UserProfile>,
+    ): Promise<void> => {
       try {
         const response = await fetch(`${API_BASE}/profile/${uid}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
 
         if (!response.ok) {
           const err = await response.json();
-          throw new Error(err.error || 'Failed to update profile');
+          throw new Error(err.error || "Failed to update profile");
         }
       } catch (error) {
         console.error("Update Profile API Error:", error);
         throw error;
       }
-    }
+    },
   },
 
   friends: {
-      sendRequest: async (fromUid: string, toUid: string) => {
-          await fetch(`${API_BASE}/friends/request`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ fromUid, toUid })
-          });
-      },
-      acceptRequest: async (userUid: string, requesterUid: string) => {
-          await fetch(`${API_BASE}/friends/accept`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userUid, requesterUid })
-          });
-      },
-      rejectRequest: async (userUid: string, requesterUid: string) => {
-          await fetch(`${API_BASE}/friends/reject`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userUid, requesterUid })
-          });
-      },
-      removeFriend: async (uid1: string, uid2: string) => {
-          await fetch(`${API_BASE}/friends/remove`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ uid1, uid2 })
-          });
-      }
+    sendRequest: async (fromUid: string, toUid: string) => {
+      await fetch(`${API_BASE}/friends/request`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fromUid, toUid }),
+      });
+    },
+    acceptRequest: async (userUid: string, requesterUid: string) => {
+      await fetch(`${API_BASE}/friends/accept`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userUid, requesterUid }),
+      });
+    },
+    rejectRequest: async (userUid: string, requesterUid: string) => {
+      await fetch(`${API_BASE}/friends/reject`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userUid, requesterUid }),
+      });
+    },
+    removeFriend: async (uid1: string, uid2: string) => {
+      await fetch(`${API_BASE}/friends/remove`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uid1, uid2 }),
+      });
+    },
   },
 
   notifications: {
-      get: async (uid: string): Promise<Notification[]> => {
-          try {
-              const response = await fetch(`${API_BASE}/notifications/${uid}`);
-              if (!response.ok) return [];
-              return await response.json();
-          } catch (error) {
-              return [];
-          }
-      },
-      markRead: async (notificationIds: string[]) => {
-          await fetch(`${API_BASE}/notifications/mark-read`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ notificationIds })
-          });
+    get: async (uid: string): Promise<Notification[]> => {
+      try {
+        const response = await fetch(`${API_BASE}/notifications/${uid}`);
+        if (!response.ok) return [];
+        return await response.json();
+      } catch (error) {
+        return [];
       }
+    },
+    markRead: async (notificationIds: string[]) => {
+      await fetch(`${API_BASE}/notifications/mark-read`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notificationIds }),
+      });
+    },
   },
 
   posts: {
     create: async (postData: Partial<Post>): Promise<void> => {
       try {
         const response = await fetch(`${API_BASE}/posts`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(postData),
         });
         if (!response.ok) {
           const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.error || 'Failed to create post');
+          throw new Error(errData.error || "Failed to create post");
         }
       } catch (error) {
         console.error("Create Post Error:", error);
@@ -211,11 +245,16 @@ export const api = {
         return null;
       }
     },
-    updatePost: async (postId: string, uid: string, content: string, imageURL?: string | null): Promise<void> => {
+    updatePost: async (
+      postId: string,
+      uid: string,
+      content: string,
+      imageURL?: string | null,
+    ): Promise<void> => {
       try {
         const response = await fetch(`${API_BASE}/posts/${postId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ uid, content, imageURL }),
         });
         if (!response.ok) {
@@ -229,8 +268,8 @@ export const api = {
     deletePost: async (postId: string, uid: string): Promise<void> => {
       try {
         const response = await fetch(`${API_BASE}/posts/${postId}`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ uid }),
         });
         if (!response.ok) {
@@ -241,11 +280,14 @@ export const api = {
         throw error;
       }
     },
-    toggleLike: async (postId: string, uid: string): Promise<{ likes: number, likedBy: string[] }> => {
+    toggleLike: async (
+      postId: string,
+      uid: string,
+    ): Promise<{ likes: number; likedBy: string[] }> => {
       try {
         const response = await fetch(`${API_BASE}/posts/${postId}/like`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ uid }),
         });
         if (!response.ok) throw new Error("Failed to toggle like");
@@ -255,11 +297,15 @@ export const api = {
         throw error;
       }
     },
-    addComment: async (postId: string, uid: string, text: string): Promise<Comment> => {
+    addComment: async (
+      postId: string,
+      uid: string,
+      text: string,
+    ): Promise<Comment> => {
       try {
         const response = await fetch(`${API_BASE}/posts/${postId}/comment`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ uid, text }),
         });
         if (!response.ok) throw new Error("Failed to add comment");
@@ -268,6 +314,6 @@ export const api = {
         console.error("Add Comment Error:", error);
         throw error;
       }
-    }
-  }
+    },
+  },
 };
