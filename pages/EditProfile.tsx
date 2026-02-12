@@ -5,7 +5,9 @@ import { api } from '../services/api';
 import { UserProfile, POPULAR_INTERESTS, InterestTag } from '../types';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
-import { Camera, ChevronLeft, Save, Loader2, User as UserIcon, Calendar } from 'lucide-react';
+import { Camera, ChevronLeft, Save, Loader2, User as UserIcon, Calendar, Briefcase } from 'lucide-react';
+import { compressImage } from '@/util/ImageCompression';
+
 
 const EditProfile: React.FC = () => {
   const { user } = useAuth();
@@ -19,6 +21,7 @@ const EditProfile: React.FC = () => {
   const [instagram, setInstagram] = useState('');
   const [bio, setBio] = useState('');
   const [dob, setDob] = useState('');
+  const [jobRole, setJobRole] = useState('');
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
 
   useEffect(() => {
@@ -32,6 +35,7 @@ const EditProfile: React.FC = () => {
             setInstagram(profile.instagramHandle || '');
             setBio(profile.bio || '');
             setDob(profile.dob || '');
+            setJobRole(profile.jobRole || '');
             setSelectedInterests(profile.interests || []);
           }
         } catch (err) {
@@ -45,19 +49,25 @@ const EditProfile: React.FC = () => {
     fetchProfile();
   }, [user]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 500000) { 
-         setError("Image is too large (Max 500KB).");
+      // Increased limit to 10MB input
+      if (file.size > 10 * 1024 * 1024) { 
+         setError("Image is too large (Max 10MB).");
          return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoURL(reader.result as string);
+      
+      try {
+        setLoading(true);
         setError(null);
-      };
-      reader.readAsDataURL(file);
+        const compressed = await compressImage(file, 800, 0.8);
+        setPhotoURL(compressed);
+      } catch (err: any) {
+        setError(err.message || "Failed to process image.");
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -115,6 +125,7 @@ const EditProfile: React.FC = () => {
         instagramHandle: instagram,
         bio: bio.trim(),
         dob,
+        jobRole: jobRole.trim(),
         interests: selectedInterests,
       };
 
@@ -179,6 +190,13 @@ const EditProfile: React.FC = () => {
                   label="Display Name" 
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
+                />
+
+                <Input 
+                  label="Job Role / Profession" 
+                  value={jobRole}
+                  icon={<Briefcase className="w-5 h-5" />}
+                  onChange={(e) => setJobRole(e.target.value)}
                 />
 
                 <Input 

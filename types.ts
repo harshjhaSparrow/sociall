@@ -9,6 +9,7 @@ export interface UserProfile {
   email: string | null;
   displayName: string;
   photoURL: string;
+  jobRole?: string;
   instagramHandle?: string;
   interests: string[];
   bio?: string;
@@ -17,7 +18,8 @@ export interface UserProfile {
   friends?: string[];
   incomingRequests?: string[];
   outgoingRequests?: string[];
-  blockedUsers?: string[]; // List of UIDs this user has blocked
+  friendRequestMessages?: Record<string, string>; // Map of uid -> message
+  blockedUsers?: string[]; 
   dob?: string;
   isGhostMode?: boolean;
 }
@@ -88,3 +90,5 @@ export const POPULAR_INTERESTS: InterestTag[] = [
   { id: 'books', label: 'Reading', emoji: '📚' },
   { id: 'pets', label: 'Pets', emoji: '🐾' },
 ];
+
+declare module "nsfwjs";

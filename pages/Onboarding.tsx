@@ -5,7 +5,9 @@ import { api } from '../services/api';
 import { UserProfile, POPULAR_INTERESTS, InterestTag } from '../types';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
-import { Camera, Instagram, Sparkles, ChevronLeft, User as UserIcon, Calendar, Shield, MapPin, CheckCircle, FileText } from 'lucide-react';
+import { Camera, Instagram, Sparkles, ChevronLeft, User as UserIcon, Calendar, Shield, MapPin, CheckCircle, FileText, Briefcase } from 'lucide-react';
+import { compressImage } from '@/util/ImageCompression';
+
 
 const STEPS = ['Legal', 'Basic Info', 'Socials', 'Interests'];
 
@@ -25,6 +27,7 @@ const Onboarding: React.FC = () => {
   const [displayName, setDisplayName] = useState('');
   const [photoURL, setPhotoURL] = useState('');
   const [dob, setDob] = useState('');
+  const [jobRole, setJobRole] = useState('');
   const [instagram, setInstagram] = useState('');
   const [bio, setBio] = useState('');
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
@@ -36,19 +39,26 @@ const Onboarding: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 500000) { 
-         setError("Image too large (Max 500KB).");
+      // Increased limit for input because we compress it anyway
+      if (file.size > 10 * 1024 * 1024) { 
+         setError("Image too large (Max 10MB).");
          return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoURL(reader.result as string);
+      
+      try {
+        setLoading(true);
         setError(null);
-      };
-      reader.readAsDataURL(file);
+        // Optimize for profile picture: 800px max width, 0.8 quality
+        const compressed = await compressImage(file, 800, 0.8);
+        setPhotoURL(compressed);
+      } catch (err: any) {
+        setError(err.message || "Failed to process image.");
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -133,6 +143,7 @@ const Onboarding: React.FC = () => {
         displayName,
         photoURL,
         dob,
+        jobRole: jobRole.trim(),
         instagramHandle: instagram,
         bio: bio.trim(),
         interests: selectedInterests,
@@ -247,6 +258,14 @@ const Onboarding: React.FC = () => {
                 placeholder="e.g. Alex Rivera"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
+              />
+
+              <Input 
+                label="Job Role / Profession"
+                placeholder="e.g. Designer, Student, Engineer"
+                icon={<Briefcase className="w-5 h-5" />}
+                value={jobRole}
+                onChange={(e) => setJobRole(e.target.value)}
               />
 
               <div>

@@ -405,12 +405,14 @@ app.post('/api/user/block', async (req, res) => {
         // 1. Add to blocked list
         await profiles.updateOne({ uid: uid }, { $addToSet: { blockedUsers: targetUid } });
 
-        // 2. Remove friendship/requests both ways
+        // 2. Remove friendship/requests both ways AND cleanup request messages
         await profiles.updateOne({ uid: uid }, {
-            $pull: { friends: targetUid, incomingRequests: targetUid, outgoingRequests: targetUid }
+            $pull: { friends: targetUid, incomingRequests: targetUid, outgoingRequests: targetUid },
+            $unset: { [`friendRequestMessages.${targetUid}`]: "" }
         });
         await profiles.updateOne({ uid: targetUid }, {
-            $pull: { friends: uid, incomingRequests: uid, outgoingRequests: uid }
+            $pull: { friends: uid, incomingRequests: uid, outgoingRequests: uid },
+            $unset: { [`friendRequestMessages.${uid}`]: "" }
         });
 
         res.json({ success: true });
@@ -461,11 +463,17 @@ app.post('/api/report', async (req, res) => {
 app.post('/api/friends/request', async (req, res) => {
     if (!db) return res.status(503).json({ error: "Database not connected" });
     try {
-        const { fromUid, toUid } = req.body;
+        const { fromUid, toUid, message } = req.body;
         const profiles = db.collection('profiles');
 
         await profiles.updateOne({ uid: fromUid }, { $addToSet: { outgoingRequests: toUid } });
-        await profiles.updateOne({ uid: toUid }, { $addToSet: { incomingRequests: fromUid } });
+        
+        const updateDoc = { $addToSet: { incomingRequests: fromUid } };
+        if (message) {
+            updateDoc.$set = { [`friendRequestMessages.${fromUid}`]: message };
+        }
+        
+        await profiles.updateOne({ uid: toUid }, updateDoc);
         await createNotification('friend_request', fromUid, toUid);
 
         res.json({ success: true });
@@ -480,8 +488,15 @@ app.post('/api/friends/accept', async (req, res) => {
         const { userUid, requesterUid } = req.body;
         const profiles = db.collection('profiles');
 
-        await profiles.updateOne({ uid: userUid }, { $pull: { incomingRequests: requesterUid }, $addToSet: { friends: requesterUid } });
-        await profiles.updateOne({ uid: requesterUid }, { $pull: { outgoingRequests: userUid }, $addToSet: { friends: userUid } });
+        await profiles.updateOne({ uid: userUid }, { 
+            $pull: { incomingRequests: requesterUid }, 
+            $addToSet: { friends: requesterUid },
+            $unset: { [`friendRequestMessages.${requesterUid}`]: "" }
+        });
+        await profiles.updateOne({ uid: requesterUid }, { 
+            $pull: { outgoingRequests: userUid }, 
+            $addToSet: { friends: userUid } 
+        });
         await createNotification('friend_accept', userUid, requesterUid);
 
         res.json({ success: true });
@@ -496,8 +511,13 @@ app.post('/api/friends/reject', async (req, res) => {
         const { userUid, requesterUid } = req.body;
         const profiles = db.collection('profiles');
 
-        await profiles.updateOne({ uid: userUid }, { $pull: { incomingRequests: requesterUid } });
-        await profiles.updateOne({ uid: requesterUid }, { $pull: { outgoingRequests: userUid } });
+        await profiles.updateOne({ uid: userUid }, { 
+            $pull: { incomingRequests: requesterUid },
+            $unset: { [`friendRequestMessages.${requesterUid}`]: "" }
+        });
+        await profiles.updateOne({ uid: requesterUid }, { 
+            $pull: { outgoingRequests: userUid } 
+        });
 
         res.json({ success: true });
     } catch (error) {

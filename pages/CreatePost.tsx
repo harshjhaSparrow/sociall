@@ -5,6 +5,8 @@ import { api } from '../services/api';
 import Button from '../components/ui/Button';
 import { ChevronLeft, Image as ImageIcon, X, AlertCircle, MapPin } from 'lucide-react';
 import { useUserLocation } from '../components/LocationGuard';
+import { compressImage } from '@/util/ImageCompression';
+
 
 const CreatePost: React.FC = () => {
   const { user } = useAuth();
@@ -30,19 +32,27 @@ const CreatePost: React.FC = () => {
     }
   }, [gpsLocation]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) { 
-        setError("Image is too large (Max 2MB)");
+      // Increased to 20MB limit for raw input since we compress it
+      if (file.size > 20 * 1024 * 1024) { 
+        setError("Image is too large (Max 20MB)");
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImage(reader.result as string);
+      
+      try {
+        setLoading(true);
         setError(null);
-      };
-      reader.readAsDataURL(file);
+        // Optimize for feed: 1600px max width, 0.85 quality
+        const compressed = await compressImage(file, 1600, 0.85);
+        setImage(compressed);
+      } catch (err: any) {
+        console.error(err);
+        setError(err.message || "Failed to process image.");
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -61,13 +71,16 @@ const CreatePost: React.FC = () => {
         console.warn("Could not fetch profile", e);
       }
       
+      const isGhost = !!profile?.isGhostMode;
+
       await api.posts.create({
         uid: user.uid,
         authorName: profile?.displayName || user.email?.split('@')[0] || 'User',
         authorPhoto: profile?.photoURL || '',
         content,
         imageURL: image || undefined,
-        location: gpsLocation ? {
+        // Do not attach location if user is in Ghost Mode
+        location: (gpsLocation && !isGhost) ? {
           ...gpsLocation,
           name: locationName
         } : undefined

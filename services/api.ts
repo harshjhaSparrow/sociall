@@ -136,11 +136,11 @@ export const api = {
   },
 
   friends: {
-      sendRequest: async (fromUid: string, toUid: string) => {
+      sendRequest: async (fromUid: string, toUid: string, message?: string) => {
          const response = await fetch(`${API_BASE}/friends/request`, {
              method: 'POST',
              headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ fromUid, toUid })
+             body: JSON.stringify({ fromUid, toUid, message })
          });
          if (!response.ok) throw new Error("Failed to send request");
       },

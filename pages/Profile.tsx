@@ -1,5 +1,5 @@
 import { calculateDistance } from '@/util/location';
-import { Ban, Check, ChevronRight, Clock, Edit2, Flag, Instagram, Loader2, LogOut, MapPin, MessageCircle, MoreVertical, Navigation, ShieldAlert, Sparkles, UserCheck, UserPlus, Users, X } from 'lucide-react';
+import { Ban, Briefcase, Check, ChevronRight, Clock, Edit2, Flag, Instagram, Loader2, LogOut, Mail, MapPin, MessageCircle, MoreVertical, Navigation, ShieldAlert, Sparkles, UserCheck, UserPlus, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useUserLocation } from '../components/LocationGuard';
@@ -27,6 +27,10 @@ export default function Profile() {
   const [relationship, setRelationship] = useState<'self' | 'friend' | 'sent' | 'received' | 'none'>('none');
   const [actionLoading, setActionLoading] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
+
+  // Request Message State
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [requestMessage, setRequestMessage] = useState('');
 
   // Friends List Modal State
   const [isFriendsModalOpen, setIsFriendsModalOpen] = useState(false);
@@ -152,8 +156,10 @@ export default function Profile() {
       if (!user || !profile) return;
       setActionLoading(true);
       try {
-          await api.friends.sendRequest(user.uid, profile.uid);
+          await api.friends.sendRequest(user.uid, profile.uid, requestMessage);
           setRelationship('sent');
+          setShowRequestModal(false);
+          setRequestMessage('');
       } catch (e) { console.error(e); }
       setActionLoading(false);
   };
@@ -168,7 +174,8 @@ export default function Profile() {
               setProfile(prev => prev ? ({
                   ...prev,
                   incomingRequests: prev.incomingRequests?.filter(id => id !== requesterUid),
-                  friends: [...(prev.friends || []), requesterUid]
+                  friends: [...(prev.friends || []), requesterUid],
+                  friendRequestMessages: { ...prev.friendRequestMessages, [requesterUid]: undefined } as any
               }) : null);
           } else {
               setRelationship('friend');
@@ -185,7 +192,8 @@ export default function Profile() {
               setFriendRequests(prev => prev.filter(r => r.uid !== requesterUid));
               setProfile(prev => prev ? ({
                   ...prev,
-                  incomingRequests: prev.incomingRequests?.filter(id => id !== requesterUid)
+                  incomingRequests: prev.incomingRequests?.filter(id => id !== requesterUid),
+                  friendRequestMessages: { ...prev.friendRequestMessages, [requesterUid]: undefined } as any
               }) : null);
           } else {
               setRelationship('none'); 
@@ -426,9 +434,19 @@ export default function Profile() {
             </div>
 
             <h1 className="text-3xl font-bold text-white tracking-tight">{profile.displayName}</h1>
-            <div className="flex items-center justify-center gap-1.5 mt-2 text-slate-400 font-medium">
-              <MapPin className="w-4 h-4 text-primary-500" />
-              <span>{locationName}</span>
+            
+            {/* Location & Job */}
+            <div className="flex flex-col items-center gap-1 mt-2">
+                {profile.jobRole && (
+                    <div className="flex items-center gap-1.5 text-slate-300 font-medium text-sm">
+                        <Briefcase className="w-3.5 h-3.5" />
+                        <span>{profile.jobRole}</span>
+                    </div>
+                )}
+                <div className="flex items-center gap-1.5 text-slate-400 font-medium text-sm">
+                    <MapPin className="w-3.5 h-3.5 text-primary-500" />
+                    <span>{locationName}</span>
+                </div>
             </div>
             
             {!isOwnProfile && distance && (
@@ -476,7 +494,7 @@ export default function Profile() {
                  <>
                    {relationship === 'none' && (
                        <button 
-                         onClick={handleSendRequest}
+                         onClick={() => setShowRequestModal(true)}
                          disabled={actionLoading}
                          className="inline-flex items-center gap-2 px-5 py-3 bg-primary-600 text-white rounded-2xl font-semibold text-sm hover:bg-primary-500 transition-colors active:scale-95 shadow-lg shadow-primary-500/20"
                        >
@@ -534,37 +552,48 @@ export default function Profile() {
                      <h2 className="text-sm font-bold text-orange-200 uppercase tracking-wider">Friend Requests</h2>
                  </div>
                  <div className="space-y-3">
-                     {friendRequests.map(reqUser => (
-                         <div key={reqUser.uid} className="flex items-center justify-between bg-slate-900 p-3 rounded-2xl shadow-sm border border-slate-800">
-                             <div 
-                               className="flex items-center gap-3 cursor-pointer"
-                               onClick={() => navigate(`/profile/${reqUser.uid}`)}
-                             >
-                                 <div className="w-10 h-10 rounded-full bg-slate-800 overflow-hidden">
-                                     {reqUser.photoURL ? (
-                                         <img src={reqUser.photoURL} alt={reqUser.displayName} className="w-full h-full object-cover" />
-                                     ) : (
-                                         <div className="w-full h-full flex items-center justify-center font-bold text-slate-500">{reqUser.displayName[0]}</div>
-                                     )}
+                     {friendRequests.map(reqUser => {
+                         const requestMsg = profile.friendRequestMessages?.[reqUser.uid];
+                         return (
+                             <div key={reqUser.uid} className="bg-slate-900 p-3 rounded-2xl shadow-sm border border-slate-800">
+                                 <div className="flex items-center justify-between">
+                                     <div 
+                                       className="flex items-center gap-3 cursor-pointer"
+                                       onClick={() => navigate(`/profile/${reqUser.uid}`)}
+                                     >
+                                         <div className="w-10 h-10 rounded-full bg-slate-800 overflow-hidden">
+                                             {reqUser.photoURL ? (
+                                                 <img src={reqUser.photoURL} alt={reqUser.displayName} className="w-full h-full object-cover" />
+                                             ) : (
+                                                 <div className="w-full h-full flex items-center justify-center font-bold text-slate-500">{reqUser.displayName[0]}</div>
+                                             )}
+                                         </div>
+                                         <span className="font-bold text-white text-sm">{reqUser.displayName}</span>
+                                     </div>
+                                     <div className="flex gap-2">
+                                         <button 
+                                           onClick={() => handleAcceptRequest(reqUser.uid)}
+                                           className="p-2 bg-primary-500 text-white rounded-xl hover:bg-primary-600 transition-colors"
+                                         >
+                                             <Check className="w-4 h-4" />
+                                         </button>
+                                         <button 
+                                           onClick={() => handleRejectRequest(reqUser.uid)}
+                                           className="p-2 bg-slate-800 text-slate-400 rounded-xl hover:bg-slate-700 transition-colors"
+                                         >
+                                             <X className="w-4 h-4" />
+                                         </button>
+                                     </div>
                                  </div>
-                                 <span className="font-bold text-white text-sm">{reqUser.displayName}</span>
+                                 {requestMsg && (
+                                     <div className="mt-2 bg-slate-800/50 p-2 rounded-xl text-xs text-slate-300 italic border border-slate-800/50 flex items-start gap-2">
+                                         <Mail className="w-3 h-3 mt-0.5 text-slate-500" />
+                                         <span>"{requestMsg}"</span>
+                                     </div>
+                                 )}
                              </div>
-                             <div className="flex gap-2">
-                                 <button 
-                                   onClick={() => handleAcceptRequest(reqUser.uid)}
-                                   className="p-2 bg-primary-500 text-white rounded-xl hover:bg-primary-600 transition-colors"
-                                 >
-                                     <Check className="w-4 h-4" />
-                                 </button>
-                                 <button 
-                                   onClick={() => handleRejectRequest(reqUser.uid)}
-                                   className="p-2 bg-slate-800 text-slate-400 rounded-xl hover:bg-slate-700 transition-colors"
-                                 >
-                                     <X className="w-4 h-4" />
-                                 </button>
-                             </div>
-                         </div>
-                     ))}
+                         );
+                     })}
                  </div>
                  <div className="h-px bg-slate-800 mt-6" />
              </div>
@@ -643,6 +672,40 @@ export default function Profile() {
              </div>
            )}
         </div>
+        
+        {/* Send Request Modal */}
+        {showRequestModal && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in">
+                <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowRequestModal(false)}></div>
+                <div className="bg-slate-900 w-full max-w-sm rounded-2xl shadow-2xl relative z-10 p-6 border border-slate-800 animate-slide-up">
+                    <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                        <UserPlus className="w-5 h-5 text-primary-500" /> Add Friend
+                    </h3>
+                    <p className="text-slate-400 text-sm mb-4">Add a message to introduce yourself (optional).</p>
+                    <textarea 
+                        className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm outline-none focus:border-primary-500 mb-4 h-24 resize-none placeholder-slate-500"
+                        placeholder="Hi! I saw we have similar interests..."
+                        value={requestMessage}
+                        onChange={(e) => setRequestMessage(e.target.value)}
+                    ></textarea>
+                    <div className="flex justify-end gap-2">
+                        <button 
+                            onClick={() => setShowRequestModal(false)}
+                            className="px-4 py-2 text-slate-400 font-medium text-sm hover:text-white"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            onClick={handleSendRequest}
+                            disabled={actionLoading}
+                            className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium text-sm hover:bg-primary-500 disabled:opacity-50 flex items-center gap-2"
+                        >
+                            {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Send Request"}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
 
         {/* Report Modal */}
         {reportModalOpen && (
