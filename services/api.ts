@@ -6,16 +6,20 @@ import { UserProfile, Post, Comment, Notification, Message, POPULAR_INTERESTS } 
  * Communicates with the Node.js/MongoDB backend.
  */
 
-const PORT = 5000;
+const PORT =  5000;
+
 const getBaseUrl = () => {
-    const { hostname } = window.location;
-    // If running on localhost or loopback, point to localhost
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        return `http://localhost:${PORT}/api`;
-    }
-    // If running on a network IP (e.g. 192.168.x.x) for mobile testing, try to reach server on that IP
-    return `http://${hostname}:${PORT}/api`;
+  const { hostname } = window.location;
+
+  // Local development
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return `http://localhost:5000/api`;
+  }
+
+  // Production (Elastic Beanstalk / any hosted env)
+  return `/api`;
 };
+
 
 const API_BASE = getBaseUrl();
 
