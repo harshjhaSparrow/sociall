@@ -6,7 +6,8 @@ import { UserProfile, POPULAR_INTERESTS, InterestTag } from '../types';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import { Camera, Instagram, Sparkles, ChevronLeft, User as UserIcon, Calendar, Shield, MapPin, CheckCircle, FileText, Briefcase } from 'lucide-react';
-import { compressImage } from '@/util/ImageCompression';
+import { compressImage } from '../util/ImageCompression';
+
 
 
 const STEPS = ['Legal', 'Basic Info', 'Socials', 'Interests'];
