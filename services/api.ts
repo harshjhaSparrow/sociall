@@ -21,7 +21,8 @@ const getBaseUrl = () => {
 };
 
 
-const API_BASE = getBaseUrl();
+//const API_BASE = getBaseUrl();
+const API_BASE = `http://sociall2-env.eba-xqgujdsm.ap-south-1.elasticbeanstalk.com/api`;
 
 export const api = {
   auth: {
@@ -229,7 +230,8 @@ export const api = {
     subscribe: (uid: string, onMessage: (msg: Message) => void) => {
         const { hostname, protocol } = window.location;
         const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${wsProtocol}//${hostname}:${PORT}?uid=${uid}`;
+        // const wsUrl = `${wsProtocol}//${hostname}:${PORT}?uid=${uid}`;
+        const wsUrl = `ws://sociall2-env.eba-xqgujdsm.ap-south-1.elasticbeanstalk.com/ws?uid=${uid}`;
         
         let socket: WebSocket | null = null;
         let keepAliveInterval: any;
