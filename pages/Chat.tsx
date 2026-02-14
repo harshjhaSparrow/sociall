@@ -1,22 +1,26 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { ChevronLeft, Loader2, Send, User as UserIcon, Users } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
-import { UserProfile, Message } from '../types';
-import { ChevronLeft, Send, Loader2, MoreVertical, RefreshCw, User as UserIcon } from 'lucide-react';
+import { Message, UserProfile } from '../types';
 
 const Chat: React.FC = () => {
-  const { uid } = useParams<{ uid: string }>(); // Friend's UID
+  const { uid, groupId } = useParams<{ uid?: string; groupId?: string }>(); 
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const [friend, setFriend] = useState<UserProfile | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [groupTitle, setGroupTitle] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
+  const isGroup = !!groupId;
+
   const scrollToBottom = (smooth = true) => {
     messagesEndRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
   };
@@ -28,20 +32,36 @@ const Chat: React.FC = () => {
 
   useEffect(() => {
     const init = async () => {
-      if (!uid || !user) return;
+      if (!user) return;
       try {
-        const friendProfile = await api.profile.get(uid);
-        if (!friendProfile) {
-            navigate('/');
-            return;
+        if (isGroup && groupId) {
+            // Group Mode: Fetch history AND group details to get title
+            const [history, groupData] = await Promise.all([
+                api.chat.getGroupHistory(groupId),
+                api.posts.getPost(groupId)
+            ]);
+            setMessages(history);
+            
+            if (groupData?.meetupDetails?.title) {
+                setGroupTitle(groupData.meetupDetails.title);
+            } else if (history.length > 0 && history[0].groupTitle) {
+                setGroupTitle(history[0].groupTitle);
+            } else {
+                setGroupTitle("Group Chat");
+            }
+
+        } else if (uid) {
+            // 1:1 Mode
+            const friendProfile = await api.profile.get(uid);
+            if (!friendProfile) {
+                navigate('/');
+                return;
+            }
+            setFriend(friendProfile);
+            const history = await api.chat.getHistory(user.uid, uid);
+            setMessages(history);
+            await api.chat.markRead(user.uid, uid);
         }
-        setFriend(friendProfile);
-
-        const history = await api.chat.getHistory(user.uid, uid);
-        setMessages(history);
-
-        // Mark as read
-        await api.chat.markRead(user.uid, uid);
       } catch (e) {
         console.error(e);
       } finally {
@@ -49,44 +69,46 @@ const Chat: React.FC = () => {
       }
     };
     init();
-  }, [uid, user, navigate]);
+  }, [uid, groupId, user, navigate, isGroup]);
 
   // Real-time Subscription
   useEffect(() => {
-      if (!user || !uid) return;
+      if (!user) return;
       
       const unsubscribe = api.chat.subscribe(user.uid, (newMsg: Message) => {
-          // Check if message belongs to this conversation
-          const isRelevant = 
-             (newMsg.fromUid === uid && newMsg.toUid === user.uid) || 
-             (newMsg.fromUid === user.uid && newMsg.toUid === uid);
+          let isRelevant = false;
+
+          if (isGroup && groupId) {
+              isRelevant = newMsg.groupId === groupId;
+          } else if (uid) {
+              isRelevant = 
+                 (newMsg.fromUid === uid && newMsg.toUid === user.uid) || 
+                 (newMsg.fromUid === user.uid && newMsg.toUid === uid);
+          }
              
           if (isRelevant) {
               setMessages(prev => {
-                  // Prevent duplicates if backend sends echo (though our backend sends to both)
                   if (prev.some(m => m._id === newMsg._id)) return prev;
                   return [...prev, newMsg];
               });
               
-              // If the new message is from the friend, mark it read immediately while chat is open
-              if (newMsg.fromUid === uid) {
+              if (!isGroup && uid && newMsg.fromUid === uid) {
                   api.chat.markRead(user.uid, uid).catch(console.error);
               }
           }
       });
       
       return () => unsubscribe();
-  }, [user, uid]);
+  }, [user, uid, groupId, isGroup]);
 
   const handleSend = async () => {
-      if (!text.trim() || !user || !uid) return;
+      if (!text.trim() || !user) return;
       setSending(true);
       const msgText = text.trim();
       setText(''); // Optimistic clear
 
       try {
-          const sentMsg = await api.chat.send(user.uid, uid, msgText);
-          // Backend SSE will likely deliver it back, but let's add it optimistically if id is unique
+          const sentMsg = await api.chat.send(user.uid, uid, msgText, groupId);
           setMessages(prev => {
               if (prev.some(m => m._id === sentMsg._id)) return prev;
               return [...prev, sentMsg];
@@ -107,7 +129,7 @@ const Chat: React.FC = () => {
       );
   }
 
-  if (!friend) return null;
+  if (!isGroup && !friend) return null;
 
   return (
       <div className="flex flex-col h-[100dvh] bg-slate-950">
@@ -122,20 +144,29 @@ const Chat: React.FC = () => {
               
               <div 
                 className="flex items-center gap-3 ml-1 flex-1 cursor-pointer"
-                onClick={() => navigate(`/profile/${uid}`)}
+                onClick={() => !isGroup && friend && navigate(`/profile/${uid}`)}
               >
-                  <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 overflow-hidden shrink-0">
-                      {friend.photoURL ? (
-                          <img src={friend.photoURL} alt={friend.displayName} className="w-full h-full object-cover" />
-                      ) : (
-                          <div className="w-full h-full flex items-center justify-center font-bold text-slate-500">
-                             {friend.displayName[0]}
-                          </div>
-                      )}
-                  </div>
+                  {isGroup ? (
+                      <div className="w-10 h-10 rounded-full bg-primary-900/50 border border-primary-500/30 flex items-center justify-center text-primary-400">
+                          <Users className="w-5 h-5" />
+                      </div>
+                  ) : (
+                      <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 overflow-hidden shrink-0">
+                          {friend?.photoURL ? (
+                              <img src={friend.photoURL} alt={friend.displayName} className="w-full h-full object-cover" />
+                          ) : (
+                              <div className="w-full h-full flex items-center justify-center font-bold text-slate-500">
+                                 {friend?.displayName[0]}
+                              </div>
+                          )}
+                      </div>
+                  )}
+                  
                   <div>
-                      <h2 className="font-bold text-white text-base leading-tight">{friend.displayName}</h2>
-                      <p className="text-xs text-slate-500">Tap to view profile</p>
+                      <h2 className="font-bold text-white text-base leading-tight">
+                          {isGroup ? (groupTitle || "Group Chat") : friend?.displayName}
+                      </h2>
+                      {!isGroup && <p className="text-xs text-slate-500">Tap to view profile</p>}
                   </div>
               </div>
           </div>
@@ -145,7 +176,7 @@ const Chat: React.FC = () => {
               {messages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-2 opacity-50">
                       <div className="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center">
-                          <UserIcon className="w-8 h-8" />
+                          {isGroup ? <Users className="w-8 h-8" /> : <UserIcon className="w-8 h-8" />}
                       </div>
                       <p className="text-sm">Start the conversation!</p>
                   </div>
@@ -159,26 +190,34 @@ const Chat: React.FC = () => {
                             key={msg._id} 
                             className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}
                           >
-                              <div className={`flex max-w-[80%] ${isMe ? 'items-end' : 'items-end gap-2'}`}>
-                                  {!isMe && (
-                                      <div className="w-6 h-6 rounded-full bg-slate-800 overflow-hidden shrink-0 mb-1 opacity-80">
-                                          {showAvatar && (
-                                              friend.photoURL ? (
-                                                  <img src={friend.photoURL} className="w-full h-full object-cover" />
-                                              ) : (
-                                                  <div className="w-full h-full flex items-center justify-center text-[8px] font-bold text-slate-500">{friend.displayName[0]}</div>
-                                              )
-                                          )}
-                                      </div>
+                              <div className={`flex max-w-[80%] flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                                  {isGroup && !isMe && showAvatar && (
+                                      <span className="text-[10px] text-slate-500 ml-9 mb-0.5">{msg.authorName || 'User'}</span>
                                   )}
                                   
-                                  <div className={`
-                                      px-4 py-2.5 rounded-2xl text-sm leading-relaxed break-words shadow-sm
-                                      ${isMe 
-                                          ? 'bg-primary-600 text-white rounded-br-none' 
-                                          : 'bg-slate-800 text-slate-200 rounded-bl-none border border-slate-700'}
-                                  `}>
-                                      {msg.text}
+                                  <div className={`flex ${isMe ? 'items-end' : 'items-end gap-2'}`}>
+                                      {!isMe && (
+                                          <div className="w-6 h-6 rounded-full bg-slate-800 overflow-hidden shrink-0 mb-1 opacity-80 border border-slate-700">
+                                              {showAvatar && (
+                                                  (isGroup ? msg.authorPhoto : friend?.photoURL) ? (
+                                                      <img src={isGroup ? msg.authorPhoto : friend?.photoURL} className="w-full h-full object-cover" />
+                                                  ) : (
+                                                      <div className="w-full h-full flex items-center justify-center text-[8px] font-bold text-slate-500">
+                                                          {(isGroup ? msg.authorName : friend?.displayName)?.[0] || '?'}
+                                                      </div>
+                                                  )
+                                              )}
+                                          </div>
+                                      )}
+                                      
+                                      <div className={`
+                                          px-4 py-2.5 rounded-2xl text-sm leading-relaxed break-words shadow-sm
+                                          ${isMe 
+                                              ? 'bg-primary-600 text-white rounded-br-none' 
+                                              : 'bg-slate-800 text-slate-200 rounded-bl-none border border-slate-700'}
+                                      `}>
+                                          {msg.text}
+                                      </div>
                                   </div>
                               </div>
                           </div>

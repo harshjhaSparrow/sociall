@@ -31,11 +31,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
       if (user) {
         try {
           const profile = await api.profile.get(user.uid);
+          // A profile is considered "complete" (onboarded) if it exists AND has interests selected.
           const isOnboarded = !!profile && Array.isArray(profile.interests) && profile.interests.length > 0;
           setHasProfile(isOnboarded);
         } catch (e) {
           console.error("Error checking profile", e);
-          setHasProfile(false);
         } finally {
           setProfileChecked(true);
         }
@@ -91,8 +91,17 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } />
 
-        {/* Chat - Isolated (No Bottom Menu) */}
+        {/* Direct Chat - Isolated */}
         <Route path="/chat/:uid" element={
+          <ProtectedRoute>
+            <LocationGuard>
+               <Chat />
+            </LocationGuard>
+          </ProtectedRoute>
+        } />
+
+        {/* Group Chat - Isolated */}
+        <Route path="/chat/group/:groupId" element={
           <ProtectedRoute>
             <LocationGuard>
                <Chat />

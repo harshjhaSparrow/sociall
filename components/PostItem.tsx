@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Post } from '../types';
-import { Heart, MessageCircle, Send, Trash2, Edit, Loader2, MapPin, Navigation } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Heart, MessageCircle, Send, Trash2, Edit, Loader2, MapPin, Navigation, Calendar, Clock, DollarSign, PartyPopper, Users, ExternalLink, Check, UserPlus, ArrowRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useUserLocation } from './LocationGuard';
-import { calculateDistance } from '@/util/location';
+import { api } from '../services/api';
+import { calculateDistance } from '../util/location';
 
 interface PostItemProps {
   post: Post;
@@ -22,29 +23,33 @@ const PostItem: React.FC<PostItemProps> = ({
   onDelete, 
   onEdit 
 }) => {
+  const navigate = useNavigate();
   const { location: myLocation } = useUserLocation();
   const [showAllComments, setShowAllComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
+  const [joinLoading, setJoinLoading] = useState(false);
+  const [requestSent, setRequestSent] = useState(false); // Local optimistic state
 
   const isLiked = currentUserId && post.likedBy?.includes(currentUserId);
   const commentCount = post.comments?.length || 0;
   
-  // Logic to determine which comments to show:
-  // If showAll is false, show ONLY the last comment (if exists).
-  // If showAll is true, show all.
   const hasComments = commentCount > 0;
   const commentsToShow = showAllComments 
       ? post.comments 
       : (hasComments ? [post.comments![post.comments!.length - 1]] : []);
 
+  const isMeetup = post.type === 'meetup' && post.meetupDetails;
+  const isHost = currentUserId === post.uid;
+  const isAttendee = currentUserId && post.attendees?.includes(currentUserId);
+  const isPending = currentUserId && post.pendingRequests?.includes(currentUserId);
+  
   const handleSubmitComment = async () => {
     if (!post._id || !commentText.trim()) return;
     setSubmittingComment(true);
     try {
       await onAddComment(post._id, commentText);
       setCommentText('');
-      // If we add a comment, expand to show all so the user sees theirs
       setShowAllComments(true);
     } catch (error) {
       console.error("Failed to add comment", error);
@@ -53,12 +58,33 @@ const PostItem: React.FC<PostItemProps> = ({
     }
   };
 
+  const handleJoinRequest = async () => {
+      if (!currentUserId || !post._id) return;
+      setJoinLoading(true);
+      try {
+          await api.meetups.join(post._id, currentUserId);
+          setRequestSent(true);
+      } catch (e) {
+          console.error("Join failed", e);
+      } finally {
+          setJoinLoading(false);
+      }
+  };
+
   const distance = (post.location && myLocation) 
     ? calculateDistance(myLocation.lat, myLocation.lng, post.location.lat, post.location.lng)
     : null;
 
   return (
-    <div className="bg-slate-900 rounded-3xl shadow-sm border border-slate-800 overflow-hidden relative">
+    <div className={`bg-slate-900 rounded-3xl shadow-sm border overflow-hidden relative ${isMeetup ? 'border-primary-900/50' : 'border-slate-800'}`}>
+      
+      {/* Meetup Badge */}
+      {isMeetup && (
+          <div className="absolute top-0 right-0 bg-primary-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10 uppercase tracking-wide flex items-center gap-1">
+              <PartyPopper className="w-3 h-3" /> Meet Up
+          </div>
+      )}
+
       {/* Post Header */}
       <div className="p-4 flex items-center justify-between">
         <Link to={`/profile/${post.uid}`} className="flex items-center gap-3 group">
@@ -90,7 +116,6 @@ const PostItem: React.FC<PostItemProps> = ({
         
         {/* Action Buttons */}
         <div className="flex items-center gap-1">
-          {/* Distance Indicator */}
           {distance && (
             <div className="mr-2 flex items-center gap-1 text-xs font-bold text-primary-400 bg-primary-500/10 px-2 py-1 rounded-full border border-primary-500/20">
               <Navigation className="w-3 h-3 fill-current" />
@@ -119,21 +144,126 @@ const PostItem: React.FC<PostItemProps> = ({
         </div>
       </div>
 
-      {/* Post Image */}
-      {post.imageURL && (
-        <div className="w-full aspect-square bg-slate-950">
-          <img src={post.imageURL} alt="Post" className="w-full h-full object-cover" />
-        </div>
+      {/* MEETUP CARD DESIGN */}
+      {isMeetup ? (
+          <div className="px-4 pb-2">
+              {/* Image (Optional for meetup, if present) */}
+              {post.imageURL && (
+                <div className="w-full h-48 bg-slate-950 rounded-2xl overflow-hidden mb-4 border border-slate-800">
+                  <img src={post.imageURL} alt="Meetup" className="w-full h-full object-cover" />
+                </div>
+              )}
+
+              <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700/50 relative overflow-hidden">
+                  {/* Decorative background circle */}
+                  <div className="absolute -right-10 -top-10 w-32 h-32 bg-primary-500/10 rounded-full blur-2xl"></div>
+
+                  <h2 className="text-xl font-bold text-white mb-1">{post.meetupDetails?.title}</h2>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-700/50 text-primary-400 text-xs font-bold mb-4 border border-slate-700">
+                      <PartyPopper className="w-3 h-3" /> {post.meetupDetails?.activity}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="flex items-center gap-2 text-sm text-slate-300">
+                          <div className="p-1.5 bg-slate-700 rounded-lg text-slate-400">
+                              <Calendar className="w-4 h-4" />
+                          </div>
+                          <span className="font-medium">{new Date(post.meetupDetails!.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-slate-300">
+                          <div className="p-1.5 bg-slate-700 rounded-lg text-slate-400">
+                              <Clock className="w-4 h-4" />
+                          </div>
+                          <span className="font-medium">{post.meetupDetails?.startTime} - {post.meetupDetails?.endTime}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-slate-300">
+                          <div className="p-1.5 bg-slate-700 rounded-lg text-slate-400">
+                              <DollarSign className="w-4 h-4" />
+                          </div>
+                          <span className="font-medium truncate">{post.meetupDetails?.feeType}</span>
+                      </div>
+                      {post.meetupDetails?.maxGuests && (
+                          <div className="flex items-center gap-2 text-sm text-slate-300">
+                              <div className="p-1.5 bg-slate-700 rounded-lg text-slate-400">
+                                  <Users className="w-4 h-4" />
+                              </div>
+                              <span className="font-medium">{post.meetupDetails.maxGuests} Guests Max</span>
+                          </div>
+                      )}
+                  </div>
+
+                  <p className="text-slate-400 text-sm leading-relaxed mb-4 border-t border-slate-700/50 pt-3">
+                      {post.content}
+                  </p>
+
+                  {post.meetupDetails?.meetingUrl && (
+                      <a 
+                        href={post.meetupDetails.meetingUrl} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm font-medium mb-4 break-all"
+                      >
+                          <ExternalLink className="w-4 h-4 flex-shrink-0" />
+                          {post.meetupDetails.meetingUrl}
+                      </a>
+                  )}
+
+                  {/* Join / Status Button */}
+                  {!isHost ? (
+                      <>
+                        {isAttendee ? (
+                            <button 
+                                onClick={() => navigate(`/chat/group/${post._id}`)}
+                                className="w-full py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors shadow-lg shadow-green-500/20 active:scale-95"
+                            >
+                                <MessageCircle className="w-4 h-4" />
+                                Open Group Chat
+                            </button>
+                        ) : (isPending || requestSent) ? (
+                            <button disabled className="w-full py-3 bg-slate-700 text-slate-400 rounded-xl font-bold text-sm flex items-center justify-center gap-2 cursor-not-allowed border border-slate-600">
+                                <Clock className="w-4 h-4" />
+                                Request Pending
+                            </button>
+                        ) : (
+                            <button 
+                                onClick={handleJoinRequest}
+                                disabled={joinLoading}
+                                className="w-full py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors shadow-lg shadow-primary-500/20 active:scale-95"
+                            >
+                                {joinLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                                Request to Join
+                            </button>
+                        )}
+                      </>
+                  ) : (
+                      <button 
+                        onClick={() => navigate(`/post/${post._id}`)}
+                        className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors border border-slate-600"
+                      >
+                          Manage Guests {post.pendingRequests?.length ? `(${post.pendingRequests.length})` : ''}
+                      </button>
+                  )}
+              </div>
+          </div>
+      ) : (
+          /* REGULAR POST DESIGN */
+          <>
+            {post.imageURL && (
+                <div className="w-full aspect-square bg-slate-950">
+                <img src={post.imageURL} alt="Post" className="w-full h-full object-cover" />
+                </div>
+            )}
+            <div className="p-4">
+                <p className="text-slate-300 text-sm leading-relaxed mb-3">
+                {post.content}
+                </p>
+            </div>
+          </>
       )}
 
-      {/* Post Content */}
-      <div className="p-4">
-        <p className="text-slate-300 text-sm leading-relaxed mb-3">
-          {post.content}
-        </p>
-        
-        {/* Actions */}
-        <div className="flex items-center gap-4 pt-2 border-t border-slate-800 mt-4 mb-3">
+      {/* Common Footer Actions */}
+      <div className="px-4 pb-4">
+        <div className={`flex items-center gap-4 pt-2 ${isMeetup ? '' : 'border-t border-slate-800'}`}>
           <button 
             onClick={() => onLike(post)}
             className={`flex items-center gap-1.5 transition-colors group py-2 ${isLiked ? 'text-primary-500' : 'text-slate-500 hover:text-primary-500'}`}
@@ -151,8 +281,7 @@ const PostItem: React.FC<PostItemProps> = ({
         </div>
 
         {/* Comments Section */}
-        <div className="space-y-3">
-            {/* View All Button */}
+        <div className="space-y-3 mt-1">
             {!showAllComments && commentCount > 1 && (
                 <button 
                     onClick={() => setShowAllComments(true)}
@@ -162,7 +291,6 @@ const PostItem: React.FC<PostItemProps> = ({
                 </button>
             )}
 
-            {/* Comment List (Shows only latest if !showAllComments) */}
             {commentsToShow && commentsToShow.length > 0 && (
                 <div className="space-y-3">
                     {commentsToShow.map((comment, idx) => (
@@ -185,12 +313,11 @@ const PostItem: React.FC<PostItemProps> = ({
                 </div>
             )}
 
-            {/* Input - Always visible if user wants to engage */}
             <div className="flex items-center gap-2 pt-2">
                 <input 
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  placeholder="Add a comment..."
+                  placeholder={isMeetup ? "Ask a question..." : "Add a comment..."}
                   className="flex-1 bg-transparent border-b border-slate-800 py-2 text-sm text-white focus:border-primary-500 outline-none placeholder-slate-600 transition-colors"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
