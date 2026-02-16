@@ -18,7 +18,6 @@ const getBaseUrl = () => {
 };
 
 const API_BASE = getBaseUrl();
-// const API_BASE = `http://sociall2-env.eba-xqgujdsm.ap-south-1.elasticbeanstalk.com/api`;
 
 export const api = {
   auth: {
@@ -195,7 +194,15 @@ export const api = {
               body: JSON.stringify({ hostUid, requesterUid })
           });
           if (!response.ok) throw new Error("Failed to reject request");
-      }
+      },
+      removeAttendee: async (postId: string, hostUid: string, targetUid: string) => {
+          const response = await fetch(`${API_BASE}/meetups/${postId}/remove-attendee`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ hostUid, targetUid })
+          });
+          if (!response.ok) throw new Error("Failed to remove attendee");
+      },
   },
 
   chat: {
@@ -221,7 +228,7 @@ export const api = {
     },
     getGroupHistory: async (groupId: string): Promise<Message[]> => {
         try {
-            const response = await fetch(`${API_BASE}/chat/history/group/${groupId}`);
+            const response = await fetch(`${API_BASE}/chat/history/${groupId}`);
             if (!response.ok) return [];
             return await response.json();
         } catch (error) {
@@ -264,7 +271,6 @@ export const api = {
         const { hostname, protocol } = window.location;
         const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${wsProtocol}//${hostname}:${PORT}?uid=${uid}`;
-      // const wsUrl = `ws://sociall2-env.eba-xqgujdsm.ap-south-1.elasticbeanstalk.com/ws?uid=${uid}`;
         
         let socket: WebSocket | null = null;
         let keepAliveInterval: any;

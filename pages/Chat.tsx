@@ -1,15 +1,14 @@
-import { ChevronLeft, Loader2, Send, User as UserIcon, Users } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
-import { Message, UserProfile } from '../types';
+import { UserProfile, Message, Post } from '../types';
+import { ChevronLeft, Send, Loader2, User as UserIcon, Users, X, Trash2, Crown } from 'lucide-react';
 
 const Chat: React.FC = () => {
   const { uid, groupId } = useParams<{ uid?: string; groupId?: string }>(); 
   const { user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   
   const [friend, setFriend] = useState<UserProfile | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -17,6 +16,12 @@ const Chat: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [groupTitle, setGroupTitle] = useState('');
+  
+  // Group Info State
+  const [groupPost, setGroupPost] = useState<Post | null>(null);
+  const [members, setMembers] = useState<UserProfile[]>([]);
+  const [showGroupInfo, setShowGroupInfo] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const isGroup = !!groupId;
@@ -35,19 +40,30 @@ const Chat: React.FC = () => {
       if (!user) return;
       try {
         if (isGroup && groupId) {
-            // Group Mode: Fetch history AND group details to get title
+            // Group Mode: Fetch history AND group details
             const [history, groupData] = await Promise.all([
                 api.chat.getGroupHistory(groupId),
                 api.posts.getPost(groupId)
             ]);
             setMessages(history);
+            setGroupPost(groupData);
             
-            if (groupData?.meetupDetails?.title) {
-                setGroupTitle(groupData.meetupDetails.title);
-            } else if (history.length > 0 && history[0].groupTitle) {
-                setGroupTitle(history[0].groupTitle);
+            if (groupData) {
+                // Fetch members
+                const allMemberIds = [groupData.uid, ...(groupData.attendees || [])];
+                const uniqueIds = Array.from(new Set(allMemberIds));
+                const profiles = await api.profile.getBatch(uniqueIds);
+                setMembers(profiles);
+
+                if (groupData.meetupDetails?.title) {
+                    setGroupTitle(groupData.meetupDetails.title);
+                } else if (history.length > 0 && history[0].groupTitle) {
+                    setGroupTitle(history[0].groupTitle);
+                } else {
+                    setGroupTitle("Group Chat");
+                }
             } else {
-                setGroupTitle("Group Chat");
+                 setGroupTitle("Group Chat");
             }
 
         } else if (uid) {
@@ -121,6 +137,26 @@ const Chat: React.FC = () => {
       }
   };
 
+  const handleRemoveMember = async (targetUid: string) => {
+      if (!user || !groupPost || !isGroup) return;
+      
+      if (confirm("Remove this user from the group?")) {
+          try {
+              await api.meetups.removeAttendee(groupPost._id!, user.uid, targetUid);
+              
+              // Update local state
+              setMembers(prev => prev.filter(m => m.uid !== targetUid));
+              setGroupPost(prev => prev ? ({
+                  ...prev,
+                  attendees: prev.attendees?.filter(id => id !== targetUid)
+              }) : null);
+              
+          } catch (e) {
+              alert("Failed to remove user");
+          }
+      }
+  };
+
   if (loading) {
       return (
           <div className="h-[100dvh] flex items-center justify-center bg-slate-950">
@@ -132,7 +168,7 @@ const Chat: React.FC = () => {
   if (!isGroup && !friend) return null;
 
   return (
-      <div className="flex flex-col h-[100dvh] bg-slate-950">
+      <div className="flex flex-col h-[100dvh] bg-slate-950 relative">
           {/* Header */}
           <div className="flex items-center px-4 py-3 bg-slate-900 border-b border-slate-800 shadow-sm shrink-0 sticky top-0 z-10">
               <button 
@@ -144,7 +180,13 @@ const Chat: React.FC = () => {
               
               <div 
                 className="flex items-center gap-3 ml-1 flex-1 cursor-pointer"
-                onClick={() => !isGroup && friend && navigate(`/profile/${uid}`)}
+                onClick={() => {
+                    if (isGroup) {
+                        setShowGroupInfo(true);
+                    } else if (friend) {
+                        navigate(`/profile/${uid}`);
+                    }
+                }}
               >
                   {isGroup ? (
                       <div className="w-10 h-10 rounded-full bg-primary-900/50 border border-primary-500/30 flex items-center justify-center text-primary-400">
@@ -166,7 +208,9 @@ const Chat: React.FC = () => {
                       <h2 className="font-bold text-white text-base leading-tight">
                           {isGroup ? (groupTitle || "Group Chat") : friend?.displayName}
                       </h2>
-                      {!isGroup && <p className="text-xs text-slate-500">Tap to view profile</p>}
+                      <p className="text-xs text-slate-500">
+                          {isGroup ? 'Tap for Group Info' : 'Tap to view profile'}
+                      </p>
                   </div>
               </div>
           </div>
@@ -251,6 +295,105 @@ const Chat: React.FC = () => {
                   </button>
               </div>
           </div>
+
+          {/* Group Info Modal */}
+          {showGroupInfo && groupPost && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in">
+                  <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowGroupInfo(false)}></div>
+                  <div className="bg-slate-900 w-full max-w-sm rounded-3xl shadow-2xl relative z-10 flex flex-col max-h-[80vh] animate-slide-up border border-slate-800">
+                      
+                      {/* Modal Header */}
+                      <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+                          <h3 className="font-bold text-xl text-white">Group Info</h3>
+                          <button onClick={() => setShowGroupInfo(false)} className="p-2 -mr-2 text-slate-400 hover:text-white">
+                              <X className="w-6 h-6" />
+                          </button>
+                      </div>
+
+                      {/* Modal Content */}
+                      <div className="overflow-y-auto p-4 flex-1 no-scrollbar space-y-6">
+                           
+                           {/* Host Section */}
+                           <div>
+                               <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-2">Host</h4>
+                               {members.filter(m => m.uid === groupPost.uid).map(host => (
+                                   <div key={host.uid} className="flex items-center gap-3 p-3 rounded-2xl bg-slate-800/50 border border-slate-800">
+                                       <div className="w-12 h-12 rounded-full bg-slate-800 overflow-hidden shrink-0 border-2 border-primary-500/50">
+                                            {host.photoURL ? (
+                                                <img src={host.photoURL} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center font-bold text-slate-500">{host.displayName[0]}</div>
+                                            )}
+                                       </div>
+                                       <div className="flex-1">
+                                           <div className="flex items-center gap-1.5">
+                                               <span className="font-bold text-white">{host.displayName}</span>
+                                               <Crown className="w-3.5 h-3.5 text-primary-500 fill-current" />
+                                           </div>
+                                           <p className="text-xs text-slate-400">Event Organizer</p>
+                                       </div>
+                                       <button 
+                                          onClick={() => navigate(`/profile/${host.uid}`)}
+                                          className="text-xs bg-slate-800 px-3 py-1.5 rounded-lg text-slate-300 hover:text-white transition-colors"
+                                       >
+                                           View
+                                       </button>
+                                   </div>
+                               ))}
+                           </div>
+
+                           {/* Attendees Section */}
+                           <div>
+                               <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-2 flex justify-between">
+                                   <span>Members</span>
+                                   <span className="text-slate-600">{members.length - 1}</span>
+                               </h4>
+                               
+                               <div className="space-y-2">
+                                   {members.filter(m => m.uid !== groupPost.uid).length === 0 ? (
+                                       <p className="text-slate-500 text-sm px-2 italic">No other members yet.</p>
+                                   ) : (
+                                       members.filter(m => m.uid !== groupPost.uid).map(member => (
+                                           <div key={member.uid} className="flex items-center gap-3 p-3 rounded-2xl bg-slate-800 border border-slate-700">
+                                               <div className="w-10 h-10 rounded-full bg-slate-900 overflow-hidden shrink-0">
+                                                    {member.photoURL ? (
+                                                        <img src={member.photoURL} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center font-bold text-slate-500 text-xs">{member.displayName[0]}</div>
+                                                    )}
+                                               </div>
+                                               <div className="flex-1 min-w-0">
+                                                   <span className="font-bold text-white text-sm block truncate">{member.displayName}</span>
+                                               </div>
+                                               
+                                               <div className="flex items-center gap-2">
+                                                   <button 
+                                                      onClick={() => navigate(`/profile/${member.uid}`)}
+                                                      className="text-xs bg-slate-900 px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition-colors border border-slate-700"
+                                                   >
+                                                       View
+                                                   </button>
+                                                   
+                                                   {/* Host Actions: Remove Member */}
+                                                   {user && user.uid === groupPost.uid && (
+                                                       <button 
+                                                           onClick={() => handleRemoveMember(member.uid)}
+                                                           className="p-1.5 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500 hover:text-white transition-colors"
+                                                           title="Remove from group"
+                                                       >
+                                                           <Trash2 className="w-4 h-4" />
+                                                       </button>
+                                                   )}
+                                               </div>
+                                           </div>
+                                       ))
+                                   )}
+                               </div>
+                           </div>
+                      </div>
+                  </div>
+              </div>
+          )}
       </div>
   );
 };

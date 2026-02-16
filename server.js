@@ -644,6 +644,26 @@ app.post('/api/meetups/:id/reject', async (req, res) => {
     }
 });
 
+app.post('/api/meetups/:id/remove-attendee', async (req, res) => {
+    if (!db) return res.status(503).json({ error: "Database not connected" });
+    try {
+        const postId = req.params.id;
+        const { hostUid, targetUid } = req.body;
+        if (!ObjectId.isValid(postId)) return res.status(400).json({ error: "Invalid ID" });
+        const posts = db.collection('posts');
+        const post = await posts.findOne({ _id: new ObjectId(postId) });
+        if (!post) return res.status(404).json({ error: "Meetup not found" });
+        if (post.uid !== hostUid) return res.status(403).json({ error: "Unauthorized" });
+        
+        await posts.updateOne({ _id: new ObjectId(postId) }, { 
+            $pull: { attendees: targetUid } 
+        });
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: "Failed to remove attendee" });
+    }
+});
+
 app.get('/api/notifications/:uid', async (req, res) => {
     if (!db) return res.status(503).json({ error: "Database not connected" });
     try {
@@ -725,12 +745,24 @@ app.get('/api/chat/history/:uid1/:uid2', async (req, res) => {
   }
 });
 
-app.get('/api/chat/history/group/:groupId', async (req, res) => {
+app.get('/api/chat/history/:groupId', async (req, res) => {
     if (!db) return res.status(503).json({ error: "Database not connected" });
     try {
         const { groupId } = req.params;
         const messages = db.collection('messages');
-        const history = await messages.find({ groupId: String(groupId) }).sort({ createdAt: 1 }).toArray();
+        
+        // Support both string and ObjectId storage for robustness
+        let query = { groupId: String(groupId) };
+        if (ObjectId.isValid(groupId)) {
+            query = { 
+                $or: [
+                    { groupId: String(groupId) },
+                    { groupId: new ObjectId(groupId) }
+                ]
+            };
+        }
+
+        const history = await messages.find(query).sort({ createdAt: 1 }).toArray();
         res.json(history);
     } catch (e) {
         res.status(500).json({ error: "Failed to fetch group history" });
@@ -765,12 +797,19 @@ app.get('/api/chat/inbox/:uid', async (req, res) => {
     }).project({ _id: 1, meetupDetails: 1, createdAt: 1 }).toArray();
     
     const groupIds = userGroups.map(g => g._id.toString());
+    const groupObjectIds = userGroups.map(g => g._id);
     
-    // Get actual last messages for these groups
+    // Get actual last messages for these groups, robust against ID type
     const groupPipeline = [
-        { $match: { groupId: { $in: groupIds } } },
+        { $match: { 
+            $or: [
+                { groupId: { $in: groupIds } },
+                { groupId: { $in: groupObjectIds } }
+            ]
+        } },
         { $sort: { createdAt: -1 } },
-        { $group: { _id: "$groupId", lastMessage: { $first: "$$ROOT" } } }
+        // Normalize groupId to string for grouping to avoid duplicate entries for same group
+        { $group: { _id: { $toString: "$groupId" }, lastMessage: { $first: "$$ROOT" } } }
     ];
 
     const [directChats, groupMessages] = await Promise.all([
