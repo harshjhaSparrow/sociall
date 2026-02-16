@@ -3,34 +3,20 @@ import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet/dist/leaflet.css";
 
-import {
-  ChevronRight,
-  Loader2,
-  User,
-  X
-} from "lucide-react";
+import { ChevronRight, Loader2, User, X } from "lucide-react";
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-import {
-  MapContainer,
-  Marker,
-  TileLayer,
-  useMap,
-} from "react-leaflet";
+import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 
 import { calculateDistance } from "@/util/location";
+import { Instagram } from "lucide-react";
 import MarkerClusterGroup from "react-leaflet-markercluster";
 import { useNavigate } from "react-router-dom";
 import { useUserLocation } from "../components/LocationGuard";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";
-import { UserProfile } from "../types";
+import { POPULAR_INTERESTS, UserProfile } from "../types";
 
 /* -------------------- TYPES -------------------- */
 
@@ -54,10 +40,7 @@ const getDistanceMeters = (
   const Δλ = ((lng2 - lng1) * Math.PI) / 180;
 
   const a =
-    Math.sin(Δφ / 2) ** 2 +
-    Math.cos(φ1) *
-      Math.cos(φ2) *
-      Math.sin(Δλ / 2) ** 2;
+    Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
@@ -65,9 +48,7 @@ const getDistanceMeters = (
 
 /* -------------------- MAP CLICK HANDLER -------------------- */
 
-const MapEventHandler: React.FC<{ onClick: () => void }> = ({
-  onClick,
-}) => {
+const MapEventHandler: React.FC<{ onClick: () => void }> = ({ onClick }) => {
   const map = useMap();
 
   useEffect(() => {
@@ -89,20 +70,15 @@ const MapPage: React.FC = () => {
 
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedUser, setSelectedUser] =
-    useState<NearbyUser | null>(null);
-  const [isListOpen, setIsListOpen] =
-    useState(false);
+  const [selectedUser, setSelectedUser] = useState<NearbyUser | null>(null);
+  const [isListOpen, setIsListOpen] = useState(false);
 
   /* ---------------- FETCH USERS ---------------- */
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const data =
-          await api.profile.getAllWithLocation(
-            currentUser?.uid,
-          );
+        const data = await api.profile.getAllWithLocation(currentUser?.uid);
         setUsers(data);
       } catch (e) {
         console.error("Failed to load map users", e);
@@ -120,11 +96,7 @@ const MapPage: React.FC = () => {
     if (!myLocation) return [];
 
     return users
-      .filter(
-        (u) =>
-          u.uid !== currentUser?.uid &&
-          u.lastLocation,
-      )
+      .filter((u) => u.uid !== currentUser?.uid && u.lastLocation)
       .map((u) => {
         const distMeters = getDistanceMeters(
           myLocation.lat,
@@ -132,25 +104,18 @@ const MapPage: React.FC = () => {
           u.lastLocation!.lat,
           u.lastLocation!.lng,
         );
-
         const distDisplay = calculateDistance(
           myLocation.lat,
           myLocation.lng,
           u.lastLocation!.lat,
           u.lastLocation!.lng,
         );
-
-        return {
-          ...u,
-          distMeters,
-          distDisplay,
-        };
+        return { ...u, distMeters, distDisplay };
       })
-      .sort(
-        (a, b) =>
-          a.distMeters - b.distMeters,
-      );
+      .sort((a, b) => a.distMeters - b.distMeters);
   }, [users, myLocation, currentUser]);
+
+  console.log("nearbyUsersnearbyUsers", nearbyUsers);
 
   /* ---------------- USER ICON ---------------- */
 
@@ -202,7 +167,6 @@ const MapPage: React.FC = () => {
 
   return (
     <div className="h-[calc(100dvh-64px)] w-full relative bg-slate-950">
-
       <MapContainer
         center={[myLocation.lat, myLocation.lng]}
         zoom={14}
@@ -211,28 +175,17 @@ const MapPage: React.FC = () => {
         attributionControl={false}
         className="w-full h-full"
       >
-       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
-        <MapEventHandler
-          onClick={() => setSelectedUser(null)}
-        />
+        <MapEventHandler onClick={() => setSelectedUser(null)} />
 
-        <Marker
-          position={[
-            myLocation.lat,
-            myLocation.lng,
-          ]}
-          icon={myIcon}
-        />
+        <Marker position={[myLocation.lat, myLocation.lng]} icon={myIcon} />
 
         <MarkerClusterGroup chunkedLoading>
           {nearbyUsers.map((user) => (
             <Marker
               key={user.uid}
-              position={[
-                user.lastLocation!.lat,
-                user.lastLocation!.lng,
-              ]}
+              position={[user.lastLocation!.lat, user.lastLocation!.lng]}
               icon={createUserIcon(user)}
               eventHandlers={{
                 click: (e) => {
@@ -271,9 +224,7 @@ const MapPage: React.FC = () => {
             </div>
 
             <button
-              onClick={() =>
-                navigate(`/profile/${selectedUser.uid}`)
-              }
+              onClick={() => navigate(`/profile/${selectedUser.uid}`)}
               className="h-12 w-12 bg-primary-600 rounded-xl flex items-center justify-center"
             >
               <ChevronRight className="w-6 h-6 text-white" />
@@ -283,39 +234,48 @@ const MapPage: React.FC = () => {
       )}
 
       {/* FLOATING NEARBY BUTTON */}
-      {!isListOpen &&
-        !selectedUser &&
-        nearbyUsers.length > 0 && (
-          <button
-            onClick={() => setIsListOpen(true)}
-            className="absolute bottom-6 left-4 z-[1001] bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-xl p-2 pr-4 flex items-center gap-3 border border-slate-800"
-          >
-            {/* Stacked Avatars */}
-            <div className="flex -space-x-3 items-center">
-              {nearbyUsers.slice(0, 3).map((u, i) => (
-                <div key={u.uid} className={`w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-800 overflow-hidden relative z-[${3-i}]`}>
-                   {u.photoURL ? (
-                     <img src={u.photoURL} alt={u.displayName} className="w-full h-full object-cover" />
-                   ) : (
-                     <div className="w-full h-full flex items-center justify-center text-xs font-bold text-slate-500">
-                       {u.displayName[0]}
-                     </div>
-                   )}
-                </div>
-              ))}
-              {nearbyUsers.length > 3 && (
-                 <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-400 relative z-0">
-                    +{nearbyUsers.length - 3}
-                 </div>
-              )}
-            </div>
-            
-            <div className="text-left">
-              <p className="font-bold text-white text-sm">{nearbyUsers.length} Nearby</p>
-              <p className="text-[10px] text-primary-400 font-medium">Tap to view list</p>
-            </div>
-          </button>
-        )}
+      {!isListOpen && !selectedUser && nearbyUsers.length > 0 && (
+        <button
+          onClick={() => setIsListOpen(true)}
+          className="absolute bottom-6 left-4 z-[1001] bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-xl p-2 pr-4 flex items-center gap-3 border border-slate-800"
+        >
+          {/* Stacked Avatars */}
+          <div className="flex -space-x-3 items-center">
+            {nearbyUsers.slice(0, 3).map((u, i) => (
+              <div
+                key={u.uid}
+                className={`w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-800 overflow-hidden relative z-[${3 - i}]`}
+              >
+                {u.photoURL ? (
+                  <img
+                    src={u.photoURL}
+                    alt={u.displayName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-xs font-bold text-slate-500">
+                    {u.displayName[0]}
+                  </div>
+                )}
+              </div>
+            ))}
+            {nearbyUsers.length > 3 && (
+              <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-400 relative z-0">
+                +{nearbyUsers.length - 3}
+              </div>
+            )}
+          </div>
+
+          <div className="text-left">
+            <p className="font-bold text-white text-sm">
+              {nearbyUsers.length} Nearby
+            </p>
+            <p className="text-[10px] text-primary-400 font-medium">
+              Tap to view list
+            </p>
+          </div>
+        </button>
+      )}
 
       {/* BOTTOM DRAWER */}
       {isListOpen && (
@@ -327,9 +287,7 @@ const MapPage: React.FC = () => {
 
           <div className="bg-slate-900 rounded-t-3xl max-h-[85vh] flex flex-col border-t border-slate-800 relative z-10">
             <div className="px-6 py-4 border-b border-slate-800 flex justify-between">
-              <h2 className="text-lg font-bold text-white">
-                People Nearby
-              </h2>
+              <h2 className="text-lg font-bold text-white">People Nearby</h2>
               <button
                 onClick={() => setIsListOpen(false)}
                 className="text-slate-400"
@@ -358,20 +316,85 @@ const MapPage: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="flex-1">
-                      <h3 className="font-bold text-white">
-                        {u.displayName}
-                      </h3>
-                      <p className="text-xs text-primary-400 mt-1">
-                        {u.distDisplay}
+                    {/* Info Side */}
+                    <div className="flex-1 min-w-0 flex flex-col">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3
+                            className="font-bold text-white text-lg leading-tight cursor-pointer hover:text-primary-400 transition-colors"
+                            onClick={() => navigate(`/profile/${u.uid}`)}
+                          >
+                            {u.displayName}
+                          </h3>
+                          {u.lastLocation?.name ? (
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              {u.lastLocation.name}
+                            </p>
+                          ) : (
+                            <p className="text-xs text-slate-500 mt-0.5 italic">
+                              {u.distDisplay}
+                            </p>
+                          )}
+                        </div>
+                        {u.instagramHandle && (
+                          <a
+                            href={`https://instagram.com/${u.instagramHandle}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-pink-400 hover:text-pink-300 p-1.5 bg-pink-500/10 rounded-lg transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Instagram className="w-4 h-4" />
+                          </a>
+                        )}
+                      </div>
+
+                      {/* Bio */}
+                      <p className="text-sm text-slate-400 mt-2 line-clamp-2 leading-relaxed">
+                        {u.bio || "No bio available."}
                       </p>
-                      <p className="text-sm text-slate-400 mt-2 line-clamp-2">
-                        {u.bio || "No bio available"}
-                      </p>
+
+                      {/* Interests Chips */}
+                      {u.interests && u.interests.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-3">
+                          {u.interests.slice(0, 3).map((iid) => {
+                            const tag = POPULAR_INTERESTS.find(
+                              (p) => p.id === iid,
+                            );
+                            return (
+                              <span
+                                key={iid}
+                                className="inline-flex items-center px-2 py-1 rounded-md bg-slate-800 border border-slate-700 text-[10px] font-medium text-slate-300"
+                              >
+                                {tag ? (
+                                  <span className="mr-1">{tag.emoji}</span>
+                                ) : null}
+                                {tag ? tag.label : iid}
+                              </span>
+                            );
+                          })}
+                          {u.interests.length > 3 && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-md bg-slate-800 border border-slate-700 text-[10px] font-medium text-slate-500">
+                              +{u.interests.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
+
+                  {/* Action Button */}
+                  <button
+                    onClick={() => navigate(`/profile/${u.uid}`)}
+                    className="w-full py-2.5 bg-slate-800 text-white rounded-xl text-xs font-bold shadow-md hover:bg-slate-700 transition-colors flex items-center justify-center gap-1 mt-1 active:scale-[0.98] border border-slate-700"
+                  >
+                    View Full Profile <ChevronRight className="w-3 h-3" />
+                  </button>
                 </div>
               ))}
+
+              {/* Bottom Spacer for safe area */}
+              <div className="h-6" />
             </div>
           </div>
         </div>
