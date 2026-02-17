@@ -11,7 +11,6 @@ const __dirname = path.dirname(__filename);
 const app = express();
 //this is for hosting frontend in render
 app.use(express.static(path.join(__dirname, "dist")));
-
 //this is for hosting frontend in render
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "dist", "index.html"));
@@ -25,12 +24,26 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 // Enable CORS
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://backend.strangerchat.space",
+  "http://localhost:5000"
+];
+
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
+
+
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
@@ -155,10 +168,6 @@ async function getMutualBlockedUids(viewerUid) {
 
 // --- API ROUTES ---
 
-// Default route to check server status
-app.get('/', (req, res) => {
-    res.send(`Socially API Running. DB Connected: ${!!db}`);
-});
 
 app.post('/api/auth/signup', async (req, res) => {
   if (!db) return res.status(503).json({ error: "Database not connected" });
@@ -889,6 +898,6 @@ app.get('/api/chat/unread-count/:uid', async (req, res) => {
     }
 });
 
-server.listen(port, () => {
-    console.log(`Server listening on port ${port}`);
+server.listen(port, '0.0.0.0', () => {
+  console.log(`Server listening on port ${port}`);
 });
