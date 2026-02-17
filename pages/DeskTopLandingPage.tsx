@@ -73,7 +73,7 @@ const DesktopLanding: React.FC = () => {
             <h1 className="text-5xl lg:text-7xl font-bold leading-[1.1] tracking-tight text-white">
               Your World, <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 via-pink-500 to-purple-500">
-                Connected Live.
+                Connected Live
               </span>
             </h1>
             
