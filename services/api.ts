@@ -314,7 +314,6 @@ export const api = {
       let keepAliveInterval: any;
 
       const connect = () => {
-        console.log("Connecting to WS:", wsUrl);
         socket = new WebSocket(wsUrl);
 
         socket.onopen = () => {
