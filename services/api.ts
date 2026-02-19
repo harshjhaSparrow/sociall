@@ -311,48 +311,74 @@ export const api = {
       }
     },
     subscribe: (uid: string, onMessage: (msg: Message) => void) => {
-      const { protocol, hostname, port } = window.location;
-      // Decide ws or wss
-      const wsProtocol = protocol === "https:" ? "wss:" : "ws:";
-      // Include port only if present (local dev)
-      const portPart = port ? `:${port}` : "";
-      const wsUrl = `${wsProtocol}//${hostname}${portPart}?uid=${uid}`;
-      let socket: WebSocket | null = null;
-      let keepAliveInterval: any;
+  const { protocol, hostname, port } = window.location;
 
-      const connect = () => {
-        socket = new WebSocket(wsUrl);
+  const isLocal =
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname.startsWith("192.168.") ||
+    hostname.startsWith("10.");
 
-        socket.onopen = () => {
-          keepAliveInterval = setInterval(() => {
-            if (socket?.readyState === WebSocket.OPEN) {
-              socket.send(JSON.stringify({ type: "ping" }));
-            }
-          }, 30000);
-        };
+  const isVercel = hostname.includes("vercel.app");
 
-        socket.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            if (data.type === "ping" || data.type === "pong") return;
-            onMessage(data);
-          } catch (e) {
-            console.error("WS Parse Error", e);
-          }
-        };
+  let wsUrl: string;
 
-        socket.onclose = () => {
-          clearInterval(keepAliveInterval);
-        };
-      };
+  // 1️⃣ Local development
+  if (isLocal) {
+    const wsProtocol = "ws:";
+    const portPart = port ? `:${port}` : "";
+    wsUrl = `${wsProtocol}//${hostname}${portPart}?uid=${uid}`;
+  }
 
-      connect();
+  // 2️⃣ If frontend hosted on Vercel
+  else if (isVercel) {
+    wsUrl = `wss://backend.strangerchat.space?uid=${uid}`;
+  }
 
-      return () => {
-        if (socket) socket.close();
-        clearInterval(keepAliveInterval);
-      };
-    },
+  // 3️⃣ Production (Beanstalk / custom domain)
+  else {
+    const wsProtocol = protocol === "https:" ? "wss:" : "ws:";
+    const portPart = port ? `:${port}` : "";
+    wsUrl = `${wsProtocol}//${hostname}${portPart}?uid=${uid}`;
+  }
+
+  let socket: WebSocket | null = null;
+  let keepAliveInterval: any;
+
+  const connect = () => {
+    socket = new WebSocket(wsUrl);
+
+    socket.onopen = () => {
+      keepAliveInterval = setInterval(() => {
+        if (socket?.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({ type: "ping" }));
+        }
+      }, 30000);
+    };
+
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "ping" || data.type === "pong") return;
+        onMessage(data);
+      } catch (e) {
+        console.error("WS Parse Error", e);
+      }
+    };
+
+    socket.onclose = () => {
+      clearInterval(keepAliveInterval);
+    };
+  };
+
+  connect();
+
+  return () => {
+    if (socket) socket.close();
+    clearInterval(keepAliveInterval);
+  };
+},
+
   },
 
   notifications: {
