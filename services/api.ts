@@ -11,6 +11,11 @@ const PORT = 5000;
 const getBaseUrl = () => {
   const { protocol, hostname } = window.location;
 
+  console.log("🌍 Current Location:", {
+    protocol,
+    hostname,
+  });
+
   const isLocal =
     hostname === "localhost" ||
     hostname === "127.0.0.1" ||
@@ -19,19 +24,32 @@ const getBaseUrl = () => {
 
   const isVercel = hostname.includes("vercel.app");
 
+  console.log("🧠 Environment Check:", {
+    isLocal,
+    isVercel,
+  });
+
   // 1️⃣ Local or network testing
   if (isLocal) {
-    return `http://${hostname}:${PORT}/api`;
+    const localUrl = `http://${hostname}:${PORT}/api`;
+    console.log("🏠 Using Local API:", localUrl);
+    return localUrl;
   }
 
   // 2️⃣ If frontend is deployed on Vercel
   if (isVercel) {
-    return "https://backend.strangerchat.space/api";
+    const vercelUrl = "https://backend.strangerchat.space/api";
+    console.log("🚀 Using Backend for Vercel:", vercelUrl);
+    return vercelUrl;
   }
 
   // 3️⃣ Production (Beanstalk / custom domain / Load Balancer)
-  return `${protocol}//${hostname}/api`;
+  const prodUrl = `${protocol}//${hostname}/api`;
+  console.log("🌐 Using Production API:", prodUrl);
+
+  return prodUrl;
 };
+
 
 const API_BASE = getBaseUrl();
 
