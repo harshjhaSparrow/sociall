@@ -1,48 +1,66 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
-import Button from '../components/ui/Button';
-import { ChevronLeft, Image as ImageIcon, X, AlertCircle, MapPin, Calendar, Clock, DollarSign, Users, Link as LinkIcon, PartyPopper, Type } from 'lucide-react';
-import { useUserLocation } from '../components/LocationGuard';
-import { MEETUP_ACTIVITIES, FEE_TYPES } from '../types';
-import Input from '../components/ui/Input';
-import { compressImage } from '../util/ImageCompression';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { api } from "../services/api";
+import {
+  ChevronLeft,
+  Image as ImageIcon,
+  X,
+  AlertCircle,
+  MapPin,
+  Calendar,
+  Clock,
+  DollarSign,
+  Users,
+  Link as LinkIcon,
+  PartyPopper,
+  Type,
+  Loader2,
+} from "lucide-react";
+import { useUserLocation } from "../components/LocationGuard";
+import { MEETUP_ACTIVITIES, FEE_TYPES } from "../types";
+import Input from "../components/ui/Input";
+import { compressImage } from "@/util/ImageCompression";
 
 const CreatePost: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { location: gpsLocation } = useUserLocation();
-  
-  // Mode State
-  const [postType, setPostType] = useState<'regular' | 'meetup'>('regular');
-
-  // Common State
-  const [content, setContent] = useState('');
+  const [postType, setPostType] = useState<"regular" | "meetup">("regular");
+  const [content, setContent] = useState("");
   const [image, setImage] = useState<string | null>(null);
-  const [locationName, setLocationName] = useState<string | undefined>(undefined);
+  const [locationName, setLocationName] = useState<string | undefined>(
+    undefined,
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Meetup Specific State
-  const [meetupTitle, setMeetupTitle] = useState('');
+  const [meetupTitle, setMeetupTitle] = useState("");
   const [activity, setActivity] = useState(MEETUP_ACTIVITIES[0]);
   const [feeType, setFeeType] = useState(FEE_TYPES[0]);
-  const [date, setDate] = useState('');
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [maxGuests, setMaxGuests] = useState<number | ''>('');
-  const [meetupUrl, setMeetupUrl] = useState('');
+  const [date, setDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [maxGuests, setMaxGuests] = useState<number | "">("");
+  const [meetupUrl, setMeetupUrl] = useState("");
 
   useEffect(() => {
     if (gpsLocation) {
-      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${gpsLocation.lat}&lon=${gpsLocation.lng}`)
-        .then(res => res.json())
-        .then(data => {
-           const addr = data.address;
-           const city = addr?.city || addr?.town || addr?.village || addr?.county || "Unknown Location";
-           const state = addr?.state || "";
-           setLocationName(state ? `${city}, ${state}` : city);
+      fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${gpsLocation.lat}&lon=${gpsLocation.lng}`,
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          const addr = data.address;
+          const city =
+            addr?.city ||
+            addr?.town ||
+            addr?.village ||
+            addr?.county ||
+            "Unknown Location";
+          const state = addr?.state || "";
+          setLocationName(state ? `${city}, ${state}` : city);
         })
         .catch(() => setLocationName("Nearby"));
     }
@@ -51,11 +69,11 @@ const CreatePost: React.FC = () => {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 20 * 1024 * 1024) { 
+      if (file.size > 20 * 1024 * 1024) {
         setError("Image is too large (Max 20MB)");
         return;
       }
-      
+
       try {
         setLoading(true);
         setError(null);
@@ -72,14 +90,16 @@ const CreatePost: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!user) return;
-    
+
     // Validation
-    if (postType === 'regular' && !content.trim() && !image) return;
-    if (postType === 'meetup') {
-        if (!meetupTitle.trim() || !date || !startTime || !endTime) {
-            setError("Please fill in all required meetup fields (Title, Date, Time).");
-            return;
-        }
+    if (postType === "regular" && !content.trim() && !image) return;
+    if (postType === "meetup") {
+      if (!meetupTitle.trim() || !date || !startTime || !endTime) {
+        setError(
+          "Please fill in all required meetup fields (Title, Date, Time).",
+        );
+        return;
+      }
     }
 
     setLoading(true);
@@ -92,39 +112,42 @@ const CreatePost: React.FC = () => {
       } catch (e) {
         console.warn("Could not fetch profile", e);
       }
-      
+
       const isGhost = !!profile?.isGhostMode;
 
       const payload: any = {
         uid: user.uid,
-        authorName: profile?.displayName || user.email?.split('@')[0] || 'User',
-        authorPhoto: profile?.photoURL || '',
-        content: postType === 'regular' ? content : (content || meetupTitle), // Fallback content for legacy
+        authorName: profile?.displayName || user.email?.split("@")[0] || "User",
+        authorPhoto: profile?.photoURL || "",
+        content: postType === "regular" ? content : content || meetupTitle, // Fallback content for legacy
         imageURL: image || undefined,
-        location: (gpsLocation && !isGhost) ? {
-          ...gpsLocation,
-          name: locationName
-        } : undefined,
-        type: postType
+        location:
+          gpsLocation && !isGhost
+            ? {
+                ...gpsLocation,
+                name: locationName,
+              }
+            : undefined,
+        type: postType,
       };
 
-      if (postType === 'meetup') {
-          payload.meetupDetails = {
-              title: meetupTitle,
-              activity,
-              feeType,
-              date,
-              startTime,
-              endTime,
-              maxGuests: maxGuests || undefined,
-              meetingUrl: meetupUrl || undefined
-          };
-          // For meetups, the 'content' field in the DB acts as the description
-          payload.content = content; 
+      if (postType === "meetup") {
+        payload.meetupDetails = {
+          title: meetupTitle,
+          activity,
+          feeType,
+          date,
+          startTime,
+          endTime,
+          maxGuests: maxGuests || undefined,
+          meetingUrl: meetupUrl || undefined,
+        };
+        // For meetups, the 'content' field in the DB acts as the description
+        payload.content = content;
       }
 
       await api.posts.create(payload);
-      navigate('/');
+      navigate("/");
     } catch (err: unknown) {
       console.error(err);
       if (err instanceof Error) {
@@ -138,154 +161,191 @@ const CreatePost: React.FC = () => {
   };
 
   const isFormValid = () => {
-      if (loading) return false;
-      if (postType === 'regular') return content.trim() || image;
-      if (postType === 'meetup') return meetupTitle.trim() && date && startTime && endTime;
-      return false;
+    if (loading) return false;
+    if (postType === "regular") return content.trim() || image;
+    if (postType === "meetup")
+      return meetupTitle.trim() && date && startTime && endTime;
+    return false;
   };
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-900 sticky top-0 z-20">
-        <button onClick={() => navigate('/')} className="text-slate-400 p-2 -ml-2 hover:text-white">
-          <ChevronLeft className="w-6 h-6" />
-        </button>
-        <h2 className="font-bold text-lg text-white">Create</h2>
-        <div className="w-10"></div>
+      <div className="bg-slate-900/90 backdrop-blur-md px-4 py-3 shadow-sm z-30 sticky top-0 border-b border-slate-800">
+        <div className="max-w-md mx-auto flex items-center justify-between">
+          <button
+            onClick={() => navigate("/")}
+            className="p-2 -ml-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-800 transition-colors"
+          >
+            <ChevronLeft className="w-7 h-7" />
+          </button>
+          <span className="font-bold text-white text-lg">Create</span>
+
+          <button
+            onClick={handleSubmit}
+            disabled={loading || !isFormValid()}
+            className="text-primary-500 font-bold text-base hover:text-primary-400 transition-colors disabled:opacity-50 flex items-center gap-1 px-2 py-1"
+          >
+            {loading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : postType === "meetup" ? (
+              "Create"
+            ) : (
+              "Post"
+            )}
+          </button>
+        </div>
       </div>
 
-      <div className="flex-1 p-4 max-w-md mx-auto w-full pb-32">
+      <div className="flex-1 p-4 max-w-md mx-auto w-full pb-10">
         {/* Toggle Switch */}
         <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800 mb-6">
-            <button 
-                onClick={() => setPostType('regular')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${postType === 'regular' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}
-            >
-                <Type className="w-4 h-4" /> Post
-            </button>
-            <button 
-                onClick={() => setPostType('meetup')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${postType === 'meetup' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}
-            >
-                <PartyPopper className="w-4 h-4" /> Meet Up
-            </button>
+          <button
+            onClick={() => setPostType("regular")}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${postType === "regular" ? "bg-slate-800 text-white shadow-md" : "text-slate-500 hover:text-slate-300"}`}
+          >
+            <Type className="w-4 h-4" /> Post
+          </button>
+          <button
+            onClick={() => setPostType("meetup")}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${postType === "meetup" ? "bg-primary-600 text-white shadow-md" : "text-slate-500 hover:text-slate-300"}`}
+          >
+            <PartyPopper className="w-4 h-4" /> Meet Up
+          </button>
         </div>
 
-        {postType === 'regular' ? (
-            /* REGULAR POST FORM */
-            <>
-                <textarea
-                className="w-full h-40 text-lg text-white bg-transparent placeholder-slate-500 outline-none resize-none"
-                placeholder="What's on your mind?"
-                value={content}
-                onChange={(e) => {
-                    setContent(e.target.value);
-                    if(error) setError(null);
-                }}
-                autoFocus
-                />
-            </>
+        {postType === "regular" ? (
+          /* REGULAR POST FORM */
+          <>
+            <textarea
+              className="w-full h-40 text-lg text-white bg-transparent placeholder-slate-500 outline-none resize-none"
+              placeholder="What's on your mind?"
+              value={content}
+              onChange={(e) => {
+                setContent(e.target.value);
+                if (error) setError(null);
+              }}
+              autoFocus
+            />
+          </>
         ) : (
-            /* MEETUP FORM */
-            <div className="space-y-6 animate-fade-in">
-                <Input 
-                    placeholder="Event Title (e.g. Sunday Morning Run)" 
-                    value={meetupTitle}
-                    onChange={(e) => setMeetupTitle(e.target.value)}
-                    className="font-bold text-lg"
-                />
+          /* MEETUP FORM */
+          <div className="space-y-6 animate-fade-in">
+            <Input
+              placeholder="Event Title (e.g. Sunday Morning Run)"
+              value={meetupTitle}
+              onChange={(e) => setMeetupTitle(e.target.value)}
+              className="font-bold text-lg"
+            />
 
-                <div className="space-y-2">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Activity</label>
-                    <div className="relative">
-                        <select 
-                            value={activity}
-                            onChange={(e) => setActivity(e.target.value)}
-                            className="w-full bg-slate-900 border-2 border-slate-800 text-white rounded-2xl px-4 py-3.5 appearance-none outline-none focus:border-primary-500"
-                        >
-                            {MEETUP_ACTIVITIES.map(act => <option key={act} value={act}>{act}</option>)}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>
-                    </div>
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
+                Activity
+              </label>
+              <div className="relative">
+                <select
+                  value={activity}
+                  onChange={(e) => setActivity(e.target.value)}
+                  className="w-full bg-slate-900 border-2 border-slate-800 text-white rounded-2xl px-4 py-3.5 appearance-none outline-none focus:border-primary-500"
+                >
+                  {MEETUP_ACTIVITIES.map((act) => (
+                    <option key={act} value={act}>
+                      {act}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                  ▼
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                    <Input 
-                        type="date" 
-                        icon={<Calendar className="w-4 h-4" />}
-                        value={date}
-                        onChange={(e) => setDate(e.target.value)}
-                        min={new Date().toISOString().split('T')[0]}
-                    />
-                    <div className="space-y-2">
-                         <div className="flex items-center gap-2 bg-slate-900 border-2 border-slate-800 rounded-2xl px-3 py-0.5">
-                             <Clock className="w-4 h-4 text-slate-500" />
-                             <div className="flex-1 flex items-center gap-1">
-                                 <input 
-                                    type="time" 
-                                    value={startTime}
-                                    onChange={(e) => setStartTime(e.target.value)}
-                                    className="bg-transparent text-white text-sm w-full py-3 outline-none" 
-                                 />
-                                 <span className="text-slate-600">-</span>
-                                 <input 
-                                    type="time" 
-                                    value={endTime}
-                                    onChange={(e) => setEndTime(e.target.value)}
-                                    className="bg-transparent text-white text-sm w-full py-3 outline-none" 
-                                 />
-                             </div>
-                         </div>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                    <Input 
-                        type="number"
-                        placeholder="Max Guests"
-                        icon={<Users className="w-4 h-4" />}
-                        value={maxGuests}
-                        onChange={(e) => setMaxGuests(parseInt(e.target.value) || '')}
-                    />
-                    <div className="relative">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
-                            <DollarSign className="w-4 h-4" />
-                        </div>
-                        <select 
-                            value={feeType}
-                            onChange={(e) => setFeeType(e.target.value)}
-                            className="w-full bg-slate-900 border-2 border-slate-800 text-white rounded-2xl pl-10 pr-4 py-3.5 appearance-none outline-none focus:border-primary-500 h-[58px]"
-                        >
-                            {FEE_TYPES.map(fee => <option key={fee} value={fee}>{fee}</option>)}
-                        </select>
-                    </div>
-                </div>
-
-                <div className="w-full space-y-2">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Details</label>
-                    <textarea
-                        className="w-full rounded-2xl border-2 border-slate-800 bg-slate-900 px-4 py-4 text-base text-white placeholder-slate-500 outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 min-h-[100px] resize-none"
-                        placeholder="Describe the plan, meeting point details, etc..."
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                    />
-                </div>
-
-                <Input 
-                    placeholder="Link (Optional)"
-                    icon={<LinkIcon className="w-4 h-4" />}
-                    value={meetupUrl}
-                    onChange={(e) => setMeetupUrl(e.target.value)}
-                />
+              </div>
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                type="date"
+                icon={<Calendar className="w-4 h-4" />}
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
+              />
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 bg-slate-900 border-2 border-slate-800 rounded-2xl px-3 py-0.5">
+                  <Clock className="w-4 h-4 text-slate-500" />
+                  <div className="flex-1 flex items-center gap-1">
+                    <input
+                      type="time"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      className="bg-transparent text-white text-sm w-full py-3 outline-none"
+                    />
+                    <span className="text-slate-600">-</span>
+                    <input
+                      type="time"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      className="bg-transparent text-white text-sm w-full py-3 outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                type="number"
+                placeholder="Max Guests"
+                icon={<Users className="w-4 h-4" />}
+                value={maxGuests}
+                onChange={(e) => setMaxGuests(parseInt(e.target.value) || "")}
+              />
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
+                  <DollarSign className="w-4 h-4" />
+                </div>
+                <select
+                  value={feeType}
+                  onChange={(e) => setFeeType(e.target.value)}
+                  className="w-full bg-slate-900 border-2 border-slate-800 text-white rounded-2xl pl-10 pr-4 py-3.5 appearance-none outline-none focus:border-primary-500 h-[58px]"
+                >
+                  {FEE_TYPES.map((fee) => (
+                    <option key={fee} value={fee}>
+                      {fee}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="w-full space-y-2">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
+                Details
+              </label>
+              <textarea
+                className="w-full rounded-2xl border-2 border-slate-800 bg-slate-900 px-4 py-4 text-base text-white placeholder-slate-500 outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 min-h-[100px] resize-none"
+                placeholder="Describe the plan, meeting point details, etc..."
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+              />
+            </div>
+
+            <Input
+              placeholder="Link (Optional)"
+              icon={<LinkIcon className="w-4 h-4" />}
+              value={meetupUrl}
+              onChange={(e) => setMeetupUrl(e.target.value)}
+            />
+          </div>
         )}
 
         {/* Image Preview (Common) */}
         {image && (
           <div className="relative rounded-2xl overflow-hidden mb-6 border border-slate-800 animate-fade-in mt-6">
-            <img src={image} alt="Preview" className="w-full h-auto max-h-80 object-cover" />
-            <button 
+            <img
+              src={image}
+              alt="Preview"
+              className="w-full h-auto max-h-80 object-cover"
+            />
+            <button
               onClick={() => setImage(null)}
               className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-full backdrop-blur-sm hover:bg-black/70 transition-colors"
             >
@@ -296,18 +356,23 @@ const CreatePost: React.FC = () => {
 
         {/* Action Bar (Common) */}
         <div className="flex items-center justify-between mt-6 border-t border-slate-800 pt-4">
-           <label className="flex items-center gap-2 text-primary-400 font-medium px-4 py-2 bg-primary-500/10 rounded-xl cursor-pointer hover:bg-primary-500/20 transition-colors select-none">
-              <ImageIcon className="w-5 h-5" />
-              <span>{image ? 'Change Photo' : 'Add Photo'}</span>
-              <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-           </label>
+          <label className="flex items-center gap-2 text-primary-400 font-medium px-4 py-2 bg-primary-500/10 rounded-xl cursor-pointer hover:bg-primary-500/20 transition-colors select-none">
+            <ImageIcon className="w-5 h-5" />
+            <span>{image ? "Change Photo" : "Add Photo"}</span>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageUpload}
+            />
+          </label>
 
-           {locationName && (
-             <div className="flex items-center gap-1.5 text-slate-400 text-xs font-semibold px-3 py-1.5 bg-slate-800 rounded-full border border-slate-700">
-               <MapPin className="w-3 h-3" />
-               {locationName}
-             </div>
-           )}
+          {locationName && (
+            <div className="flex items-center gap-1.5 text-slate-400 text-xs font-semibold px-3 py-1.5 bg-slate-800 rounded-full border border-slate-700">
+              <MapPin className="w-3 h-3" />
+              {locationName}
+            </div>
+          )}
         </div>
 
         {/* Error Message */}
@@ -317,20 +382,6 @@ const CreatePost: React.FC = () => {
             {error}
           </div>
         )}
-      </div>
-
-      {/* Footer Button */}
-      <div className="fixed bottom-0 inset-x-0 p-4 border-t border-slate-800 bg-slate-900 z-30">
-         <div className="max-w-md mx-auto">
-            <Button 
-                onClick={handleSubmit} 
-                fullWidth 
-                isLoading={loading}
-                disabled={!isFormValid()}
-            >
-                {postType === 'meetup' ? 'Create Meet Up' : 'Post'}
-            </Button>
-         </div>
       </div>
     </div>
   );

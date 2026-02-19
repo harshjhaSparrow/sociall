@@ -11,7 +11,6 @@ const Layout: React.FC = () => {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const isActive = (path: string) => {
-    // Exact match for home, startsWith for others
     if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
   };

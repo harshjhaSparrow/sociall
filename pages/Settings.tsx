@@ -1,13 +1,15 @@
-import { ArrowRight, ChevronLeft, EyeOff, Ghost, Shield } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import { ChevronLeft, Ghost, EyeOff, Shield, ArrowRight, Radar, Map as MapIcon, PauseCircle } from 'lucide-react';
 
 const Settings: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isGhostMode, setIsGhostMode] = useState(false);
+  const [isDiscoverable, setIsDiscoverable] = useState(true);
+  const [discoveryRadius, setDiscoveryRadius] = useState(10);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,6 +19,9 @@ const Settings: React.FC = () => {
           const profile = await api.profile.get(user.uid);
           if (profile) {
             setIsGhostMode(!!profile.isGhostMode);
+            // Default to true/10 if not set
+            setIsDiscoverable(profile.isDiscoverable !== false);
+            setDiscoveryRadius(profile.discoveryRadius || 10);
           }
         } catch (e) {
           console.error("Failed to load settings", e);
@@ -41,6 +46,32 @@ const Settings: React.FC = () => {
     }
   };
 
+  const toggleDiscoverable = async () => {
+      if (!user) return;
+      const newValue = !isDiscoverable;
+      setIsDiscoverable(newValue);
+      try {
+          await api.profile.createOrUpdate(user.uid, { isDiscoverable: newValue });
+      } catch (e) {
+          console.error("Failed to update discoverable status", e);
+          setIsDiscoverable(!newValue);
+      }
+  };
+
+  const handleRadiusChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = parseInt(e.target.value);
+      setDiscoveryRadius(val);
+  };
+
+  const saveRadius = async () => {
+      if (!user) return;
+      try {
+          await api.profile.createOrUpdate(user.uid, { discoveryRadius: discoveryRadius });
+      } catch (e) {
+          console.error("Failed to save radius", e);
+      }
+  };
+
   const handleLogout = async () => {
       await logout();
       navigate('/auth');
@@ -61,12 +92,80 @@ const Settings: React.FC = () => {
       </div>
 
       <div className="flex-1 max-w-md mx-auto w-full p-4 space-y-6">
+          
+          {/* Discovery Section */}
+          <section>
+             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-2">Discovery Settings</h3>
+             
+             {/* Radius Slider */}
+             <div className="bg-slate-900 rounded-2xl border border-slate-800 p-4 mb-4">
+                 <div className="flex items-center gap-4 mb-4">
+                     <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+                         <Radar className="w-6 h-6" />
+                     </div>
+                     <div className="flex-1">
+                         <h4 className="text-white font-bold text-base">Discovery Radius</h4>
+                         <p className="text-xs text-slate-400 mt-0.5">Show users & posts within {discoveryRadius}km</p>
+                     </div>
+                     <span className="font-bold text-white bg-slate-800 px-3 py-1 rounded-lg border border-slate-700">{discoveryRadius}km</span>
+                 </div>
+                 
+                 <div className="px-2">
+                     <input 
+                       type="range" 
+                       min="1" 
+                       max="50" 
+                       value={discoveryRadius} 
+                       onChange={handleRadiusChange}
+                       onMouseUp={saveRadius}
+                       onTouchEnd={saveRadius}
+                       className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                     />
+                     <div className="flex justify-between mt-2 text-xs text-slate-500 font-medium">
+                         <span>1km</span>
+                         <span>50km</span>
+                     </div>
+                 </div>
+             </div>
+
+             {/* Pause Discoverability */}
+             <div className="bg-slate-900 rounded-2xl border border-slate-800 p-4 mb-4">
+                 <div className="flex items-center gap-4">
+                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${!isDiscoverable ? 'bg-orange-500 text-white' : 'bg-slate-800 text-slate-400'}`}>
+                         <PauseCircle className="w-6 h-6" />
+                     </div>
+                     <div className="flex-1">
+                         <h4 className="text-white font-bold text-base">Pause Discoverability</h4>
+                         <p className="text-xs text-slate-400 leading-tight mt-0.5">
+                            Hide me from the map and discovery lists without disabling location features completely.
+                         </p>
+                     </div>
+                     
+                     <button 
+                        onClick={toggleDiscoverable}
+                        className={`
+                            relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75
+                            ${!isDiscoverable ? 'bg-orange-500' : 'bg-slate-700'}
+                        `}
+                     >
+                         <span
+                            aria-hidden="true"
+                            className={`
+                                pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out
+                                ${!isDiscoverable ? 'translate-x-5' : 'translate-x-0'}
+                            `}
+                        />
+                     </button>
+                 </div>
+             </div>
+          </section>
+
           {/* Privacy Section */}
           <section>
              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-2">Privacy & Safety</h3>
              
              {/* Ghost Mode Toggle */}
-             <div className="bg-slate-900 rounded-2xl border border-slate-800 p-4">
+             <div className="bg-slate-900 rounded-2xl border border-slate-800 p-4 mb-4">
                  <div className="flex items-center gap-4 mb-3">
                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isGhostMode ? 'bg-purple-500 text-white' : 'bg-slate-800 text-slate-400'}`}>
                          {isGhostMode ? <Ghost className="w-6 h-6" /> : <EyeOff className="w-6 h-6" />}
@@ -74,7 +173,7 @@ const Settings: React.FC = () => {
                      <div className="flex-1">
                          <h4 className="text-white font-bold text-base">Ghost Mode</h4>
                          <p className="text-xs text-slate-400 leading-tight mt-0.5">
-                            Browse the map and feed without appearing to others. You remain invisible on the map.
+                            Completely hide your location and presence. You remain invisible on the map.
                          </p>
                      </div>
                      

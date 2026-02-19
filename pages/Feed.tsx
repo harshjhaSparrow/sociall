@@ -1,10 +1,22 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { api } from '../services/api';
-import { Post, Notification } from '../types';
-import { useAuth } from '../context/AuthContext';
-import { Loader2, RefreshCw, Bell, Heart, MessageCircle, UserPlus, X, Check, Settings } from 'lucide-react';
-import PostItem from '../components/PostItem';
+import { Bell, Check, Heart, Loader2, MessageCircle, RefreshCw, Settings, UserPlus, X } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useUserLocation } from '../components/LocationGuard';
+import PostItem from '../components/PostItem';
+import { useAuth } from '../context/AuthContext';
+import { api } from '../services/api';
+import { Notification, Post, UserProfile } from '../types';
+
+const getDistanceMeters = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+    const R = 6371e3; 
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+};
 
 const PostSkeleton = () => (
   <div className="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden shadow-sm animate-pulse">
@@ -26,8 +38,10 @@ const PostSkeleton = () => (
 const Feed: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { location: myLocation } = useUserLocation();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   
   // Notification State
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -42,9 +56,39 @@ const Feed: React.FC = () => {
 
   const fetchPosts = async () => {
     try {
-      // Pass user UID so backend can filter blocked content
-      const data = await api.posts.getAll(user?.uid);
-      setPosts(data);
+      if (!user) return;
+      
+      const [allPosts, profile] = await Promise.all([
+          api.posts.getAll(user.uid),
+          api.profile.get(user.uid)
+      ]);
+      
+      setUserProfile(profile);
+
+      // Filter based on discovery radius if location is available
+      let filteredPosts = allPosts;
+      if (myLocation && profile && profile.discoveryRadius) {
+          const maxDistMeters = profile.discoveryRadius * 1000;
+          filteredPosts = allPosts.filter((p:any) => {
+              // Always show own posts
+              if (p.uid === user.uid) return true;
+              
+              // If post has no location, we might choose to show or hide. 
+              // Assuming global posts without location should show? Or hide?
+              // Let's hide if we are strictly filtering by radius, but show if it's a friend?
+              // For simplicity, if post has location, we filter. If not, we show (e.g. global/remote posts).
+              if (p.location) {
+                  const dist = getDistanceMeters(
+                      myLocation.lat, myLocation.lng,
+                      p.location.lat, p.location.lng
+                  );
+                  return dist <= maxDistMeters;
+              }
+              return true; 
+          });
+      }
+
+      setPosts(filteredPosts);
     } catch (error) {
       console.error(error);
     } finally {
@@ -69,7 +113,7 @@ const Feed: React.FC = () => {
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
-  }, [user]);
+  }, [user, myLocation]); // Re-fetch/filter if location changes
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -282,7 +326,7 @@ const Feed: React.FC = () => {
           </div>
         ) : posts.length === 0 ? (
           <div className="text-center py-20 text-slate-500 animate-fade-in">
-            <p>No posts yet. Be the first to share something!</p>
+            <p>No posts found nearby. Try increasing your discovery radius in settings!</p>
           </div>
         ) : (
           posts.map((post, index) => (

@@ -3,10 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { UserProfile, POPULAR_INTERESTS, InterestTag } from '../types';
-import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
-import { Camera, ChevronLeft, Save, Loader2, User as UserIcon, Calendar, Briefcase } from 'lucide-react';
-import { compressImage } from '@/util/ImageCompression';
+import { Camera, ChevronLeft, Loader2, User as UserIcon, Calendar, Briefcase } from 'lucide-react';
+import { compressImage } from '../util/ImageCompression';
 
 
 const EditProfile: React.FC = () => {
@@ -159,11 +158,18 @@ const EditProfile: React.FC = () => {
                  <ChevronLeft className="w-7 h-7" />
             </button>
              <span className="font-bold text-white text-lg">Edit Profile</span>
-             <div className="w-10"></div> 
+             
+             <button
+              onClick={handleSave}
+              disabled={loading}
+              className="text-primary-500 font-bold text-base hover:text-primary-400 transition-colors disabled:opacity-50 flex items-center gap-1 px-2 py-1"
+            >
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save"}
+            </button>
         </div>
       </div>
 
-      <div className="flex-1 pb-32">
+      <div className="flex-1 pb-10">
         <form onSubmit={handleSave} className="max-w-md mx-auto w-full p-6 space-y-8">
             
             {/* Photo */}
@@ -263,21 +269,6 @@ const EditProfile: React.FC = () => {
               </div>
             )}
         </form>
-      </div>
-
-      {/* Sticky Save Button */}
-      <div className="fixed bottom-0 inset-x-0 p-6 bg-slate-900/80 backdrop-blur-xl border-t border-slate-800 z-40">
-        <div className="max-w-md mx-auto">
-          <Button 
-            onClick={handleSave} 
-            fullWidth 
-            isLoading={loading}
-            className="shadow-xl shadow-primary-500/20"
-          >
-            Save Changes
-            <Save className="w-5 h-5 ml-2" />
-          </Button>
-        </div>
       </div>
     </div>
   );

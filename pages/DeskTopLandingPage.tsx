@@ -67,7 +67,7 @@ const DesktopLanding: React.FC = () => {
           <div className="flex-1 space-y-8 text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-primary-400 text-xs font-bold uppercase tracking-wider animate-fade-in">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>The #1 Social Discovery App</span>
+              <span>The #1 Social Discovery App.</span>
             </div>
             
             <h1 className="text-5xl lg:text-7xl font-bold leading-[1.1] tracking-tight text-white">

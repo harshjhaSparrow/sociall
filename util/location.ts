@@ -19,7 +19,7 @@ export const calculateDistance = (
   const d = R * c; // Distance in meters
 
   if (d < 1000) {
-    return `${Math.round(d)} m`;
+    return "< 1 km";
   }
   const km = d / 1000;
   // Use one decimal place if between 1 and 10 km

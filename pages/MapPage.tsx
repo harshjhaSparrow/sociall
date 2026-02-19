@@ -9,7 +9,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 
-import { calculateDistance } from "@/util/location";
 import { Instagram } from "lucide-react";
 import MarkerClusterGroup from "react-leaflet-markercluster";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +16,7 @@ import { useUserLocation } from "../components/LocationGuard";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";
 import { POPULAR_INTERESTS, UserProfile } from "../types";
+import { calculateDistance } from "../util/location";
 
 /* -------------------- TYPES -------------------- */
 
@@ -66,6 +66,7 @@ const MapEventHandler: React.FC<{ onClick: () => void }> = ({ onClick }) => {
 const MapPage: React.FC = () => {
   const { location: myLocation } = useUserLocation();
   const { user: currentUser } = useAuth();
+    const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile | null>(null);
   const navigate = useNavigate();
 
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -92,28 +93,29 @@ const MapPage: React.FC = () => {
 
   /* ---------------- NEARBY USERS ---------------- */
 
-  const nearbyUsers = useMemo(() => {
+ const nearbyUsers = useMemo(() => {
     if (!myLocation) return [];
+    
+    // Default to 10km if not set
+    const maxDistanceKm = currentUserProfile?.discoveryRadius || 10;
+    const maxDistanceMeters = maxDistanceKm * 1000;
 
     return users
-      .filter((u) => u.uid !== currentUser?.uid && u.lastLocation)
-      .map((u) => {
+      .filter(u => u.uid !== currentUser?.uid && u.lastLocation)
+      .map(u => {
         const distMeters = getDistanceMeters(
-          myLocation.lat,
-          myLocation.lng,
-          u.lastLocation!.lat,
-          u.lastLocation!.lng,
+          myLocation.lat, myLocation.lng, 
+          u.lastLocation!.lat, u.lastLocation!.lng
         );
         const distDisplay = calculateDistance(
-          myLocation.lat,
-          myLocation.lng,
-          u.lastLocation!.lat,
-          u.lastLocation!.lng,
+          myLocation.lat, myLocation.lng, 
+          u.lastLocation!.lat, u.lastLocation!.lng
         );
         return { ...u, distMeters, distDisplay };
       })
+      .filter(u => u.distMeters <= maxDistanceMeters) // Apply Radius Filter
       .sort((a, b) => a.distMeters - b.distMeters);
-  }, [users, myLocation, currentUser]);
+  }, [users, myLocation, currentUser, currentUserProfile]);
 
   console.log("nearbyUsersnearbyUsers", nearbyUsers);
 

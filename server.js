@@ -12,7 +12,7 @@ const app = express();
 //this is for hosting frontend in render
 app.use(express.static(path.join(__dirname, "dist")));
 //this is for hosting frontend in render
-app.get("/", (req, res) => {
+app.get("/app", (req, res) => {
   res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
@@ -139,11 +139,134 @@ async function createNotification(type, fromUid, toUid, postId = null) {
   }
 }
 
+// --- DATABASE CLEANUP UTILITY ---
+async function cleanupOrphanedData() {
+  if (!db) return;
+  console.log("Starting cleanup of orphaned data...");
+  try {
+    const users = db.collection('users');
+    const profiles = db.collection('profiles');
+    const posts = db.collection('posts');
+    const messages = db.collection('messages');
+    const notifications = db.collection('notifications');
+
+    // 1. Get valid UIDs (convert ObjectIds to strings)
+    const allUsers = await users.find({}).project({ _id: 1 }).toArray();
+    const validUids = new Set(allUsers.map(u => u._id.toString()));
+    const validUidArray = Array.from(validUids);
+
+    console.log(`Found ${validUids.size} valid users.`);
+
+    // 2. Delete Orphaned Profiles
+    const profRes = await profiles.deleteMany({ uid: { $nin: validUidArray } });
+    console.log(`Deleted ${profRes.deletedCount} orphaned profiles`);
+
+    // 3. Delete Orphaned Posts
+    const postRes = await posts.deleteMany({ uid: { $nin: validUidArray } });
+    console.log(`Deleted ${postRes.deletedCount} orphaned posts`);
+
+    // 4. Delete Orphaned Messages (Invalid sender OR invalid recipient)
+    const msgRes = await messages.deleteMany({
+        $or: [
+            { fromUid: { $nin: validUidArray } },
+            { toUid: { $exists: true, $nin: validUidArray } }
+        ]
+    });
+    console.log(`Deleted ${msgRes.deletedCount} orphaned messages`);
+
+    // 5. Delete Orphaned Notifications
+    const notifRes = await notifications.deleteMany({
+         $or: [
+            { fromUid: { $nin: validUidArray } },
+            { toUid: { $nin: validUidArray } }
+        ]
+    });
+    console.log(`Deleted ${notifRes.deletedCount} orphaned notifications`);
+
+    // 6. Clean Arrays (Comments, Likes, Attendees, Friend Lists)
+    
+    // Remove comments from deleted users
+    await posts.updateMany(
+        {},
+        { $pull: { comments: { uid: { $nin: validUidArray } } } }
+    );
+    
+    // Iterate Posts to clean string arrays (likedBy, attendees, etc.)
+    const allPosts = await posts.find({}).toArray();
+    let postUpdates = 0;
+    for (const post of allPosts) {
+        let changed = false;
+        const updates = {};
+        
+        if (post.likedBy) {
+            const newLiked = post.likedBy.filter(id => validUids.has(id));
+            if (newLiked.length !== post.likedBy.length) {
+                updates.likedBy = newLiked;
+                updates.likes = newLiked.length;
+                changed = true;
+            }
+        }
+        if (post.attendees) {
+            const newAtt = post.attendees.filter(id => validUids.has(id));
+            if (newAtt.length !== post.attendees.length) {
+                updates.attendees = newAtt;
+                changed = true;
+            }
+        }
+        if (post.pendingRequests) {
+             const newPen = post.pendingRequests.filter(id => validUids.has(id));
+             if (newPen.length !== post.pendingRequests.length) {
+                 updates.pendingRequests = newPen;
+                 changed = true;
+             }
+        }
+        
+        if (changed) {
+            await posts.updateOne({ _id: post._id }, { $set: updates });
+            postUpdates++;
+        }
+    }
+    console.log(`Cleaned up arrays in ${postUpdates} posts`);
+
+    // Iterate Profiles to clean friend lists
+    const allProfiles = await profiles.find({}).toArray();
+    let profileUpdates = 0;
+    for (const p of allProfiles) {
+        let changed = false;
+        const updates = {};
+        const fields = ['friends', 'incomingRequests', 'outgoingRequests', 'blockedUsers'];
+        
+        for (const f of fields) {
+            if (p[f] && Array.isArray(p[f])) {
+                const filtered = p[f].filter(id => validUids.has(id));
+                if (filtered.length !== p[f].length) {
+                    updates[f] = filtered;
+                    changed = true;
+                }
+            }
+        }
+        if (changed) {
+            await profiles.updateOne({ _id: p._id }, { $set: updates });
+            profileUpdates++;
+        }
+    }
+    console.log(`Cleaned up lists in ${profileUpdates} profiles`);
+    console.log("Cleanup finished.");
+
+  } catch (e) {
+    console.error("Error during cleanup:", e);
+  }
+}
+
 async function run() {
   try {
     await client.connect();
     db = client.db(DB_NAME);
     console.log("Connected to MongoDB!");
+    
+    // Run cleanup on startup to sync state
+    await cleanupOrphanedData();
+
   } catch (e) {
     console.error("MongoDB connection error:", e);
   }
@@ -168,6 +291,17 @@ async function getMutualBlockedUids(viewerUid) {
 
 // --- API ROUTES ---
 
+// Default route to check server status
+app.get('/', (req, res) => {
+    res.send(`Socially API Running. DB Connected: ${!!db}`);
+});
+
+// Manual Cleanup Trigger
+app.post('/api/cleanup', async (req, res) => {
+    if (!db) return res.status(503).json({ error: "Database not connected" });
+    await cleanupOrphanedData();
+    res.json({ success: true, message: "Database cleanup completed" });
+});
 
 app.post('/api/auth/signup', async (req, res) => {
   if (!db) return res.status(503).json({ error: "Database not connected" });
@@ -190,6 +324,8 @@ app.post('/api/auth/signup', async (req, res) => {
         photoURL: "",
         interests: [],
         blockedUsers: [],
+        isDiscoverable: true,
+        discoveryRadius: 10,
         createdAt: Date.now()
     });
 
@@ -234,6 +370,8 @@ app.post('/api/auth/google', async (req, res) => {
             photoURL: photoURL || "",
             interests: [],
             blockedUsers: [],
+            isDiscoverable: true,
+            discoveryRadius: 10,
             createdAt: Date.now()
         });
       } else {
@@ -274,7 +412,8 @@ app.get('/api/profiles', async (req, res) => {
     const profiles = db.collection('profiles');
     let filter = {
       lastLocation: { $exists: true, $ne: null },
-      isGhostMode: { $ne: true }
+      isGhostMode: { $ne: true },
+      isDiscoverable: { $ne: false } // Only show discoverable users
     };
     if (viewerUid) {
         const excludedUids = await getMutualBlockedUids(viewerUid);
@@ -313,6 +452,8 @@ app.post('/api/profile/:uid', async (req, res) => {
     const { uid } = req.params;
     const data = req.body;
     const profiles = db.collection('profiles');
+    
+    // 1. Update Profile
     const updateFields = { ...data, uid, updatedAt: new Date() };
     const updateDoc = { $set: updateFields };
     if (data.isGhostMode === true) {
@@ -323,12 +464,62 @@ app.post('/api/profile/:uid', async (req, res) => {
         updateFields.isGhostMode = false;
     }
     await profiles.updateOne({ uid }, updateDoc, { upsert: true });
+
+    // 2. Propagate updates to related collections (Posts, Comments, Messages, Notifications)
+    // This ensures that old posts/comments reflect the new username/photo
+    if (data.displayName || data.photoURL !== undefined) {
+        const posts = db.collection('posts');
+        const messages = db.collection('messages');
+        const notifications = db.collection('notifications');
+
+        const updates = {};
+        const commentUpdates = {};
+        const notifUpdates = {};
+        
+        if (data.displayName) {
+             updates.authorName = data.displayName;
+             commentUpdates["comments.$[elem].authorName"] = data.displayName;
+             notifUpdates.fromName = data.displayName;
+        }
+        if (data.photoURL !== undefined) {
+             updates.authorPhoto = data.photoURL;
+             commentUpdates["comments.$[elem].authorPhoto"] = data.photoURL;
+             notifUpdates.fromPhoto = data.photoURL;
+        }
+
+        // Update Posts (where user is author)
+        if (Object.keys(updates).length > 0) {
+            await posts.updateMany({ uid }, { $set: updates });
+        }
+
+        // Update Comments (where user is author)
+        if (Object.keys(commentUpdates).length > 0) {
+            await posts.updateMany(
+                { "comments.uid": uid },
+                { $set: commentUpdates },
+                { arrayFilters: [{ "elem.uid": uid }] }
+            );
+        }
+
+        // Update Messages (where user is sender)
+        if (Object.keys(updates).length > 0) {
+            await messages.updateMany({ fromUid: uid }, { $set: updates });
+        }
+
+        // Update Notifications (where user is sender)
+        if (Object.keys(notifUpdates).length > 0) {
+            await notifications.updateMany({ fromUid: uid }, { $set: notifUpdates });
+        }
+    }
+
     res.json({ success: true });
   } catch (error) {
+    console.error("Profile update error", error);
     res.status(500).json({ error: "Failed to update profile" });
   }
 });
 
+// ... (rest of file remains unchanged)
 app.post('/api/user/block', async (req, res) => {
     if (!db) return res.status(503).json({ error: "Database not connected" });
     try {
@@ -754,7 +945,7 @@ app.get('/api/chat/history/:uid1/:uid2', async (req, res) => {
   }
 });
 
-app.get('/api/chat/history/:groupId', async (req, res) => {
+app.get('/api/chat/history/group/:groupId', async (req, res) => {
     if (!db) return res.status(503).json({ error: "Database not connected" });
     try {
         const { groupId } = req.params;
@@ -899,5 +1090,6 @@ app.get('/api/chat/unread-count/:uid', async (req, res) => {
 });
 
 server.listen(port, '0.0.0.0', () => {
-  console.log(`Server listening on port ${port}`);
+  console.log(`Server + WebSocket running on port ${port}`);
 });
+

@@ -17,12 +17,19 @@ const getBaseUrl = () => {
     hostname.startsWith("192.168.") ||
     hostname.startsWith("10.");
 
-  // Local or network testing
+  const isVercel = hostname.includes("vercel.app");
+
+  // 1️⃣ Local or network testing
   if (isLocal) {
     return `http://${hostname}:${PORT}/api`;
   }
 
-  // Production (Beanstalk + Load Balancer + SSL)
+  // 2️⃣ If frontend is deployed on Vercel
+  if (isVercel) {
+    return "https://backend.strangerchat.space/api";
+  }
+
+  // 3️⃣ Production (Beanstalk / custom domain / Load Balancer)
   return `${protocol}//${hostname}/api`;
 };
 

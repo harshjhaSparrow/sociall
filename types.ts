@@ -1,3 +1,4 @@
+
 export interface Location {
   lat: number;
   lng: number;
@@ -33,6 +34,8 @@ export interface UserProfile {
   blockedUsers?: string[]; 
   dob?: string;
   isGhostMode?: boolean;
+  isDiscoverable?: boolean;
+  discoveryRadius?: number; // in km
 }
 
 export interface Comment {
