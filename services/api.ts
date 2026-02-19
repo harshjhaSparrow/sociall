@@ -11,10 +11,6 @@ const PORT = 5000;
 const getBaseUrl = () => {
   const { protocol, hostname } = window.location;
 
-  console.log("🌍 Current Location:", {
-    protocol,
-    hostname,
-  });
 
   const isLocal =
     hostname === "localhost" ||
@@ -55,7 +51,6 @@ const API_BASE = getBaseUrl();
 
 
 // const API_BASE = getBaseUrl();
-// const API_BASE = "https://backend.strangerchat.space/api";
 
 export const api = {
   auth: {

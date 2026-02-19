@@ -26,22 +26,30 @@ const wss = new WebSocketServer({ server });
 // Enable CORS
 const allowedOrigins = [
   "http://localhost:3000",
+  "http://localhost:5000",
   "https://backend.strangerchat.space",
-  "http://localhost:5000"
+  "https://sociall-sigma.vercel.app"   // ✅ ADD THIS
 ];
+
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (
+        !origin ||
+        origin.includes("vercel.app") ||
+        allowedOrigins.includes(origin)
+      ) {
         callback(null, true);
       } else {
+        console.log("❌ CORS blocked:", origin);
         callback(new Error("Not allowed by CORS"));
       }
     },
     credentials: true,
   })
 );
+
 
 
 app.use(express.json({ limit: "10mb" }));
