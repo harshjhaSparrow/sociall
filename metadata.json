@@ -1,5 +1,5 @@
 {
-  "name": "Socially",
+  "name": "Orbyt",
   "description": "A mobile-first social profile application backed by a Node.js/MongoDB server. Requires 'node server.js' to be running.",
   "requestFramePermissions": [
     "camera",

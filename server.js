@@ -74,45 +74,45 @@ const clients = new Map(); // uid -> Set<WebSocket>
 
 // --- WebSocket Logic ---
 wss.on('connection', (ws, req) => {
-    const urlParams = new URLSearchParams(req.url.split('?')[1]);
-    const uid = urlParams.get('uid');
+  const urlParams = new URLSearchParams(req.url.split('?')[1]);
+  const uid = urlParams.get('uid');
 
-    if (uid) {
-        if (!clients.has(uid)) {
-            clients.set(uid, new Set());
-        }
-        clients.get(uid).add(ws);
-
-        ws.on('close', () => {
-            if (clients.has(uid)) {
-                clients.get(uid).delete(ws);
-                if (clients.get(uid).size === 0) {
-                    clients.delete(uid);
-                }
-            }
-        });
-
-        ws.on('message', (message) => {
-            try {
-                const data = JSON.parse(message);
-                if (data.type === 'ping') {
-                    ws.send(JSON.stringify({ type: 'pong' }));
-                }
-            } catch (e) {
-                // Ignore
-            }
-        });
+  if (uid) {
+    if (!clients.has(uid)) {
+      clients.set(uid, new Set());
     }
+    clients.get(uid).add(ws);
+
+    ws.on('close', () => {
+      if (clients.has(uid)) {
+        clients.get(uid).delete(ws);
+        if (clients.get(uid).size === 0) {
+          clients.delete(uid);
+        }
+      }
+    });
+
+    ws.on('message', (message) => {
+      try {
+        const data = JSON.parse(message);
+        if (data.type === 'ping') {
+          ws.send(JSON.stringify({ type: 'pong' }));
+        }
+      } catch (e) {
+        // Ignore
+      }
+    });
+  }
 });
 
 function sendToUser(uid, data) {
-    if (clients.has(uid)) {
-        clients.get(uid).forEach(client => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify(data));
-            }
-        });
-    }
+  if (clients.has(uid)) {
+    clients.get(uid).forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify(data));
+      }
+    });
+  }
 }
 
 async function createNotification(type, fromUid, toUid, postId = null) {
@@ -129,9 +129,9 @@ async function createNotification(type, fromUid, toUid, postId = null) {
     const receiverBlocked = receiver.blockedUsers || [];
 
     if (senderBlocked.includes(toUid) || receiverBlocked.includes(fromUid)) {
-        return;
+      return;
     }
-    
+
     await notifications.insertOne({
       type,
       fromUid,
@@ -175,64 +175,64 @@ async function cleanupOrphanedData() {
 
     // 4. Delete Orphaned Messages (Invalid sender OR invalid recipient)
     const msgRes = await messages.deleteMany({
-        $or: [
-            { fromUid: { $nin: validUidArray } },
-            { toUid: { $exists: true, $nin: validUidArray } }
-        ]
+      $or: [
+        { fromUid: { $nin: validUidArray } },
+        { toUid: { $exists: true, $nin: validUidArray } }
+      ]
     });
     console.log(`Deleted ${msgRes.deletedCount} orphaned messages`);
 
     // 5. Delete Orphaned Notifications
     const notifRes = await notifications.deleteMany({
-         $or: [
-            { fromUid: { $nin: validUidArray } },
-            { toUid: { $nin: validUidArray } }
-        ]
+      $or: [
+        { fromUid: { $nin: validUidArray } },
+        { toUid: { $nin: validUidArray } }
+      ]
     });
     console.log(`Deleted ${notifRes.deletedCount} orphaned notifications`);
 
     // 6. Clean Arrays (Comments, Likes, Attendees, Friend Lists)
-    
+
     // Remove comments from deleted users
     await posts.updateMany(
-        {},
-        { $pull: { comments: { uid: { $nin: validUidArray } } } }
+      {},
+      { $pull: { comments: { uid: { $nin: validUidArray } } } }
     );
-    
+
     // Iterate Posts to clean string arrays (likedBy, attendees, etc.)
     const allPosts = await posts.find({}).toArray();
     let postUpdates = 0;
     for (const post of allPosts) {
-        let changed = false;
-        const updates = {};
-        
-        if (post.likedBy) {
-            const newLiked = post.likedBy.filter(id => validUids.has(id));
-            if (newLiked.length !== post.likedBy.length) {
-                updates.likedBy = newLiked;
-                updates.likes = newLiked.length;
-                changed = true;
-            }
+      let changed = false;
+      const updates = {};
+
+      if (post.likedBy) {
+        const newLiked = post.likedBy.filter(id => validUids.has(id));
+        if (newLiked.length !== post.likedBy.length) {
+          updates.likedBy = newLiked;
+          updates.likes = newLiked.length;
+          changed = true;
         }
-        if (post.attendees) {
-            const newAtt = post.attendees.filter(id => validUids.has(id));
-            if (newAtt.length !== post.attendees.length) {
-                updates.attendees = newAtt;
-                changed = true;
-            }
+      }
+      if (post.attendees) {
+        const newAtt = post.attendees.filter(id => validUids.has(id));
+        if (newAtt.length !== post.attendees.length) {
+          updates.attendees = newAtt;
+          changed = true;
         }
-        if (post.pendingRequests) {
-             const newPen = post.pendingRequests.filter(id => validUids.has(id));
-             if (newPen.length !== post.pendingRequests.length) {
-                 updates.pendingRequests = newPen;
-                 changed = true;
-             }
+      }
+      if (post.pendingRequests) {
+        const newPen = post.pendingRequests.filter(id => validUids.has(id));
+        if (newPen.length !== post.pendingRequests.length) {
+          updates.pendingRequests = newPen;
+          changed = true;
         }
-        
-        if (changed) {
-            await posts.updateOne({ _id: post._id }, { $set: updates });
-            postUpdates++;
-        }
+      }
+
+      if (changed) {
+        await posts.updateOne({ _id: post._id }, { $set: updates });
+        postUpdates++;
+      }
     }
     console.log(`Cleaned up arrays in ${postUpdates} posts`);
 
@@ -240,23 +240,23 @@ async function cleanupOrphanedData() {
     const allProfiles = await profiles.find({}).toArray();
     let profileUpdates = 0;
     for (const p of allProfiles) {
-        let changed = false;
-        const updates = {};
-        const fields = ['friends', 'incomingRequests', 'outgoingRequests', 'blockedUsers'];
-        
-        for (const f of fields) {
-            if (p[f] && Array.isArray(p[f])) {
-                const filtered = p[f].filter(id => validUids.has(id));
-                if (filtered.length !== p[f].length) {
-                    updates[f] = filtered;
-                    changed = true;
-                }
-            }
+      let changed = false;
+      const updates = {};
+      const fields = ['friends', 'incomingRequests', 'outgoingRequests', 'blockedUsers'];
+
+      for (const f of fields) {
+        if (p[f] && Array.isArray(p[f])) {
+          const filtered = p[f].filter(id => validUids.has(id));
+          if (filtered.length !== p[f].length) {
+            updates[f] = filtered;
+            changed = true;
+          }
         }
-        if (changed) {
-            await profiles.updateOne({ _id: p._id }, { $set: updates });
-            profileUpdates++;
-        }
+      }
+      if (changed) {
+        await profiles.updateOne({ _id: p._id }, { $set: updates });
+        profileUpdates++;
+      }
     }
     console.log(`Cleaned up lists in ${profileUpdates} profiles`);
     console.log("Cleanup finished.");
@@ -271,7 +271,7 @@ async function run() {
     await client.connect();
     db = client.db(DB_NAME);
     console.log("Connected to MongoDB!");
-    
+
     // Run cleanup on startup to sync state
     await cleanupOrphanedData();
 
@@ -283,32 +283,32 @@ run().catch(console.dir);
 
 // --- HELPER: Get Blocked Lists ---
 async function getMutualBlockedUids(viewerUid) {
-    if (!viewerUid || viewerUid === 'undefined' || viewerUid === 'null') return [];
-    try {
-        const profiles = db.collection('profiles');
-        const viewer = await profiles.findOne({ uid: viewerUid });
-        const blockedByViewer = viewer?.blockedUsers || [];
-        const blockers = await profiles.find({ blockedUsers: viewerUid }).project({ uid: 1 }).toArray();
-        const blockingViewer = blockers.map(b => b.uid);
-        return [...new Set([...blockedByViewer, ...blockingViewer])];
-    } catch (e) {
-        console.error("Error fetching blocked UIDs", e);
-        return [];
-    }
+  if (!viewerUid || viewerUid === 'undefined' || viewerUid === 'null') return [];
+  try {
+    const profiles = db.collection('profiles');
+    const viewer = await profiles.findOne({ uid: viewerUid });
+    const blockedByViewer = viewer?.blockedUsers || [];
+    const blockers = await profiles.find({ blockedUsers: viewerUid }).project({ uid: 1 }).toArray();
+    const blockingViewer = blockers.map(b => b.uid);
+    return [...new Set([...blockedByViewer, ...blockingViewer])];
+  } catch (e) {
+    console.error("Error fetching blocked UIDs", e);
+    return [];
+  }
 }
 
 // --- API ROUTES ---
 
 // Default route to check server status
 app.get('/', (req, res) => {
-    res.send(`Socially API Running. DB Connected: ${!!db}`);
+  res.send(`Orbyt API Running. DB Connected: ${!!db}`);
 });
 
 // Manual Cleanup Trigger
 app.post('/api/cleanup', async (req, res) => {
-    if (!db) return res.status(503).json({ error: "Database not connected" });
-    await cleanupOrphanedData();
-    res.json({ success: true, message: "Database cleanup completed" });
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  await cleanupOrphanedData();
+  res.json({ success: true, message: "Database cleanup completed" });
 });
 
 app.post('/api/auth/signup', async (req, res) => {
@@ -317,7 +317,7 @@ app.post('/api/auth/signup', async (req, res) => {
     const { email, password } = req.body;
     const users = db.collection('users');
     const profiles = db.collection('profiles');
-    
+
     const existing = await users.findOne({ email });
     if (existing) return res.status(400).json({ error: "Email already in use" });
 
@@ -326,15 +326,15 @@ app.post('/api/auth/signup', async (req, res) => {
     const uid = result.insertedId.toString();
 
     await profiles.insertOne({
-        uid,
-        email,
-        displayName: email.split('@')[0],
-        photoURL: "",
-        interests: [],
-        blockedUsers: [],
-        isDiscoverable: true,
-        discoveryRadius: 10,
-        createdAt: Date.now()
+      uid,
+      email,
+      displayName: email.split('@')[0],
+      photoURL: "",
+      interests: [],
+      blockedUsers: [],
+      isDiscoverable: true,
+      discoveryRadius: 10,
+      createdAt: Date.now()
     });
 
     res.json({ user: { uid, email } });
@@ -357,46 +357,46 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 app.post('/api/auth/google', async (req, res) => {
-    if (!db) return res.status(503).json({ error: "Database not connected" });
-    try {
-      const { email, displayName, photoURL } = req.body;
-      const users = db.collection('users');
-      const profiles = db.collection('profiles');
-      
-      let user = await users.findOne({ email });
-      let uid;
-  
-      if (!user) {
-        const newUser = { email, authType: 'google', createdAt: new Date() };
-        const result = await users.insertOne(newUser);
-        uid = result.insertedId.toString();
-        
-        await profiles.insertOne({
-            uid,
-            email,
-            displayName: displayName || email.split('@')[0],
-            photoURL: photoURL || "",
-            interests: [],
-            blockedUsers: [],
-            isDiscoverable: true,
-            discoveryRadius: 10,
-            createdAt: Date.now()
-        });
-      } else {
-        uid = user._id.toString();
-        if (photoURL || displayName) {
-             const updateFields = {};
-             if (photoURL) updateFields.photoURL = photoURL;
-             if (Object.keys(updateFields).length > 0) {
-                 await profiles.updateOne({ uid }, { $set: updateFields });
-             }
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { email, displayName, photoURL } = req.body;
+    const users = db.collection('users');
+    const profiles = db.collection('profiles');
+
+    let user = await users.findOne({ email });
+    let uid;
+
+    if (!user) {
+      const newUser = { email, authType: 'google', createdAt: new Date() };
+      const result = await users.insertOne(newUser);
+      uid = result.insertedId.toString();
+
+      await profiles.insertOne({
+        uid,
+        email,
+        displayName: displayName || email.split('@')[0],
+        photoURL: photoURL || "",
+        interests: [],
+        blockedUsers: [],
+        isDiscoverable: true,
+        discoveryRadius: 10,
+        createdAt: Date.now()
+      });
+    } else {
+      uid = user._id.toString();
+      if (photoURL || displayName) {
+        const updateFields = {};
+        if (photoURL) updateFields.photoURL = photoURL;
+        if (Object.keys(updateFields).length > 0) {
+          await profiles.updateOne({ uid }, { $set: updateFields });
         }
       }
-      res.json({ user: { uid, email } });
-    } catch (error) {
-      res.status(500).json({ error: "Google login failed" });
     }
-  });
+    res.json({ user: { uid, email } });
+  } catch (error) {
+    res.status(500).json({ error: "Google login failed" });
+  }
+});
 
 app.get('/api/profile/:uid', async (req, res) => {
   if (!db) return res.status(503).json({ error: "Database not connected" });
@@ -424,12 +424,12 @@ app.get('/api/profiles', async (req, res) => {
       isDiscoverable: { $ne: false } // Only show discoverable users
     };
     if (viewerUid) {
-        const excludedUids = await getMutualBlockedUids(viewerUid);
-        if (excludedUids.length > 0) {
-            filter.uid = { $nin: excludedUids };
-        }
+      const excludedUids = await getMutualBlockedUids(viewerUid);
+      if (excludedUids.length > 0) {
+        filter.uid = { $nin: excludedUids };
+      }
     }
-    const users = await profiles.find(filter).project({ 
+    const users = await profiles.find(filter).project({
       uid: 1, displayName: 1, photoURL: 1, lastLocation: 1,
       interests: 1, bio: 1, instagramHandle: 1, friends: 1
     }).limit(100).toArray();
@@ -440,18 +440,18 @@ app.get('/api/profiles', async (req, res) => {
 });
 
 app.post('/api/profiles/batch', async (req, res) => {
-    if (!db) return res.status(503).json({ error: "Database not connected" });
-    try {
-        const { uids } = req.body;
-        if (!Array.isArray(uids) || uids.length === 0) return res.json([]);
-        const profiles = db.collection('profiles');
-        const users = await profiles.find({ uid: { $in: uids } }).project({
-            uid: 1, displayName: 1, photoURL: 1, bio: 1
-        }).toArray();
-        res.json(users);
-    } catch (error) {
-        res.status(500).json({ error: "Failed to fetch batch profiles" });
-    }
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { uids } = req.body;
+    if (!Array.isArray(uids) || uids.length === 0) return res.json([]);
+    const profiles = db.collection('profiles');
+    const users = await profiles.find({ uid: { $in: uids } }).project({
+      uid: 1, displayName: 1, photoURL: 1, bio: 1
+    }).toArray();
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch batch profiles" });
+  }
 });
 
 app.post('/api/profile/:uid', async (req, res) => {
@@ -460,64 +460,64 @@ app.post('/api/profile/:uid', async (req, res) => {
     const { uid } = req.params;
     const data = req.body;
     const profiles = db.collection('profiles');
-    
+
     // 1. Update Profile
     const updateFields = { ...data, uid, updatedAt: new Date() };
     const updateDoc = { $set: updateFields };
     if (data.isGhostMode === true) {
-        updateFields.isGhostMode = true; 
-        updateDoc.$unset = { lastLocation: "" };
-        delete updateFields.lastLocation;
+      updateFields.isGhostMode = true;
+      updateDoc.$unset = { lastLocation: "" };
+      delete updateFields.lastLocation;
     } else if (data.isGhostMode === false) {
-        updateFields.isGhostMode = false;
+      updateFields.isGhostMode = false;
     }
     await profiles.updateOne({ uid }, updateDoc, { upsert: true });
 
     // 2. Propagate updates to related collections (Posts, Comments, Messages, Notifications)
     // This ensures that old posts/comments reflect the new username/photo
     if (data.displayName || data.photoURL !== undefined) {
-        const posts = db.collection('posts');
-        const messages = db.collection('messages');
-        const notifications = db.collection('notifications');
+      const posts = db.collection('posts');
+      const messages = db.collection('messages');
+      const notifications = db.collection('notifications');
 
-        const updates = {};
-        const commentUpdates = {};
-        const notifUpdates = {};
-        
-        if (data.displayName) {
-             updates.authorName = data.displayName;
-             commentUpdates["comments.$[elem].authorName"] = data.displayName;
-             notifUpdates.fromName = data.displayName;
-        }
-        if (data.photoURL !== undefined) {
-             updates.authorPhoto = data.photoURL;
-             commentUpdates["comments.$[elem].authorPhoto"] = data.photoURL;
-             notifUpdates.fromPhoto = data.photoURL;
-        }
+      const updates = {};
+      const commentUpdates = {};
+      const notifUpdates = {};
 
-        // Update Posts (where user is author)
-        if (Object.keys(updates).length > 0) {
-            await posts.updateMany({ uid }, { $set: updates });
-        }
+      if (data.displayName) {
+        updates.authorName = data.displayName;
+        commentUpdates["comments.$[elem].authorName"] = data.displayName;
+        notifUpdates.fromName = data.displayName;
+      }
+      if (data.photoURL !== undefined) {
+        updates.authorPhoto = data.photoURL;
+        commentUpdates["comments.$[elem].authorPhoto"] = data.photoURL;
+        notifUpdates.fromPhoto = data.photoURL;
+      }
 
-        // Update Comments (where user is author)
-        if (Object.keys(commentUpdates).length > 0) {
-            await posts.updateMany(
-                { "comments.uid": uid },
-                { $set: commentUpdates },
-                { arrayFilters: [{ "elem.uid": uid }] }
-            );
-        }
+      // Update Posts (where user is author)
+      if (Object.keys(updates).length > 0) {
+        await posts.updateMany({ uid }, { $set: updates });
+      }
 
-        // Update Messages (where user is sender)
-        if (Object.keys(updates).length > 0) {
-            await messages.updateMany({ fromUid: uid }, { $set: updates });
-        }
+      // Update Comments (where user is author)
+      if (Object.keys(commentUpdates).length > 0) {
+        await posts.updateMany(
+          { "comments.uid": uid },
+          { $set: commentUpdates },
+          { arrayFilters: [{ "elem.uid": uid }] }
+        );
+      }
 
-        // Update Notifications (where user is sender)
-        if (Object.keys(notifUpdates).length > 0) {
-            await notifications.updateMany({ fromUid: uid }, { $set: notifUpdates });
-        }
+      // Update Messages (where user is sender)
+      if (Object.keys(updates).length > 0) {
+        await messages.updateMany({ fromUid: uid }, { $set: updates });
+      }
+
+      // Update Notifications (where user is sender)
+      if (Object.keys(notifUpdates).length > 0) {
+        await notifications.updateMany({ fromUid: uid }, { $set: notifUpdates });
+      }
     }
 
     res.json({ success: true });
@@ -529,116 +529,116 @@ app.post('/api/profile/:uid', async (req, res) => {
 
 // ... (rest of file remains unchanged)
 app.post('/api/user/block', async (req, res) => {
-    if (!db) return res.status(503).json({ error: "Database not connected" });
-    try {
-        const { uid, targetUid } = req.body;
-        const profiles = db.collection('profiles');
-        await profiles.updateOne({ uid: uid }, { $addToSet: { blockedUsers: targetUid } });
-        await profiles.updateOne({ uid: uid }, {
-            $pull: { friends: targetUid, incomingRequests: targetUid, outgoingRequests: targetUid },
-            $unset: { [`friendRequestMessages.${targetUid}`]: "" }
-        });
-        await profiles.updateOne({ uid: targetUid }, {
-            $pull: { friends: uid, incomingRequests: uid, outgoingRequests: uid },
-            $unset: { [`friendRequestMessages.${uid}`]: "" }
-        });
-        res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ error: "Failed to block user" });
-    }
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { uid, targetUid } = req.body;
+    const profiles = db.collection('profiles');
+    await profiles.updateOne({ uid: uid }, { $addToSet: { blockedUsers: targetUid } });
+    await profiles.updateOne({ uid: uid }, {
+      $pull: { friends: targetUid, incomingRequests: targetUid, outgoingRequests: targetUid },
+      $unset: { [`friendRequestMessages.${targetUid}`]: "" }
+    });
+    await profiles.updateOne({ uid: targetUid }, {
+      $pull: { friends: uid, incomingRequests: uid, outgoingRequests: uid },
+      $unset: { [`friendRequestMessages.${uid}`]: "" }
+    });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to block user" });
+  }
 });
 
 app.post('/api/user/unblock', async (req, res) => {
-    if (!db) return res.status(503).json({ error: "Database not connected" });
-    try {
-        const { uid, targetUid } = req.body;
-        const profiles = db.collection('profiles');
-        await profiles.updateOne({ uid: uid }, { $pull: { blockedUsers: targetUid } });
-        res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ error: "Failed to unblock user" });
-    }
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { uid, targetUid } = req.body;
+    const profiles = db.collection('profiles');
+    await profiles.updateOne({ uid: uid }, { $pull: { blockedUsers: targetUid } });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to unblock user" });
+  }
 });
 
 app.post('/api/report', async (req, res) => {
-    if (!db) return res.status(503).json({ error: "Database not connected" });
-    try {
-        const { reporterUid, targetUid, reason, postId } = req.body;
-        const reports = db.collection('reports');
-        await reports.insertOne({
-            reporterUid, targetUid, reason, postId: postId || null,
-            createdAt: Date.now(), status: 'pending'
-        });
-        res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ error: "Failed to submit report" });
-    }
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { reporterUid, targetUid, reason, postId } = req.body;
+    const reports = db.collection('reports');
+    await reports.insertOne({
+      reporterUid, targetUid, reason, postId: postId || null,
+      createdAt: Date.now(), status: 'pending'
+    });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to submit report" });
+  }
 });
 
 app.post('/api/friends/request', async (req, res) => {
-    if (!db) return res.status(503).json({ error: "Database not connected" });
-    try {
-        const { fromUid, toUid, message } = req.body;
-        const profiles = db.collection('profiles');
-        await profiles.updateOne({ uid: fromUid }, { $addToSet: { outgoingRequests: toUid } });
-        const updateDoc = { $addToSet: { incomingRequests: fromUid } };
-        if (message) updateDoc.$set = { [`friendRequestMessages.${fromUid}`]: message };
-        await profiles.updateOne({ uid: toUid }, updateDoc);
-        await createNotification('friend_request', fromUid, toUid);
-        res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ error: "Failed to send request" });
-    }
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { fromUid, toUid, message } = req.body;
+    const profiles = db.collection('profiles');
+    await profiles.updateOne({ uid: fromUid }, { $addToSet: { outgoingRequests: toUid } });
+    const updateDoc = { $addToSet: { incomingRequests: fromUid } };
+    if (message) updateDoc.$set = { [`friendRequestMessages.${fromUid}`]: message };
+    await profiles.updateOne({ uid: toUid }, updateDoc);
+    await createNotification('friend_request', fromUid, toUid);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to send request" });
+  }
 });
 
 app.post('/api/friends/accept', async (req, res) => {
-    if (!db) return res.status(503).json({ error: "Database not connected" });
-    try {
-        const { userUid, requesterUid } = req.body;
-        const profiles = db.collection('profiles');
-        await profiles.updateOne({ uid: userUid }, { 
-            $pull: { incomingRequests: requesterUid }, 
-            $addToSet: { friends: requesterUid },
-            $unset: { [`friendRequestMessages.${requesterUid}`]: "" }
-        });
-        await profiles.updateOne({ uid: requesterUid }, { 
-            $pull: { outgoingRequests: userUid }, 
-            $addToSet: { friends: userUid } 
-        });
-        await createNotification('friend_accept', userUid, requesterUid);
-        res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ error: "Failed to accept request" });
-    }
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { userUid, requesterUid } = req.body;
+    const profiles = db.collection('profiles');
+    await profiles.updateOne({ uid: userUid }, {
+      $pull: { incomingRequests: requesterUid },
+      $addToSet: { friends: requesterUid },
+      $unset: { [`friendRequestMessages.${requesterUid}`]: "" }
+    });
+    await profiles.updateOne({ uid: requesterUid }, {
+      $pull: { outgoingRequests: userUid },
+      $addToSet: { friends: userUid }
+    });
+    await createNotification('friend_accept', userUid, requesterUid);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to accept request" });
+  }
 });
 
 app.post('/api/friends/reject', async (req, res) => {
-    if (!db) return res.status(503).json({ error: "Database not connected" });
-    try {
-        const { userUid, requesterUid } = req.body;
-        const profiles = db.collection('profiles');
-        await profiles.updateOne({ uid: userUid }, { 
-            $pull: { incomingRequests: requesterUid },
-            $unset: { [`friendRequestMessages.${requesterUid}`]: "" }
-        });
-        await profiles.updateOne({ uid: requesterUid }, { $pull: { outgoingRequests: userUid } });
-        res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ error: "Failed to reject request" });
-    }
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { userUid, requesterUid } = req.body;
+    const profiles = db.collection('profiles');
+    await profiles.updateOne({ uid: userUid }, {
+      $pull: { incomingRequests: requesterUid },
+      $unset: { [`friendRequestMessages.${requesterUid}`]: "" }
+    });
+    await profiles.updateOne({ uid: requesterUid }, { $pull: { outgoingRequests: userUid } });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to reject request" });
+  }
 });
 
 app.post('/api/friends/remove', async (req, res) => {
-    if (!db) return res.status(503).json({ error: "Database not connected" });
-    try {
-        const { uid1, uid2 } = req.body;
-        const profiles = db.collection('profiles');
-        await profiles.updateOne({ uid: uid1 }, { $pull: { friends: uid2 } });
-        await profiles.updateOne({ uid: uid2 }, { $pull: { friends: uid1 } });
-        res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ error: "Failed to remove friend" });
-    }
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { uid1, uid2 } = req.body;
+    const profiles = db.collection('profiles');
+    await profiles.updateOne({ uid: uid1 }, { $pull: { friends: uid2 } });
+    await profiles.updateOne({ uid: uid2 }, { $pull: { friends: uid1 } });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to remove friend" });
+  }
 });
 
 app.post('/api/posts', async (req, res) => {
@@ -671,8 +671,8 @@ app.get('/api/posts', async (req, res) => {
     const posts = db.collection('posts');
     let filter = {};
     if (viewerUid) {
-        const excludedUids = await getMutualBlockedUids(viewerUid);
-        if (excludedUids.length > 0) filter.uid = { $nin: excludedUids };
+      const excludedUids = await getMutualBlockedUids(viewerUid);
+      if (excludedUids.length > 0) filter.uid = { $nin: excludedUids };
     }
     const allPosts = await posts.find(filter).sort({ createdAt: -1 }).limit(50).toArray();
     res.json(allPosts);
@@ -700,17 +700,17 @@ app.get('/api/posts/:id', async (req, res) => {
     console.log(`Fetching post ID: ${postId}`);
 
     if (!ObjectId.isValid(postId)) {
-        return res.status(400).json({ error: "Invalid ID format" });
+      return res.status(400).json({ error: "Invalid ID format" });
     }
 
     const posts = db.collection('posts');
     const post = await posts.findOne({ _id: new ObjectId(postId) });
-    
+
     if (!post) {
-        console.log(`Post ${postId} not found.`);
-        return res.status(404).json({ error: "Post not found" });
+      console.log(`Post ${postId} not found.`);
+      return res.status(404).json({ error: "Post not found" });
     }
-    
+
     res.json(post);
   } catch (error) {
     console.error("Error fetching post:", error);
@@ -739,7 +739,7 @@ app.delete('/api/posts/:id', async (req, res) => {
   if (!db) return res.status(503).json({ error: "Database not connected" });
   try {
     const postId = req.params.id;
-    const { uid } = req.body; 
+    const { uid } = req.body;
     if (!ObjectId.isValid(postId)) return res.status(400).json({ error: "Invalid ID" });
     const posts = db.collection('posts');
     const post = await posts.findOne({ _id: new ObjectId(postId) });
@@ -798,102 +798,102 @@ app.post('/api/posts/:id/comment', async (req, res) => {
 // --- MEETUP ACTIONS ---
 
 app.post('/api/meetups/:id/join', async (req, res) => {
-    if (!db) return res.status(503).json({ error: "Database not connected" });
-    try {
-        const postId = req.params.id;
-        const { uid } = req.body;
-        if (!ObjectId.isValid(postId)) return res.status(400).json({ error: "Invalid ID" });
-        const posts = db.collection('posts');
-        const post = await posts.findOne({ _id: new ObjectId(postId) });
-        if (!post) return res.status(404).json({ error: "Meetup not found" });
-        await posts.updateOne({ _id: new ObjectId(postId) }, { $addToSet: { pendingRequests: uid } });
-        await createNotification('meetup_request', uid, post.uid, postId);
-        res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: "Failed to join meetup" });
-    }
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const postId = req.params.id;
+    const { uid } = req.body;
+    if (!ObjectId.isValid(postId)) return res.status(400).json({ error: "Invalid ID" });
+    const posts = db.collection('posts');
+    const post = await posts.findOne({ _id: new ObjectId(postId) });
+    if (!post) return res.status(404).json({ error: "Meetup not found" });
+    await posts.updateOne({ _id: new ObjectId(postId) }, { $addToSet: { pendingRequests: uid } });
+    await createNotification('meetup_request', uid, post.uid, postId);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: "Failed to join meetup" });
+  }
 });
 
 app.post('/api/meetups/:id/accept', async (req, res) => {
-    if (!db) return res.status(503).json({ error: "Database not connected" });
-    try {
-        const postId = req.params.id;
-        const { hostUid, requesterUid } = req.body;
-        if (!ObjectId.isValid(postId)) return res.status(400).json({ error: "Invalid ID" });
-        const posts = db.collection('posts');
-        const post = await posts.findOne({ _id: new ObjectId(postId) });
-        if (!post) return res.status(404).json({ error: "Meetup not found" });
-        if (post.uid !== hostUid) return res.status(403).json({ error: "Unauthorized" });
-        await posts.updateOne({ _id: new ObjectId(postId) }, { 
-            $pull: { pendingRequests: requesterUid },
-            $addToSet: { attendees: requesterUid }
-        });
-        await createNotification('meetup_accept', hostUid, requesterUid, postId);
-        res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: "Failed to accept request" });
-    }
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const postId = req.params.id;
+    const { hostUid, requesterUid } = req.body;
+    if (!ObjectId.isValid(postId)) return res.status(400).json({ error: "Invalid ID" });
+    const posts = db.collection('posts');
+    const post = await posts.findOne({ _id: new ObjectId(postId) });
+    if (!post) return res.status(404).json({ error: "Meetup not found" });
+    if (post.uid !== hostUid) return res.status(403).json({ error: "Unauthorized" });
+    await posts.updateOne({ _id: new ObjectId(postId) }, {
+      $pull: { pendingRequests: requesterUid },
+      $addToSet: { attendees: requesterUid }
+    });
+    await createNotification('meetup_accept', hostUid, requesterUid, postId);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: "Failed to accept request" });
+  }
 });
 
 app.post('/api/meetups/:id/reject', async (req, res) => {
-    if (!db) return res.status(503).json({ error: "Database not connected" });
-    try {
-        const postId = req.params.id;
-        const { hostUid, requesterUid } = req.body;
-        if (!ObjectId.isValid(postId)) return res.status(400).json({ error: "Invalid ID" });
-        const posts = db.collection('posts');
-        const post = await posts.findOne({ _id: new ObjectId(postId) });
-        if (!post) return res.status(404).json({ error: "Meetup not found" });
-        if (post.uid !== hostUid) return res.status(403).json({ error: "Unauthorized" });
-        await posts.updateOne({ _id: new ObjectId(postId) }, { $pull: { pendingRequests: requesterUid } });
-        res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: "Failed to reject request" });
-    }
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const postId = req.params.id;
+    const { hostUid, requesterUid } = req.body;
+    if (!ObjectId.isValid(postId)) return res.status(400).json({ error: "Invalid ID" });
+    const posts = db.collection('posts');
+    const post = await posts.findOne({ _id: new ObjectId(postId) });
+    if (!post) return res.status(404).json({ error: "Meetup not found" });
+    if (post.uid !== hostUid) return res.status(403).json({ error: "Unauthorized" });
+    await posts.updateOne({ _id: new ObjectId(postId) }, { $pull: { pendingRequests: requesterUid } });
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: "Failed to reject request" });
+  }
 });
 
 app.post('/api/meetups/:id/remove-attendee', async (req, res) => {
-    if (!db) return res.status(503).json({ error: "Database not connected" });
-    try {
-        const postId = req.params.id;
-        const { hostUid, targetUid } = req.body;
-        if (!ObjectId.isValid(postId)) return res.status(400).json({ error: "Invalid ID" });
-        const posts = db.collection('posts');
-        const post = await posts.findOne({ _id: new ObjectId(postId) });
-        if (!post) return res.status(404).json({ error: "Meetup not found" });
-        if (post.uid !== hostUid) return res.status(403).json({ error: "Unauthorized" });
-        
-        await posts.updateOne({ _id: new ObjectId(postId) }, { 
-            $pull: { attendees: targetUid } 
-        });
-        res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: "Failed to remove attendee" });
-    }
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const postId = req.params.id;
+    const { hostUid, targetUid } = req.body;
+    if (!ObjectId.isValid(postId)) return res.status(400).json({ error: "Invalid ID" });
+    const posts = db.collection('posts');
+    const post = await posts.findOne({ _id: new ObjectId(postId) });
+    if (!post) return res.status(404).json({ error: "Meetup not found" });
+    if (post.uid !== hostUid) return res.status(403).json({ error: "Unauthorized" });
+
+    await posts.updateOne({ _id: new ObjectId(postId) }, {
+      $pull: { attendees: targetUid }
+    });
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: "Failed to remove attendee" });
+  }
 });
 
 app.get('/api/notifications/:uid', async (req, res) => {
-    if (!db) return res.status(503).json({ error: "Database not connected" });
-    try {
-        const notifications = db.collection('notifications');
-        const list = await notifications.find({ toUid: req.params.uid }).sort({ createdAt: -1 }).limit(50).toArray();
-        res.json(list);
-    } catch (error) {
-        res.status(500).json({ error: "Failed to fetch notifications" });
-    }
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const notifications = db.collection('notifications');
+    const list = await notifications.find({ toUid: req.params.uid }).sort({ createdAt: -1 }).limit(50).toArray();
+    res.json(list);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch notifications" });
+  }
 });
 
 app.post('/api/notifications/mark-read', async (req, res) => {
-    if (!db) return res.status(503).json({ error: "Database not connected" });
-    try {
-        const { notificationIds } = req.body;
-        const notifications = db.collection('notifications');
-        const ids = notificationIds.map(id => new ObjectId(id));
-        await notifications.updateMany({ _id: { $in: ids } }, { $set: { read: true } });
-        res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ error: "Failed to mark read" });
-    }
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { notificationIds } = req.body;
+    const notifications = db.collection('notifications');
+    const ids = notificationIds.map(id => new ObjectId(id));
+    await notifications.updateMany({ _id: { $in: ids } }, { $set: { read: true } });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to mark read" });
+  }
 });
 
 app.post('/api/chat/send', async (req, res) => {
@@ -908,31 +908,31 @@ app.post('/api/chat/send', async (req, res) => {
     let newMessage = { fromUid, text, read: false, createdAt: Date.now(), authorName, authorPhoto };
 
     if (groupId) {
-        const posts = db.collection('posts');
-        const post = await posts.findOne({ _id: new ObjectId(groupId) });
-        if (!post) return res.status(404).json({ error: "Group not found" });
-        
-        // Authorization check
-        const isHost = post.uid === fromUid;
-        const isAttendee = post.attendees && post.attendees.includes(fromUid);
-        if (!isHost && !isAttendee) {
-             return res.status(403).json({ error: "You are not a member of this group" });
-        }
+      const posts = db.collection('posts');
+      const post = await posts.findOne({ _id: new ObjectId(groupId) });
+      if (!post) return res.status(404).json({ error: "Group not found" });
 
-        newMessage.groupId = String(groupId); // Force string for consistency
-        newMessage.groupTitle = post.meetupDetails?.title || "Meetup Group";
-        const result = await messages.insertOne(newMessage);
-        const fullMessage = { ...newMessage, _id: result.insertedId };
-        const recipients = new Set([...(post.attendees || []), post.uid]);
-        recipients.forEach(uid => sendToUser(uid, fullMessage));
-        return res.json(fullMessage);
+      // Authorization check
+      const isHost = post.uid === fromUid;
+      const isAttendee = post.attendees && post.attendees.includes(fromUid);
+      if (!isHost && !isAttendee) {
+        return res.status(403).json({ error: "You are not a member of this group" });
+      }
+
+      newMessage.groupId = String(groupId); // Force string for consistency
+      newMessage.groupTitle = post.meetupDetails?.title || "Meetup Group";
+      const result = await messages.insertOne(newMessage);
+      const fullMessage = { ...newMessage, _id: result.insertedId };
+      const recipients = new Set([...(post.attendees || []), post.uid]);
+      recipients.forEach(uid => sendToUser(uid, fullMessage));
+      return res.json(fullMessage);
     } else {
-        newMessage.toUid = toUid;
-        const result = await messages.insertOne(newMessage);
-        const fullMessage = { ...newMessage, _id: result.insertedId };
-        sendToUser(toUid, fullMessage);
-        sendToUser(fromUid, fullMessage);
-        return res.json(fullMessage);
+      newMessage.toUid = toUid;
+      const result = await messages.insertOne(newMessage);
+      const fullMessage = { ...newMessage, _id: result.insertedId };
+      sendToUser(toUid, fullMessage);
+      sendToUser(fromUid, fullMessage);
+      return res.json(fullMessage);
     }
   } catch (error) {
     res.status(500).json({ error: "Failed to send message" });
@@ -945,7 +945,7 @@ app.get('/api/chat/history/:uid1/:uid2', async (req, res) => {
     const { uid1, uid2 } = req.params;
     const messages = db.collection('messages');
     const history = await messages.find({
-      $or: [ { fromUid: uid1, toUid: uid2 }, { fromUid: uid2, toUid: uid1 } ]
+      $or: [{ fromUid: uid1, toUid: uid2 }, { fromUid: uid2, toUid: uid1 }]
     }).sort({ createdAt: 1 }).toArray();
     res.json(history);
   } catch (error) {
@@ -954,27 +954,27 @@ app.get('/api/chat/history/:uid1/:uid2', async (req, res) => {
 });
 
 app.get('/api/chat/history/group/:groupId', async (req, res) => {
-    if (!db) return res.status(503).json({ error: "Database not connected" });
-    try {
-        const { groupId } = req.params;
-        const messages = db.collection('messages');
-        
-        // Support both string and ObjectId storage for robustness
-        let query = { groupId: String(groupId) };
-        if (ObjectId.isValid(groupId)) {
-            query = { 
-                $or: [
-                    { groupId: String(groupId) },
-                    { groupId: new ObjectId(groupId) }
-                ]
-            };
-        }
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { groupId } = req.params;
+    const messages = db.collection('messages');
 
-        const history = await messages.find(query).sort({ createdAt: 1 }).toArray();
-        res.json(history);
-    } catch (e) {
-        res.status(500).json({ error: "Failed to fetch group history" });
+    // Support both string and ObjectId storage for robustness
+    let query = { groupId: String(groupId) };
+    if (ObjectId.isValid(groupId)) {
+      query = {
+        $or: [
+          { groupId: String(groupId) },
+          { groupId: new ObjectId(groupId) }
+        ]
+      };
     }
+
+    const history = await messages.find(query).sort({ createdAt: 1 }).toArray();
+    res.json(history);
+  } catch (e) {
+    res.status(500).json({ error: "Failed to fetch group history" });
+  }
 });
 
 app.get('/api/chat/inbox/:uid', async (req, res) => {
@@ -982,88 +982,92 @@ app.get('/api/chat/inbox/:uid', async (req, res) => {
   try {
     const { uid } = req.params;
     const messages = db.collection('messages');
-    
+
     // 1. Direct Messages
     const directPipeline = [
-        { $match: { groupId: { $exists: false }, $or: [ { fromUid: uid }, { toUid: uid } ] } },
-        { $sort: { createdAt: -1 } },
-        { $group: {
-                _id: { $cond: [ { $eq: ["$fromUid", uid] }, "$toUid", "$fromUid" ] },
-                lastMessage: { $first: "$$ROOT" },
-                unreadCount: { $sum: { $cond: [ { $and: [ { $eq: ["$toUid", uid] }, { $eq: ["$read", false] } ] }, 1, 0 ] } }
-        }},
-        { $lookup: { from: "profiles", localField: "_id", foreignField: "uid", as: "otherUser" } },
-        { $unwind: "$otherUser" },
-        { $project: { _id: 0, type: "direct", partner: "$otherUser", lastMessage: 1, unreadCount: 1 } }
+      { $match: { groupId: { $exists: false }, $or: [{ fromUid: uid }, { toUid: uid }] } },
+      { $sort: { createdAt: -1 } },
+      {
+        $group: {
+          _id: { $cond: [{ $eq: ["$fromUid", uid] }, "$toUid", "$fromUid"] },
+          lastMessage: { $first: "$$ROOT" },
+          unreadCount: { $sum: { $cond: [{ $and: [{ $eq: ["$toUid", uid] }, { $eq: ["$read", false] }] }, 1, 0] } }
+        }
+      },
+      { $lookup: { from: "profiles", localField: "_id", foreignField: "uid", as: "otherUser" } },
+      { $unwind: "$otherUser" },
+      { $project: { _id: 0, type: "direct", partner: "$otherUser", lastMessage: 1, unreadCount: 1 } }
     ];
 
     // 2. Group Chats (Meetups) - Fetch all active meetups user is part of
     const posts = db.collection('posts');
-    const userGroups = await posts.find({ 
-        $or: [ { uid: uid }, { attendees: uid } ], 
-        type: 'meetup' 
+    const userGroups = await posts.find({
+      $or: [{ uid: uid }, { attendees: uid }],
+      type: 'meetup'
     }).project({ _id: 1, meetupDetails: 1, createdAt: 1 }).toArray();
-    
+
     const groupIds = userGroups.map(g => g._id.toString());
     const groupObjectIds = userGroups.map(g => g._id);
-    
+
     // Get actual last messages for these groups, robust against ID type
     const groupPipeline = [
-        { $match: { 
-            $or: [
-                { groupId: { $in: groupIds } },
-                { groupId: { $in: groupObjectIds } }
-            ]
-        } },
-        { $sort: { createdAt: -1 } },
-        // Normalize groupId to string for grouping to avoid duplicate entries for same group
-        { $group: { _id: { $toString: "$groupId" }, lastMessage: { $first: "$$ROOT" } } }
+      {
+        $match: {
+          $or: [
+            { groupId: { $in: groupIds } },
+            { groupId: { $in: groupObjectIds } }
+          ]
+        }
+      },
+      { $sort: { createdAt: -1 } },
+      // Normalize groupId to string for grouping to avoid duplicate entries for same group
+      { $group: { _id: { $toString: "$groupId" }, lastMessage: { $first: "$$ROOT" } } }
     ];
 
     const [directChats, groupMessages] = await Promise.all([
-        messages.aggregate(directPipeline).toArray(),
-        messages.aggregate(groupPipeline).toArray()
+      messages.aggregate(directPipeline).toArray(),
+      messages.aggregate(groupPipeline).toArray()
     ]);
 
     // Map existing messages
     const groupMsgMap = {};
     groupMessages.forEach(g => {
-        groupMsgMap[g._id] = g.lastMessage;
+      groupMsgMap[g._id] = g.lastMessage;
     });
 
     // Construct persistent group chat items
     const groupChats = userGroups.map(g => {
-        const gid = g._id.toString();
-        const existingMsg = groupMsgMap[gid];
-        
-        let lastMessage;
-        if (existingMsg) {
-            lastMessage = existingMsg;
-            // Ensure title is up to date from post details
-            lastMessage.groupTitle = g.meetupDetails?.title;
-        } else {
-            // Synthetic message for empty groups
-            lastMessage = {
-                _id: 'synthetic_' + gid,
-                fromUid: 'system',
-                text: 'Meetup created',
-                createdAt: g.createdAt,
-                groupTitle: g.meetupDetails?.title,
-                read: true
-            };
-        }
+      const gid = g._id.toString();
+      const existingMsg = groupMsgMap[gid];
 
-        return {
-            type: 'group',
-            groupId: gid,
-            lastMessage: lastMessage,
-            unreadCount: 0 // Future: implement group read receipts
+      let lastMessage;
+      if (existingMsg) {
+        lastMessage = existingMsg;
+        // Ensure title is up to date from post details
+        lastMessage.groupTitle = g.meetupDetails?.title;
+      } else {
+        // Synthetic message for empty groups
+        lastMessage = {
+          _id: 'synthetic_' + gid,
+          fromUid: 'system',
+          text: 'Meetup created',
+          createdAt: g.createdAt,
+          groupTitle: g.meetupDetails?.title,
+          read: true
         };
+      }
+
+      return {
+        type: 'group',
+        groupId: gid,
+        lastMessage: lastMessage,
+        unreadCount: 0 // Future: implement group read receipts
+      };
     });
 
     // Combine and sort by latest activity
     const allChats = [...directChats, ...groupChats].sort((a, b) => b.lastMessage.createdAt - a.lastMessage.createdAt);
-    
+
     res.json(allChats);
   } catch (error) {
     console.error("Inbox Error", error);
@@ -1072,29 +1076,29 @@ app.get('/api/chat/inbox/:uid', async (req, res) => {
 });
 
 app.post('/api/chat/mark-read', async (req, res) => {
-    if (!db) return res.status(503).json({ error: "Database not connected" });
-    try {
-        const { myUid, partnerUid, groupId } = req.body;
-        const messages = db.collection('messages');
-        if (!groupId) {
-            await messages.updateMany({ toUid: myUid, fromUid: partnerUid, read: false }, { $set: { read: true } });
-        }
-        res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: "Failed to mark messages as read" });
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { myUid, partnerUid, groupId } = req.body;
+    const messages = db.collection('messages');
+    if (!groupId) {
+      await messages.updateMany({ toUid: myUid, fromUid: partnerUid, read: false }, { $set: { read: true } });
     }
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: "Failed to mark messages as read" });
+  }
 });
 
 app.get('/api/chat/unread-count/:uid', async (req, res) => {
-    if (!db) return res.status(503).json({ error: "Database not connected" });
-    try {
-        const { uid } = req.params;
-        const messages = db.collection('messages');
-        const count = await messages.countDocuments({ toUid: uid, read: false });
-        res.json({ count });
-    } catch (e) {
-        res.status(500).json({ error: "Failed to get unread count" });
-    }
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { uid } = req.params;
+    const messages = db.collection('messages');
+    const count = await messages.countDocuments({ toUid: uid, read: false });
+    res.json({ count });
+  } catch (e) {
+    res.status(500).json({ error: "Failed to get unread count" });
+  }
 });
 
 server.listen(port, '0.0.0.0', () => {

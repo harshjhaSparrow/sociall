@@ -1,77 +1,100 @@
 <!doctype html>
 <html lang="en">
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>Socially - Connect with Your World Live</title>
-    
-    <!-- SEO & Metadata -->
-    <meta name="description" content="Socially is a hyper-local social discovery app. Connect with people nearby, join local meetups, and discover what's happening around you in real-time." />
-    <meta name="keywords" content="social, local, meetup, events, nearby, chat, friends, discovery, map, community" />
-    <meta name="author" content="Socially Inc." />
-    <meta name="theme-color" content="#020617" />
-    
-    <!-- PWA / Mobile Capable -->
-    <link rel="manifest" href="./manifest.json" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Socially" />
+<meta charset="UTF-8" />
+<meta name="viewport"
+  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Orbyt - Connect with Your World Live</title>
 
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://socially.app/" />
-    <meta property="og:title" content="Socially - Connect with Your World Live" />
-    <meta property="og:description" content="Discover who's nearby, join local conversations, and make meaningful friendships instantly with Socially." />
-    <meta property="og:image" content="https://images.unsplash.com/photo-1543269865-cbf427effbad?q=80&w=1200&auto=format&fit=crop" />
+<!-- SEO & Metadata -->
+<meta name="description"
+  content="Orbyt is a hyper-local social discovery app. Connect with people nearby, join local meetups, and discover what's happening around you in real-time." />
+<meta name="keywords" content="social, local, meetup, events, nearby, chat, friends, discovery, map, community" />
+<meta name="author" content="Orbyt Inc." />
+<meta name="theme-color" content="#020617" />
 
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://socially.app/" />
-    <meta property="twitter:title" content="Socially - Connect with Your World Live" />
-    <meta property="twitter:description" content="Discover who's nearby, join local conversations, and make meaningful friendships instantly with Socially." />
-    <meta property="twitter:image" content="https://images.unsplash.com/photo-1543269865-cbf427effbad?q=80&w=1200&auto=format&fit=crop" />
+<!-- PWA / Mobile Capable -->
+<link rel="manifest" href="./manifest.json" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Orbyt" />
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://orbyt.app/" />
+<meta property="og:title" content="Orbyt - Connect with Your World Live" />
+<meta property="og:description"
+  content="Discover who's nearby, join local conversations, and make meaningful friendships instantly with Orbyt." />
+<meta property="og:image"
+  content="https://images.unsplash.com/photo-1543269865-cbf427effbad?q=80&w=1200&auto=format&fit=crop" />
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:url" content="https://orbyt.app/" />
+<meta property="twitter:title" content="Orbyt - Connect with Your World Live" />
+<meta property="twitter:description"
+  content="Discover who's nearby, join local conversations, and make meaningful friendships instantly with Orbyt." />
+<meta property="twitter:image"
+  content="https://images.unsplash.com/photo-1543269865-cbf427effbad?q=80&w=1200&auto=format&fit=crop" />
 
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ["Plus Jakarta Sans", "sans-serif"],
-            },
-            colors: {
-              primary: {
-                50: "#fff1f2",
-                100: "#ffe4e6",
-                200: "#fecdd3",
-                300: "#fda4af",
-                400: "#fb7185",
-                500: "#f43f5e", // Rose 500
-                600: "#e11d48",
-                700: "#be123c",
-              },
-            },
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+  rel="stylesheet" />
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ["Plus Jakarta Sans", "sans-serif"],
+        },
+        colors: {
+          primary: {
+            50: "#fff1f2",
+            100: "#ffe4e6",
+            200: "#fecdd3",
+            300: "#fda4af",
+            400: "#fb7185",
+            500: "#f43f5e", // Rose 500
+            600: "#e11d48",
+            700: "#be123c",
           },
         },
-      };
-    </script>
-    <style>
-      /* Hide scrollbar for Chrome, Safari and Opera */
-      .no-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
-      /* Hide scrollbar for IE, Edge and Firefox */
-      .no-scrollbar {
-        -ms-overflow-style: none; /* IE and Edge */
-        scrollbar-width: none; /* Firefox */
-      }
-    </style>
-    <script type="importmap">
+      },
+    },
+  };
+</script>
+<style>
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+  }
+
+  /* Native mobile app behavior */
+  body {
+    overscroll-behavior-y: none;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  * {
+    user-select: none;
+  }
+
+  input,
+  textarea {
+    user-select: auto;
+  }
+</style>
+<script type="importmap">
       {
         "imports": {
           "react/": "https://esm.sh/react@^19.2.4/",
@@ -82,10 +105,12 @@
         }
       }
     </script>
-    <link rel="stylesheet" href="/index.css" />
-  </head>
-  <body class="bg-slate-50 text-slate-900 font-sans antialiased">
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+<link rel="stylesheet" href="/index.css" />
+</head>
+
+<body class="bg-slate-50 text-slate-900 font-sans antialiased">
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
 </html>

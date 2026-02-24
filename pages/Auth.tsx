@@ -47,11 +47,11 @@ const AuthPage: React.FC = () => {
     try {
       const base64Url = token.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
-          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
       }).join(''));
       return JSON.parse(jsonPayload);
-    } catch(e) {
+    } catch (e) {
       return null;
     }
   };
@@ -83,17 +83,17 @@ const AuthPage: React.FC = () => {
           client_id: "793742543220-aggmdtptgpbns7vrem2ftpelnv73g4e4.apps.googleusercontent.com",
           callback: handleCredentialResponse
         });
-        
+
         window.google.accounts.id.renderButton(
           document.getElementById("googleBtn"),
-          { 
-            theme: "outline", 
-            size: "large", 
+          {
+            theme: "outline",
+            size: "large",
             width: "100%", // Will span the container
             text: "continue_with",
             shape: "pill",
             logo_alignment: "left"
-          } 
+          }
         );
       }
     };
@@ -128,13 +128,13 @@ const AuthPage: React.FC = () => {
               <Heart className="w-10 h-10 fill-current animate-pulse" />
             </div>
           </div>
-          
+
           <h1 className="text-4xl font-bold text-white tracking-tight mb-3">
-            Socially
+            Orbyt
           </h1>
           <p className="text-slate-400 text-lg max-w-[280px]">
-            {isLogin 
-              ? 'Welcome back! Your community is waiting.' 
+            {isLogin
+              ? 'Welcome back! Your community is waiting.'
               : 'Create a profile and start connecting instantly.'}
           </p>
         </div>
@@ -143,18 +143,18 @@ const AuthPage: React.FC = () => {
         <div className="w-full animate-slide-up bg-slate-900/50 backdrop-blur-md p-6 rounded-3xl border border-slate-800 shadow-2xl" style={{ animationDelay: '0.1s' }}>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-4">
-              <Input 
-                type="email" 
-                placeholder="hello@example.com" 
+              <Input
+                type="email"
+                placeholder="hello@example.com"
                 label="Email Address"
                 icon={<Mail className="w-5 h-5" />}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
-              <Input 
-                type="password" 
-                placeholder="••••••••" 
+              <Input
+                type="password"
+                placeholder="••••••••"
                 label="Password"
                 icon={<Lock className="w-5 h-5" />}
                 value={password}
@@ -162,7 +162,7 @@ const AuthPage: React.FC = () => {
                 required
               />
             </div>
-            
+
             {error && (
               <div className="p-4 rounded-2xl bg-red-500/10 text-red-400 text-sm font-medium border border-red-500/20 text-center animate-slide-up">
                 {error}
@@ -174,11 +174,11 @@ const AuthPage: React.FC = () => {
                 {isLogin ? 'Sign In' : 'Create Account'}
                 {!loading && <ArrowRight className="w-5 h-5 ml-2" />}
               </Button>
-              
+
               <div className="relative flex py-2 items-center">
-                  <div className="flex-grow border-t border-slate-800"></div>
-                  <span className="flex-shrink-0 mx-4 text-slate-500 text-sm font-medium">Or continue with</span>
-                  <div className="flex-grow border-t border-slate-800"></div>
+                <div className="flex-grow border-t border-slate-800"></div>
+                <span className="flex-shrink-0 mx-4 text-slate-500 text-sm font-medium">Or continue with</span>
+                <div className="flex-grow border-t border-slate-800"></div>
               </div>
 
               {/* Google Button Container */}
@@ -188,7 +188,7 @@ const AuthPage: React.FC = () => {
 
           {/* Toggle View */}
           <div className="mt-6 text-center">
-            <button 
+            <button
               onClick={() => {
                 setIsLogin(!isLogin);
                 setError(null);
@@ -198,7 +198,7 @@ const AuthPage: React.FC = () => {
               className="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-primary-400 transition-colors py-2 px-4 rounded-xl hover:bg-slate-800"
             >
               {isLogin ? (
-                <>New to Socially? <span className="text-primary-400 ml-1">Sign Up</span></>
+                <>New to Orbyt? <span className="text-primary-400 ml-1">Sign Up</span></>
               ) : (
                 <>Have an account? <span className="text-primary-400 ml-1">Log In</span></>
               )}

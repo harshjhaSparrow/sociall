@@ -44,11 +44,11 @@ const Onboarding: React.FC = () => {
     const file = e.target.files?.[0];
     if (file) {
       // Increased limit for input because we compress it anyway
-      if (file.size > 10 * 1024 * 1024) { 
-         setError("Image too large (Max 10MB).");
-         return;
+      if (file.size > 10 * 1024 * 1024) {
+        setError("Image too large (Max 10MB).");
+        return;
       }
-      
+
       try {
         setLoading(true);
         setError(null);
@@ -64,7 +64,7 @@ const Onboarding: React.FC = () => {
   };
 
   const toggleInterest = (id: string) => {
-    setSelectedInterests(prev => 
+    setSelectedInterests(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
@@ -85,37 +85,37 @@ const Onboarding: React.FC = () => {
 
     // Step 0: Legal & Privacy
     if (currentStep === 0) {
-        if (!agreedTerms) {
-            setError("You must agree to the Terms of Service and Privacy Policy.");
-            return;
-        }
-        if (!agreedLocation) {
-            setError("Location consent is required to use this app.");
-            return;
-        }
-        if (!agreedAge) {
-            setError("You must confirm you are at least 18 years old.");
-            return;
-        }
+      if (!agreedTerms) {
+        setError("You must agree to the Terms of Service and Privacy Policy.");
+        return;
+      }
+      if (!agreedLocation) {
+        setError("Location consent is required to use this app.");
+        return;
+      }
+      if (!agreedAge) {
+        setError("You must confirm you are at least 18 years old.");
+        return;
+      }
     }
 
     // Step 1: Basic Info
     if (currentStep === 1) {
-        if (!displayName.trim()) {
-            setError("Please enter your name.");
-            return;
-        }
-        if (!dob) {
-            setError("Date of birth is required.");
-            return;
-        }
-        const age = calculateAge(dob);
-        if (age < 18) {
-            setError("You must be at least 18 years old to use Socially.");
-            return;
-        }
+      if (!displayName.trim()) {
+        setError("Please enter your name.");
+        return;
+      }
+      if (!dob) {
+        setError("Date of birth is required.");
+        return;
+      }
+      const age = calculateAge(dob);
+      if (age < 18) {
+        setError("You must be at least 18 years old to use Orbyt.");
+        return;
+      }
     }
-    
+
     // Step 2: Socials
     if (currentStep === 2 && instagram.trim()) {
       const instagramRegex = /^[a-zA-Z0-9._]+$/;
@@ -166,67 +166,67 @@ const Onboarding: React.FC = () => {
       case 0: // Legal
         return (
           <div className="space-y-8 animate-fade-in">
-             <div className="text-center mb-6">
-                <div className="w-20 h-20 bg-slate-900 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-slate-800 shadow-xl shadow-black/50 transform -rotate-3">
-                   <Shield className="w-10 h-10 text-primary-500" />
+            <div className="text-center mb-6">
+              <div className="w-20 h-20 bg-slate-900 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-slate-800 shadow-xl shadow-black/50 transform -rotate-3">
+                <Shield className="w-10 h-10 text-primary-500" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">Welcome to Orbyt</h2>
+              <p className="text-slate-400">Please review and accept our community policies to continue.</p>
+            </div>
+
+            <div className="bg-slate-900/50 rounded-3xl p-6 border border-slate-800 space-y-6">
+              {/* Terms */}
+              <label className="flex items-start gap-4 cursor-pointer group">
+                <div className="pt-0.5">
+                  <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors ${agreedTerms ? 'bg-primary-500 border-primary-500' : 'border-slate-600 group-hover:border-primary-400'}`}>
+                    {agreedTerms && <CheckCircle className="w-4 h-4 text-white" />}
+                  </div>
+                  <input type="checkbox" className="hidden" checked={agreedTerms} onChange={e => setAgreedTerms(e.target.checked)} />
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2">Welcome to Socially</h2>
-                <p className="text-slate-400">Please review and accept our community policies to continue.</p>
-             </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-slate-200">Terms & Privacy</p>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                    I agree to the <span className="text-primary-400 underline">Terms of Service</span> and <span className="text-primary-400 underline">Privacy Policy</span>.
+                  </p>
+                </div>
+              </label>
 
-             <div className="bg-slate-900/50 rounded-3xl p-6 border border-slate-800 space-y-6">
-                 {/* Terms */}
-                 <label className="flex items-start gap-4 cursor-pointer group">
-                     <div className="pt-0.5">
-                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors ${agreedTerms ? 'bg-primary-500 border-primary-500' : 'border-slate-600 group-hover:border-primary-400'}`}>
-                           {agreedTerms && <CheckCircle className="w-4 h-4 text-white" />}
-                        </div>
-                        <input type="checkbox" className="hidden" checked={agreedTerms} onChange={e => setAgreedTerms(e.target.checked)} />
-                     </div>
-                     <div className="flex-1">
-                        <p className="text-sm font-semibold text-slate-200">Terms & Privacy</p>
-                        <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                            I agree to the <span className="text-primary-400 underline">Terms of Service</span> and <span className="text-primary-400 underline">Privacy Policy</span>.
-                        </p>
-                     </div>
-                 </label>
-                 
-                 <div className="h-px bg-slate-800/50" />
+              <div className="h-px bg-slate-800/50" />
 
-                 {/* Location */}
-                 <label className="flex items-start gap-4 cursor-pointer group">
-                     <div className="pt-0.5">
-                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors ${agreedLocation ? 'bg-primary-500 border-primary-500' : 'border-slate-600 group-hover:border-primary-400'}`}>
-                           {agreedLocation && <CheckCircle className="w-4 h-4 text-white" />}
-                        </div>
-                        <input type="checkbox" className="hidden" checked={agreedLocation} onChange={e => setAgreedLocation(e.target.checked)} />
-                     </div>
-                     <div className="flex-1">
-                        <p className="text-sm font-semibold text-slate-200">Location Access</p>
-                        <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                            I consent to sharing my location to find people nearby. I can change this in settings later.
-                        </p>
-                     </div>
-                 </label>
+              {/* Location */}
+              <label className="flex items-start gap-4 cursor-pointer group">
+                <div className="pt-0.5">
+                  <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors ${agreedLocation ? 'bg-primary-500 border-primary-500' : 'border-slate-600 group-hover:border-primary-400'}`}>
+                    {agreedLocation && <CheckCircle className="w-4 h-4 text-white" />}
+                  </div>
+                  <input type="checkbox" className="hidden" checked={agreedLocation} onChange={e => setAgreedLocation(e.target.checked)} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-slate-200">Location Access</p>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                    I consent to sharing my location to find people nearby. I can change this in settings later.
+                  </p>
+                </div>
+              </label>
 
-                 <div className="h-px bg-slate-800/50" />
+              <div className="h-px bg-slate-800/50" />
 
-                 {/* Age */}
-                 <label className="flex items-start gap-4 cursor-pointer group">
-                     <div className="pt-0.5">
-                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors ${agreedAge ? 'bg-primary-500 border-primary-500' : 'border-slate-600 group-hover:border-primary-400'}`}>
-                           {agreedAge && <CheckCircle className="w-4 h-4 text-white" />}
-                        </div>
-                        <input type="checkbox" className="hidden" checked={agreedAge} onChange={e => setAgreedAge(e.target.checked)} />
-                     </div>
-                     <div className="flex-1">
-                        <p className="text-sm font-semibold text-slate-200">Age Confirmation</p>
-                        <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                            I confirm that I am at least 18 years old.
-                        </p>
-                     </div>
-                 </label>
-             </div>
+              {/* Age */}
+              <label className="flex items-start gap-4 cursor-pointer group">
+                <div className="pt-0.5">
+                  <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors ${agreedAge ? 'bg-primary-500 border-primary-500' : 'border-slate-600 group-hover:border-primary-400'}`}>
+                    {agreedAge && <CheckCircle className="w-4 h-4 text-white" />}
+                  </div>
+                  <input type="checkbox" className="hidden" checked={agreedAge} onChange={e => setAgreedAge(e.target.checked)} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-slate-200">Age Confirmation</p>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                    I confirm that I am at least 18 years old.
+                  </p>
+                </div>
+              </label>
+            </div>
           </div>
         );
 
@@ -254,14 +254,14 @@ const Onboarding: React.FC = () => {
             </div>
 
             <div className="space-y-6">
-              <Input 
-                label="Display Name" 
+              <Input
+                label="Display Name"
                 placeholder="e.g. Alex Rivera"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
               />
 
-              <Input 
+              <Input
                 label="Job Role / Profession"
                 placeholder="e.g. Designer, Student, Engineer"
                 icon={<Briefcase className="w-5 h-5" />}
@@ -270,27 +270,27 @@ const Onboarding: React.FC = () => {
               />
 
               <div>
-                  <Input 
-                    label="Date of Birth"
-                    type="date"
-                    icon={<Calendar className="w-5 h-5" />}
-                    value={dob}
-                    onChange={(e) => setDob(e.target.value)}
-                    max={new Date().toISOString().split('T')[0]}
-                  />
-                  <p className="text-xs text-slate-500 mt-2 ml-1">You must be 18+ to join.</p>
+                <Input
+                  label="Date of Birth"
+                  type="date"
+                  icon={<Calendar className="w-5 h-5" />}
+                  value={dob}
+                  onChange={(e) => setDob(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
+                />
+                <p className="text-xs text-slate-500 mt-2 ml-1">You must be 18+ to join.</p>
               </div>
 
               <div className="w-full space-y-2">
-                  <label className="block text-sm font-semibold text-slate-300 ml-1">
-                    Bio <span className="text-slate-500 font-normal ml-1">(Optional)</span>
-                  </label>
-                  <textarea
-                    className="w-full rounded-2xl border-2 border-slate-800 bg-slate-900 px-4 py-4 text-white placeholder-slate-500 outline-none transition-all duration-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 focus:bg-slate-800 resize-none min-h-[120px]"
-                    placeholder="Tell us a bit about yourself..."
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                  />
+                <label className="block text-sm font-semibold text-slate-300 ml-1">
+                  Bio <span className="text-slate-500 font-normal ml-1">(Optional)</span>
+                </label>
+                <textarea
+                  className="w-full rounded-2xl border-2 border-slate-800 bg-slate-900 px-4 py-4 text-white placeholder-slate-500 outline-none transition-all duration-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 focus:bg-slate-800 resize-none min-h-[120px]"
+                  placeholder="Tell us a bit about yourself..."
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                />
               </div>
             </div>
           </div>
@@ -309,8 +309,8 @@ const Onboarding: React.FC = () => {
               </div>
             </div>
 
-            <Input 
-              label="Username" 
+            <Input
+              label="Username"
               placeholder="@username"
               icon={<span className="text-slate-500 font-bold">@</span>}
               value={instagram}
@@ -337,8 +337,8 @@ const Onboarding: React.FC = () => {
                     className={`
                       relative overflow-hidden px-4 py-4 rounded-2xl text-sm font-bold transition-all duration-200 border-2 text-left
                       flex items-center gap-3
-                      ${isSelected 
-                        ? 'bg-primary-500/10 border-primary-500 text-primary-400 shadow-md scale-[1.02]' 
+                      ${isSelected
+                        ? 'bg-primary-500/10 border-primary-500 text-primary-400 shadow-md scale-[1.02]'
                         : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700 hover:bg-slate-800'}
                     `}
                   >
@@ -364,18 +364,18 @@ const Onboarding: React.FC = () => {
       <div className="bg-slate-900/80 backdrop-blur-md px-6 py-4 shadow-sm z-20 sticky top-0 border-b border-slate-800">
         <div className="max-w-md mx-auto">
           <div className="flex justify-between items-center mb-4">
-             {currentStep > 0 ? (
-               <button onClick={handleBack} className="p-2 -ml-2 text-slate-400 hover:text-white transition-colors">
-                 <ChevronLeft className="w-7 h-7" />
-               </button>
-             ) : (
-               <div className="w-10" />
-             )}
-             <span className="font-bold text-white text-lg">Step {currentStep + 1} of {STEPS.length}</span>
-             <div className="w-10" />
+            {currentStep > 0 ? (
+              <button onClick={handleBack} className="p-2 -ml-2 text-slate-400 hover:text-white transition-colors">
+                <ChevronLeft className="w-7 h-7" />
+              </button>
+            ) : (
+              <div className="w-10" />
+            )}
+            <span className="font-bold text-white text-lg">Step {currentStep + 1} of {STEPS.length}</span>
+            <div className="w-10" />
           </div>
           <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-            <div 
+            <div
               className="h-full bg-primary-500 transition-all duration-500 ease-out rounded-full shadow-[0_0_10px_rgba(244,63,94,0.5)]"
               style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}
             />
@@ -404,9 +404,9 @@ const Onboarding: React.FC = () => {
               {currentStep === 0 ? 'Accept & Continue' : 'Continue'}
             </Button>
           ) : (
-            <Button 
-              onClick={handleFinish} 
-              fullWidth 
+            <Button
+              onClick={handleFinish}
+              fullWidth
               isLoading={loading}
               disabled={selectedInterests.length < 3}
               className="shadow-xl shadow-primary-500/20"

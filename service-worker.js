@@ -1,4 +1,4 @@
-const CACHE_NAME = 'socially-v1';
+const CACHE_NAME = 'orbyt-v1';
 const urlsToCache = [
   '/',
   '/index.html',

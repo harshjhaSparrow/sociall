@@ -39,7 +39,7 @@ const LocationGuard: React.FC<LocationGuardProps> = ({ children }) => {
           if (user) {
             try {
               await api.profile.createOrUpdate(user.uid, {
-                 lastLocation: loc
+                lastLocation: loc
               });
             } catch (e) {
               console.error("Failed to sync location to profile", e);
@@ -51,7 +51,8 @@ const LocationGuard: React.FC<LocationGuardProps> = ({ children }) => {
           console.error("Location error:", error);
           setLoading(false);
           reject(error);
-        }
+        },
+        { timeout: 10000, maximumAge: 60000, enableHighAccuracy: true }
       );
     });
   };
@@ -74,20 +75,20 @@ const LocationGuard: React.FC<LocationGuardProps> = ({ children }) => {
       return;
     }
     updateLocation().catch(() => {
-       alert("Location access is required to use Socially. Please enable it in your browser settings.");
-       setLoading(false);
+      alert("Location access is required to use Orbyt. Please enable it in your browser settings.");
+      setLoading(false);
     });
   };
 
   if (loading) {
-     return (
-        <div className="h-screen w-screen flex items-center justify-center bg-slate-950">
-           <div className="animate-pulse flex flex-col items-center">
-              <MapPin className="w-10 h-10 text-slate-700 mb-2" />
-              <p className="text-slate-500 font-medium">Checking permissions...</p>
-           </div>
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-slate-950">
+        <div className="animate-pulse flex flex-col items-center">
+          <MapPin className="w-10 h-10 text-slate-700 mb-2" />
+          <p className="text-slate-500 font-medium">Checking permissions...</p>
         </div>
-     );
+      </div>
+    );
   }
 
   if (!hasPermission) {
@@ -96,17 +97,17 @@ const LocationGuard: React.FC<LocationGuardProps> = ({ children }) => {
         <div className="w-24 h-24 bg-slate-900 rounded-full flex items-center justify-center mb-8 animate-fade-in border border-slate-800">
           <MapPin className="w-12 h-12 text-primary-500" />
         </div>
-        
+
         <h1 className="text-2xl font-bold text-white mb-3">Enable Location</h1>
         <p className="text-slate-400 mb-8 max-w-xs leading-relaxed">
-          To connect with people nearby and get the full Socially experience, we need access to your location.
+          To connect with people nearby and get the full Orbyt experience, we need access to your location.
         </p>
-        
+
         <Button onClick={requestLocation} fullWidth className="shadow-xl shadow-primary-500/20">
           Allow Location Access
           <ArrowRight className="w-5 h-5 ml-2" />
         </Button>
-        
+
         <p className="mt-6 text-xs text-slate-600">
           We prioritize your privacy and only use this to show relevant content.
         </p>
