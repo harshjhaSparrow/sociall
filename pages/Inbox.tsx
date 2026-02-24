@@ -38,20 +38,20 @@ const Inbox: React.FC = () => {
     // Real-time subscription for Inbox updates
     useEffect(() => {
         if (!user) return;
-        
+
         const unsubscribe = api.chat.subscribe(user.uid, (newMsg: Message) => {
             setConversations(prev => {
                 // Check if this conversation already exists in our list
                 let exists = false;
                 let updated = prev.map(conv => {
-                    let isMatch:any = false;
+                    let isMatch: any = false;
                     if (newMsg.groupId) {
                         isMatch = conv.type === 'group' && conv.groupId === newMsg.groupId;
                     } else {
                         // Direct message match
                         const partnerId = conv.partner?.uid;
-                        isMatch = conv.type === 'direct' && partnerId && 
-                                  (newMsg.fromUid === partnerId || newMsg.toUid === partnerId);
+                        isMatch = conv.type === 'direct' && partnerId &&
+                            (newMsg.fromUid === partnerId || newMsg.toUid === partnerId);
                     }
 
                     if (isMatch) {
@@ -84,21 +84,21 @@ const Inbox: React.FC = () => {
     const formatTime = (timestamp: number) => {
         const date = new Date(timestamp);
         const now = new Date();
-        const isToday = date.getDate() === now.getDate() && 
-                        date.getMonth() === now.getMonth() && 
-                        date.getFullYear() === now.getFullYear();
-        
+        const isToday = date.getDate() === now.getDate() &&
+            date.getMonth() === now.getMonth() &&
+            date.getFullYear() === now.getFullYear();
+
         if (isToday) {
             return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
-        
+
         // Check if within this week
         const diff = now.getTime() - date.getTime();
         const days = diff / (1000 * 3600 * 24);
         if (days < 7) {
             return date.toLocaleDateString(undefined, { weekday: 'short' });
         }
-        
+
         return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
     };
 
@@ -122,12 +122,12 @@ const Inbox: React.FC = () => {
                     const isGroup = conv.type === 'group';
                     const isUnread = (conv.unreadCount || 0) > 0;
                     const link = isGroup ? `/chat/group/${conv.groupId}` : `/chat/${conv.partner?.uid}`;
-                    
+
                     // Skip broken direct items
                     if (!isGroup && !conv.partner) return null;
 
                     return (
-                        <div 
+                        <div
                             key={isGroup ? conv.groupId : conv.partner!.uid}
                             onClick={() => navigate(link)}
                             className={`
@@ -152,7 +152,7 @@ const Inbox: React.FC = () => {
                                     </div>
                                 )}
                             </div>
-                            
+
                             <div className="flex-1 min-w-0">
                                 <div className="flex justify-between items-baseline mb-0.5">
                                     <h3 className={`text-base truncate ${isUnread ? 'font-black text-white' : 'font-bold text-slate-200'}`}>

@@ -1,4 +1,4 @@
-import { Ban, Briefcase, Check, ChevronRight, Clock, Edit2, Flag, Instagram, Loader2, LogOut, Mail, MapPin, MessageCircle, MoreVertical, Navigation, ShieldAlert, Sparkles, UserCheck, UserPlus, Users, X } from 'lucide-react';
+import { Ban, Briefcase, Check, ChevronRight, Clock, Edit2, Eye, Flag, Instagram, Loader2, LogOut, Mail, MapPin, MessageCircle, MoreVertical, Navigation, ShieldAlert, Sparkles, UserCheck, UserPlus, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useUserLocation } from '../components/LocationGuard';
@@ -38,6 +38,11 @@ export default function Profile() {
   const [friendsList, setFriendsList] = useState<UserProfile[]>([]);
   const [sentRequestsList, setSentRequestsList] = useState<UserProfile[]>([]);
   const [friendsLoading, setFriendsLoading] = useState(false);
+
+  // Viewers State
+  const [viewers, setViewers] = useState<(UserProfile & { viewedAt: number })[]>([]);
+  const [isViewersModalOpen, setIsViewersModalOpen] = useState(false);
+  const [viewersLoading, setViewersLoading] = useState(false);
 
   // Menu State
   const [showMenu, setShowMenu] = useState(false);
@@ -98,6 +103,11 @@ export default function Profile() {
             const posts = await api.posts.getUserPosts(targetUid);
             setMyPosts(posts);
 
+            // Record profile view if not own profile
+            if (!isOwnProfile && user && targetUid) {
+              api.profile.recordView(user.uid, targetUid);
+            }
+
           } else if (isOwnProfile) {
             navigate('/onboarding');
             return;
@@ -112,6 +122,17 @@ export default function Profile() {
     };
     fetchData();
   }, [targetUid, isOwnProfile, navigate, user]);
+
+  // Fetch viewers if own profile
+  useEffect(() => {
+    if (isOwnProfile && user) {
+      setViewersLoading(true);
+      api.profile.getViewers(user.uid)
+        .then(setViewers)
+        .catch(console.error)
+        .finally(() => setViewersLoading(false));
+    }
+  }, [isOwnProfile, user]);
 
   // Effect to determine Location Name
   useEffect(() => {
@@ -490,6 +511,17 @@ export default function Profile() {
                 <span className="font-bold text-white">{profile.friends?.length || 0}</span>
                 <span className="text-slate-400 text-sm">Friends</span>
               </button>
+
+              {isOwnProfile && (
+                <button
+                  onClick={() => setIsViewersModalOpen(true)}
+                  className="bg-slate-800 px-4 py-2 rounded-2xl flex items-center gap-2 border border-slate-700 hover:bg-slate-700 transition-colors active:scale-95 group"
+                >
+                  <Eye className="w-4 h-4 text-slate-400 group-hover:text-primary-400 transition-colors" />
+                  <span className="font-bold text-white">{viewers.length}</span>
+                  <span className="text-slate-400 text-sm">Views</span>
+                </button>
+              )}
             </div>
 
             {/* Actions */}
@@ -860,6 +892,65 @@ export default function Profile() {
                 )}
               </div>
 
+            </div>
+          </div>
+        )}
+
+        {/* Viewers List Modal */}
+        {isViewersModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsViewersModalOpen(false)}></div>
+            <div className="bg-slate-900 w-full max-w-sm rounded-3xl shadow-2xl relative z-10 flex flex-col max-h-[80vh] animate-slide-up border border-slate-800">
+
+              {/* Header */}
+              <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+                <h3 className="font-bold text-xl text-white">Profile Views</h3>
+                <button onClick={() => setIsViewersModalOpen(false)} className="p-2 -mr-2 text-slate-400 hover:text-white">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="overflow-y-auto p-4 flex-1 no-scrollbar">
+                {viewersLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
+                  </div>
+                ) : viewers.length === 0 ? (
+                  <div className="text-center py-10 text-slate-500">
+                    <Eye className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                    <p>No views yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {viewers.map((viewer, index) => (
+                      <div
+                        key={`${viewer.uid}-${index}`}
+                        className="flex items-center gap-3 p-3 rounded-2xl bg-slate-800 border border-slate-700 cursor-pointer hover:bg-slate-700 transition-colors"
+                        onClick={() => {
+                          setIsViewersModalOpen(false);
+                          navigate(`/profile/${viewer.uid}`);
+                        }}
+                      >
+                        <div className="w-12 h-12 rounded-full bg-slate-900 overflow-hidden shrink-0 border border-slate-600">
+                          {viewer.photoURL ? (
+                            <img src={viewer.photoURL} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold text-lg">{viewer.displayName[0]}</div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-white text-base truncate">{viewer.displayName}</h4>
+                          <p className="text-xs text-slate-400 truncate">
+                            {new Date(viewer.viewedAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-slate-500" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

@@ -362,6 +362,60 @@ async function getMutualBlockedUids(viewerUid) {
 
 // --- API ROUTES ---
 
+app.post('/api/profile/view', async (req, res) => {
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { viewerUid, targetUid } = req.body;
+    if (!viewerUid || !targetUid || viewerUid === targetUid) {
+      return res.status(400).json({ error: "Invalid uids" });
+    }
+
+    const profileViews = db.collection('profile_views');
+
+    await profileViews.updateOne(
+      { viewerUid, targetUid },
+      { $set: { timestamp: Date.now() } },
+      { upsert: true }
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Record view error:", error);
+    res.status(500).json({ error: "Failed to record view" });
+  }
+});
+
+app.get('/api/profile/views/:uid', async (req, res) => {
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { uid } = req.params;
+    const profileViews = db.collection('profile_views');
+    const profiles = db.collection('profiles');
+
+    const views = await profileViews.find({ targetUid: uid })
+      .sort({ timestamp: -1 })
+      .limit(20)
+      .toArray();
+
+    if (views.length === 0) return res.json([]);
+
+    const viewerUids = views.map(v => v.viewerUid);
+    const viewerProfiles = await profiles.find({ uid: { $in: viewerUids } })
+      .project({ uid: 1, displayName: 1, photoURL: 1 })
+      .toArray();
+
+    const result = views.map(v => {
+      const profile = viewerProfiles.find(p => p.uid === v.viewerUid);
+      return profile ? { ...profile, viewedAt: v.timestamp } : null;
+    }).filter(p => p !== null);
+
+    res.json(result);
+  } catch (error) {
+    console.error("Get views error:", error);
+    res.status(500).json({ error: "Failed to fetch profile views" });
+  }
+});
+
 // Default route to check server status
 app.get('/', (req, res) => {
   res.send(`Orbyt API Running. DB Connected: ${!!db}`);

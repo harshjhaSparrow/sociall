@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Notification, Post, UserProfile } from '../types';
 import { usePushNotifications } from '../hooks/usePushNotifications';
+import { MainLogo } from '../util/Images';
 
 const getDistanceMeters = (lat1: number, lng1: number, lat2: number, lng2: number) => {
   const R = 6371e3;
@@ -293,7 +294,14 @@ const Feed: React.FC = () => {
         className="bg-slate-900/80 backdrop-blur-xl sticky top-0 z-30 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] border-b border-slate-800 flex justify-between items-center transition-transform duration-200 ease-out"
         style={{ transform: `translateY(${pullY * 0.5}px)` }}
       >
-        <h1 className="text-xl font-bold text-white tracking-tight">Orbyt</h1>
+        {/* <h1 className="text-xl font-bold text-white tracking-tight">Orbyt</h1> */}
+        <div className="flex items-center">
+          <img
+            src={MainLogo}
+            alt="Orbyt Logo"
+            className="h-10 w-auto object-contain hover:scale-105 transition-transform duration-200"
+          />
+        </div>
 
         <div className="flex items-center gap-2">
           {/* Settings Button */}

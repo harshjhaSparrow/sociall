@@ -145,6 +145,27 @@ export const api = {
       });
       return response.ok;
     },
+    recordView: async (viewerUid: string, targetUid: string) => {
+      try {
+        await fetch(`${API_BASE}/profile/view`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ viewerUid, targetUid }),
+        });
+      } catch (e) {
+        console.error("Failed to record profile view:", e);
+      }
+    },
+    getViewers: async (uid: string) => {
+      try {
+        const response = await fetch(`${API_BASE}/profile/views/${uid}`);
+        if (!response.ok) return [];
+        return await response.json();
+      } catch (e) {
+        console.error("Failed to fetch profile viewers:", e);
+        return [];
+      }
+    },
   },
 
   userAction: {

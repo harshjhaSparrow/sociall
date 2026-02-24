@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
+import { ArrowRight, Lock, Mail } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
-import { Mail, Lock, Heart, ArrowRight, Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { api } from '../services/api';
+import { MainLogo } from '../util/Images';
 
 declare global {
   interface Window {
@@ -122,16 +123,21 @@ const AuthPage: React.FC = () => {
       <div className="flex-1 flex flex-col px-6 pt-12 pb-6 max-w-md mx-auto w-full justify-center">
         {/* Header Section */}
         <div className="flex flex-col items-center text-center animate-fade-in mb-8">
-          <div className="relative mb-8 group">
+          {/* <div className="relative mb-8 group">
             <div className="absolute inset-0 bg-primary-500 blur-2xl opacity-40 group-hover:opacity-60 transition-opacity rounded-full"></div>
             <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-xl shadow-primary-500/30 transform -rotate-3 transition-transform duration-300 hover:rotate-0 hover:scale-105 border border-primary-400/50">
               <Heart className="w-10 h-10 fill-current animate-pulse" />
             </div>
-          </div>
+          </div> */}
 
-          <h1 className="text-4xl font-bold text-white tracking-tight mb-3">
-            Orbyt
-          </h1>
+          <div className="flex py-8 items-center">
+            <img
+              src={MainLogo}
+              alt="Orbyt Logo"
+              className="h-14 w-auto object-contain hover:scale-105 transition-transform duration-200"
+            />
+            {/* <div className="text-2xl pt-6 font-bold text-white">rbyt</div> */}
+          </div>
           <p className="text-slate-400 text-lg max-w-[280px]">
             {isLogin
               ? 'Welcome back! Your community is waiting.'

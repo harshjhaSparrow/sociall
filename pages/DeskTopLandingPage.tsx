@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import React, { useState } from 'react';
 import Button from '../components/ui/Button';
+import { MainLogo } from '../util/Images';
 
 const DesktopLanding: React.FC = () => {
     const [activeFaq, setActiveFaq] = useState<number | null>(null);
@@ -31,11 +32,12 @@ const DesktopLanding: React.FC = () => {
             {/* Navigation */}
             <nav className="fixed top-0 inset-x-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 transition-all duration-300">
                 <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-lg shadow-primary-500/20">
-                            <Heart className="w-6 h-6 text-white fill-current" />
-                        </div>
-                        <span className="text-2xl font-bold tracking-tight text-white">Orbyt</span>
+                    <div className="flex items-center">
+                        <img
+                            src={MainLogo}
+                            alt="Orbyt Logo"
+                            className="h-12 w-auto object-contain hover:scale-105 transition-transform duration-200"
+                        />
                     </div>
 
                     {/* Desktop Menu */}
@@ -380,11 +382,18 @@ const DesktopLanding: React.FC = () => {
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-16">
                         <div className="col-span-2 md:col-span-1">
-                            <div className="flex items-center gap-2 mb-4">
+                            {/* <div className="flex items-center gap-2 mb-4">
                                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
                                     <Heart className="w-4 h-4 text-white fill-current" />
                                 </div>
                                 <span className="text-xl font-bold text-white">Orbyt</span>
+                            </div> */}
+                            <div className="flex py-4 items-center">
+                                <img
+                                    src={MainLogo}
+                                    alt="Orbyt Logo"
+                                    className="h-12 w-auto object-contain hover:scale-105 transition-transform duration-200"
+                                />
                             </div>
                             <p className="text-slate-500 text-sm leading-relaxed">
                                 Connecting the world, one neighborhood at a time. Built for the mobile generation.
