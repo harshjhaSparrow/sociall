@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { api } from "../services/api";
-import Button from "../components/ui/Button";
 import {
+  AlertCircle,
   ChevronLeft,
   Image as ImageIcon,
-  X,
-  AlertCircle,
   Loader2,
+  X,
 } from "lucide-react";
-import { compressImage } from "@/util/ImageCompression";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import Button from "../components/ui/Button";
+import { useAuth } from "../context/AuthContext";
+import { api } from "../services/api";
+import { compressImage } from "../util/ImageCompression";
 
 const EditPost: React.FC = () => {
   const { user } = useAuth();
@@ -101,15 +101,37 @@ const EditPost: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-900 sticky top-0 z-20">
-        <button
-          onClick={() => navigate("/profile")}
-          className="text-slate-400 p-2 -ml-2 hover:text-white"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </button>
-        <h2 className="font-bold text-lg text-white">Edit Post</h2>
-        <div className="w-10"></div>
+      {/* Header */}
+      <div className="bg-slate-900/90 backdrop-blur-md px-4 py-3 shadow-sm z-30 sticky top-0 border-b border-slate-800">
+        <div className="max-w-md mx-auto flex items-center justify-between">
+
+          {/* Back Button */}
+          <button
+            onClick={() => navigate("/profile")}
+            className="p-2 -ml-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-800 transition-colors"
+          >
+            <ChevronLeft className="w-7 h-7" />
+          </button>
+
+          {/* Title */}
+          <span className="font-bold text-white text-lg">
+            Edit
+          </span>
+
+          {/* Save Button (Same as CreatePost) */}
+          <button
+            onClick={handleSubmit}
+            disabled={saving || (!content.trim() && !image)}
+            className="text-primary-500 font-bold text-base hover:text-primary-400 transition-colors disabled:opacity-50 flex items-center gap-1 px-2 py-1"
+          >
+            {saving ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              "Save"
+            )}
+          </button>
+
+        </div>
       </div>
 
       <div className="flex-1 p-4 max-w-md mx-auto w-full">
@@ -166,7 +188,7 @@ const EditPost: React.FC = () => {
       </div>
 
       {/* Footer Button */}
-      <div className="p-4 border-t border-slate-800 bg-slate-900">
+      {/* <div className="p-4 border-t border-slate-800 bg-slate-900">
         <Button
           onClick={handleSubmit}
           fullWidth
@@ -175,7 +197,7 @@ const EditPost: React.FC = () => {
         >
           Save Changes
         </Button>
-      </div>
+      </div> */}
     </div>
   );
 };

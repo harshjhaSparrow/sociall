@@ -20,7 +20,7 @@ import {
 import { useUserLocation } from "../components/LocationGuard";
 import { MEETUP_ACTIVITIES, FEE_TYPES } from "../types";
 import Input from "../components/ui/Input";
-import { compressImage } from "@/util/ImageCompression";
+import { compressImage } from "../util/ImageCompression";
 
 const CreatePost: React.FC = () => {
   const { user } = useAuth();
@@ -124,9 +124,9 @@ const CreatePost: React.FC = () => {
         location:
           gpsLocation && !isGhost
             ? {
-                ...gpsLocation,
-                name: locationName,
-              }
+              ...gpsLocation,
+              name: locationName,
+            }
             : undefined,
         type: postType,
       };

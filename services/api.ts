@@ -417,7 +417,18 @@ export const api = {
       } catch (e) {
         console.error("Failed to mark notifications read:", e);
       }
-    },
+    }
+  },
+
+  push: {
+    subscribe: async (uid: string, subscription: PushSubscription) => {
+      const response = await fetch(`${API_BASE}/push/subscribe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uid, subscription }),
+      });
+      if (!response.ok) throw new Error("Failed to subscribe to push notifications");
+    }
   },
 
   posts: {

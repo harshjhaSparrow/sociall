@@ -3,11 +3,11 @@ import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet/dist/leaflet.css";
 
-import { ChevronRight, Loader2, User, X } from "lucide-react";
+import { ChevronRight, Loader2, User, X, LocateFixed } from "lucide-react";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
+import { MapContainer, Marker, TileLayer, useMap, Circle } from "react-leaflet";
 
 import { Instagram } from "lucide-react";
 import MarkerClusterGroup from "react-leaflet-markercluster";
@@ -61,18 +61,37 @@ const MapEventHandler: React.FC<{ onClick: () => void }> = ({ onClick }) => {
   return null;
 };
 
+/* -------------------- LOCATE ME CONTROL -------------------- */
+const LocateMeControl: React.FC<{ coords: { lat: number, lng: number } }> = ({ coords }) => {
+  const map = useMap();
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        map.flyTo([coords.lat, coords.lng], 14, { animate: true, duration: 1.5 });
+      }}
+      className="absolute right-4 bottom-32 z-[1001] bg-slate-900/90 backdrop-blur-md p-3 rounded-full border border-slate-800 shadow-xl hover:bg-slate-800 transition-colors"
+    >
+      <LocateFixed className="w-6 h-6 text-primary-500" />
+    </button>
+  );
+};
+
 /* -------------------- MAIN -------------------- */
 
 const MapPage: React.FC = () => {
   const { location: myLocation } = useUserLocation();
   const { user: currentUser } = useAuth();
-    const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile | null>(null);
+  const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile | null>(null);
   const navigate = useNavigate();
 
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<NearbyUser | null>(null);
   const [isListOpen, setIsListOpen] = useState(false);
+
+  type FilterType = 'all' | 'friends' | 'interests';
+  const [filter, setFilter] = useState<FilterType>('all');
 
   /* ---------------- FETCH USERS ---------------- */
 
@@ -93,9 +112,12 @@ const MapPage: React.FC = () => {
 
   /* ---------------- NEARBY USERS ---------------- */
 
- const nearbyUsers = useMemo(() => {
+  const currentUserFriends = currentUserProfile?.friends || [];
+  const currentUserInterests = currentUserProfile?.interests || [];
+
+  const nearbyUsers = useMemo(() => {
     if (!myLocation) return [];
-    
+
     // Default to 10km if not set
     const maxDistanceKm = currentUserProfile?.discoveryRadius || 10;
     const maxDistanceMeters = maxDistanceKm * 1000;
@@ -104,18 +126,30 @@ const MapPage: React.FC = () => {
       .filter(u => u.uid !== currentUser?.uid && u.lastLocation)
       .map(u => {
         const distMeters = getDistanceMeters(
-          myLocation.lat, myLocation.lng, 
+          myLocation.lat, myLocation.lng,
           u.lastLocation!.lat, u.lastLocation!.lng
         );
         const distDisplay = calculateDistance(
-          myLocation.lat, myLocation.lng, 
+          myLocation.lat, myLocation.lng,
           u.lastLocation!.lat, u.lastLocation!.lng
         );
         return { ...u, distMeters, distDisplay };
       })
-      .filter(u => u.distMeters <= maxDistanceMeters) // Apply Radius Filter
+      .filter(u => {
+        if (u.distMeters > maxDistanceMeters) return false;
+
+        // Apply Filters
+        if (filter === 'friends') {
+          return currentUserFriends.includes(u.uid);
+        }
+        if (filter === 'interests') {
+          const common = (u.interests || []).filter(i => currentUserInterests.includes(i));
+          return common.length > 0;
+        }
+        return true;
+      })
       .sort((a, b) => a.distMeters - b.distMeters);
-  }, [users, myLocation, currentUser, currentUserProfile]);
+  }, [users, myLocation, currentUser, currentUserProfile, filter, currentUserFriends, currentUserInterests]);
 
   console.log("nearbyUsersnearbyUsers", nearbyUsers);
 
@@ -129,11 +163,10 @@ const MapPage: React.FC = () => {
           <div class="w-12 h-12 relative group">
             <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-slate-800"></div>
             <div class="absolute bottom-1.5 left-0 right-0 top-0 rounded-full bg-slate-800 p-0.5 overflow-hidden border border-slate-700 shadow-md">
-              ${
-                user.photoURL
-                  ? `<img src="${user.photoURL}" class="w-full h-full object-cover rounded-full" />`
-                  : `<div class="w-full h-full bg-slate-900 flex items-center justify-center text-slate-500 font-bold">${user.displayName[0]}</div>`
-              }
+              ${user.photoURL
+            ? `<img src="${user.photoURL}" class="w-full h-full object-cover rounded-full" />`
+            : `<div class="w-full h-full bg-slate-900 flex items-center justify-center text-slate-500 font-bold">${user.displayName[0]}</div>`
+          }
             </div>
           </div>
         `,
@@ -169,6 +202,26 @@ const MapPage: React.FC = () => {
 
   return (
     <div className="h-[calc(100dvh-64px)] w-full relative bg-slate-950">
+      {/* FILTER PILLS */}
+      <div className="absolute top-4 left-0 right-0 z-[1001] flex justify-center pointer-events-none">
+        <div className="bg-slate-900/90 backdrop-blur-md p-1.5 rounded-full border border-slate-800 shadow-xl flex gap-1 pointer-events-auto">
+          {/* {(['all', 'friends', 'interests'] as const).map(f => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${filter === f
+                ? 'bg-primary-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}
+            >
+              {f === 'all' && 'All'}
+              {f === 'friends' && 'Friends'}
+              {f === 'interests' && 'Match Interests'}
+            </button>
+          ))} */}
+        </div>
+      </div>
+
       <MapContainer
         center={[myLocation.lat, myLocation.lng]}
         zoom={14}
@@ -180,6 +233,20 @@ const MapPage: React.FC = () => {
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
         <MapEventHandler onClick={() => setSelectedUser(null)} />
+
+        <LocateMeControl coords={myLocation} />
+
+        <Circle
+          center={[myLocation.lat, myLocation.lng]}
+          radius={(currentUserProfile?.discoveryRadius || 10) * 1000}
+          pathOptions={{
+            color: '#8b5cf6',
+            fillColor: '#8b5cf6',
+            fillOpacity: 0.05,
+            weight: 1,
+            dashArray: '4 4'
+          }}
+        />
 
         <Marker position={[myLocation.lat, myLocation.lng]} icon={myIcon} />
 

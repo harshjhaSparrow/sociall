@@ -5,10 +5,23 @@ import path from "path";
 import WebSocket, { WebSocketServer } from "ws";
 import { MongoClient, ObjectId, ServerApiVersion } from "mongodb";
 import { fileURLToPath } from "url";
+import webpush from "web-push";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
+
+// --- Web Push Configuration ---
+const publicVapidKey = process.env.VITE_VAPID_PUBLIC_KEY;
+const privateVapidKey = process.env.VAPID_PRIVATE_KEY;
+webpush.setVapidDetails(
+  "mailto:harsh.j@sparrowrms.in",
+  publicVapidKey,
+  privateVapidKey
+);
 //this is for hosting frontend in render
 app.use(express.static(path.join(__dirname, "dist")));
 //this is for hosting frontend in render
@@ -55,8 +68,7 @@ app.use(
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-const uri =
-  "mongodb+srv://harshjha19101997:UysDNAaDLvU0ZE2u@cluster0.xve5ejh.mongodb.net/?appName=Cluster0";
+const uri = process.env.MONGO_URI;
 
 const client = new MongoClient(uri, {
   tls: true,
@@ -142,6 +154,57 @@ async function createNotification(type, fromUid, toUid, postId = null) {
       read: false,
       createdAt: Date.now()
     });
+
+    // --- Send Web Push Notification ---
+    if (receiver.pushSubscription) {
+      let title = "New Notification";
+      let body = "You have a new notification on Orbyt.";
+
+      switch (type) {
+        case 'like':
+          title = "New Like!";
+          body = `${sender.displayName} liked your post.`;
+          break;
+        case 'comment':
+          title = "New Comment!";
+          body = `${sender.displayName} commented on your post.`;
+          break;
+        case 'friend_request':
+          title = "Friend Request";
+          body = `${sender.displayName} sent you a friend request.`;
+          break;
+        case 'friend_accept':
+          title = "Friend Request Accepted";
+          body = `${sender.displayName} accepted your friend request.`;
+          break;
+        case 'meetup_join':
+          title = "Meetup Request";
+          body = `${sender.displayName} requested to join your meetup.`;
+          break;
+        case 'meetup_accept':
+          title = "Meetup Accepted";
+          body = `${sender.displayName} accepted your request to join the meetup!`;
+          break;
+      }
+
+      const payload = JSON.stringify({
+        title,
+        body,
+        icon: sender.photoURL || "/pwa-192x192.png",
+        data: { url: postId ? `/post/${postId}` : `/profile/${sender.uid}` }
+      });
+
+      try {
+        await webpush.sendNotification(receiver.pushSubscription, payload);
+      } catch (err) {
+        console.error("Push Notification failed:", err);
+        // If subscription is invalid/expired, remove it from the profile
+        if (err.statusCode === 410 || err.statusCode === 404) {
+          await profiles.updateOne({ uid: toUid }, { $unset: { pushSubscription: "" } });
+        }
+      }
+    }
+
   } catch (e) {
     console.error("Error creating notification", e);
   }
@@ -309,6 +372,24 @@ app.post('/api/cleanup', async (req, res) => {
   if (!db) return res.status(503).json({ error: "Database not connected" });
   await cleanupOrphanedData();
   res.json({ success: true, message: "Database cleanup completed" });
+});
+
+app.post('/api/push/subscribe', async (req, res) => {
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { uid, subscription } = req.body;
+    if (!uid || !subscription) return res.status(400).json({ error: "Missing uid or subscription object" });
+
+    const profiles = db.collection('profiles');
+    await profiles.updateOne(
+      { uid },
+      { $set: { pushSubscription: subscription } }
+    );
+    res.json({ success: true, message: "Push subscription saved" });
+  } catch (error) {
+    console.error("Save subscription error:", error);
+    res.status(500).json({ error: "Failed to save push subscription" });
+  }
 });
 
 app.post('/api/auth/signup', async (req, res) => {
@@ -977,7 +1058,7 @@ app.get('/api/chat/history/:uid1/:uid2', async (req, res) => {
   }
 });
 
-app.get('/api/chat/history/group/:groupId', async (req, res) => {
+app.get('/api/chat/history/:groupId', async (req, res) => {
   if (!db) return res.status(503).json({ error: "Database not connected" });
   try {
     const { groupId } = req.params;
