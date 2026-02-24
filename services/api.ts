@@ -138,6 +138,13 @@ export const api = {
       });
       if (!response.ok) throw new Error("Failed to update profile");
     },
+
+    delete: async (uid: string) => {
+      const response = await fetch(`${API_BASE}/profile/${uid}`, {
+        method: "DELETE"
+      });
+      return response.ok;
+    },
   },
 
   userAction: {

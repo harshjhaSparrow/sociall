@@ -99,8 +99,8 @@ const LocationGuard: React.FC<LocationGuardProps> = ({ children }) => {
         </div>
 
         <h1 className="text-2xl font-bold text-white mb-3">Enable Location</h1>
-        <p className="text-slate-400 mb-8 max-w-xs leading-relaxed">
-          To connect with people nearby and get the full Orbyt experience, we need access to your location.
+        <p className="text-slate-400 mb-8 max-w-xs leading-relaxed text-sm">
+          Orbyt collects your location data to enable finding nearby people, local meetups, and displaying distance to others.
         </p>
 
         <Button onClick={requestLocation} fullWidth className="shadow-xl shadow-primary-500/20">
@@ -108,8 +108,8 @@ const LocationGuard: React.FC<LocationGuardProps> = ({ children }) => {
           <ArrowRight className="w-5 h-5 ml-2" />
         </Button>
 
-        <p className="mt-6 text-xs text-slate-600">
-          We prioritize your privacy and only use this to show relevant content.
+        <p className="mt-6 text-xs text-slate-500">
+          Location is only collected while the app is in use. See our Privacy Policy for more details.
         </p>
       </div>
     );

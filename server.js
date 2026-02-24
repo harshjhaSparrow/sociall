@@ -410,6 +410,30 @@ app.get('/api/profile/:uid', async (req, res) => {
   }
 });
 
+app.delete('/api/profile/:uid', async (req, res) => {
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { uid } = req.params;
+
+    await db.collection('profiles').deleteOne({ uid });
+    if (ObjectId.isValid(uid)) {
+      await db.collection('users').deleteOne({ _id: new ObjectId(uid) });
+    }
+    await db.collection('posts').deleteMany({ authorId: uid });
+    await db.collection('messages').deleteMany({ $or: [{ senderId: uid }, { receiverId: uid }] });
+    await db.collection('notifications').deleteMany({ $or: [{ recipientUid: uid }, { senderUid: uid }] });
+
+    await db.collection('profiles').updateMany({}, {
+      $pull: { friends: uid, incomingRequests: uid, outgoingRequests: uid, blockedUsers: uid }
+    });
+
+    res.json({ success: true, message: "Account deleted successfully" });
+  } catch (error) {
+    console.error("Delete account error:", error);
+    res.status(500).json({ error: "Failed to delete account" });
+  }
+});
+
 app.get('/api/profiles', async (req, res) => {
   if (!db) return res.status(503).json({ error: "Database not connected" });
   try {

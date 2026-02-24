@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
-import { ChevronLeft, Ghost, EyeOff, Shield, ArrowRight, Radar, Map as MapIcon, PauseCircle } from 'lucide-react';
+import { ChevronLeft, Ghost, EyeOff, Shield, ArrowRight, Radar, Map as MapIcon, PauseCircle, Trash2 } from 'lucide-react';
 
 const Settings: React.FC = () => {
   const { user, logout } = useAuth();
@@ -69,6 +69,29 @@ const Settings: React.FC = () => {
       await api.profile.createOrUpdate(user.uid, { discoveryRadius: discoveryRadius });
     } catch (e) {
       console.error("Failed to save radius", e);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to permanently delete your account? This action cannot be undone and all your data (posts, messages, profile) will be erased."
+    );
+    if (confirmDelete && user) {
+      try {
+        setLoading(true);
+        const success = await api.profile.delete(user.uid);
+        if (success) {
+          await logout();
+          navigate('/auth');
+        } else {
+          alert("Failed to delete account. Please try again.");
+        }
+      } catch (e) {
+        console.error("Account deletion failed:", e);
+        alert("An error occurred while deleting your account.");
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -219,6 +242,15 @@ const Settings: React.FC = () => {
             >
               Sign Out
             </button>
+            <button
+              onClick={handleDeleteAccount}
+              className="w-full p-4 flex items-center justify-between hover:bg-red-500/10 transition-colors text-red-500 font-bold border-t border-slate-800"
+            >
+              <div className="flex items-center gap-2">
+                <Trash2 className="w-4 h-4" />
+                Delete Account
+              </div>
+            </button>
           </div>
         </section>
 
@@ -226,9 +258,9 @@ const Settings: React.FC = () => {
         <div className="text-center pt-8 pb-4">
           <p className="text-xs text-slate-600">Orbyt v1.0.0</p>
           <div className="flex gap-4 justify-center mt-2 text-xs text-slate-500">
-            <a href="#" className="hover:text-slate-300">Privacy Policy</a>
+            <Link to="/privacy" className="hover:text-slate-300">Privacy Policy</Link>
             <span>•</span>
-            <a href="#" className="hover:text-slate-300">Terms of Service</a>
+            <Link to="/terms" className="hover:text-slate-300">Terms of Service</Link>
           </div>
         </div>
       </div>
