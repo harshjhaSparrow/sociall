@@ -44,7 +44,7 @@ const DesktopLanding: React.FC = () => {
                     <div className="hidden md:flex gap-8 text-slate-400 text-sm font-medium items-center">
                         <a href="#features" className="hover:text-white transition-colors">Features</a>
                         <a href="#how-it-works" className="hover:text-white transition-colors">How it Works</a>
-                        <a href="#safety" className="hover:text-white transition-colors">Safety</a>
+                        <a href="/privacy" className="hover:text-white transition-colors">Safety</a>
                         <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
                         <Button variant="primary" className="rounded-full px-6 h-10 text-sm ml-4">
                             Get the App
@@ -382,12 +382,6 @@ const DesktopLanding: React.FC = () => {
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-16">
                         <div className="col-span-2 md:col-span-1">
-                            {/* <div className="flex items-center gap-2 mb-4">
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
-                                    <Heart className="w-4 h-4 text-white fill-current" />
-                                </div>
-                                <span className="text-xl font-bold text-white">Orbyt</span>
-                            </div> */}
                             <div className="flex py-4 items-center">
                                 <img
                                     src={MainLogo}
