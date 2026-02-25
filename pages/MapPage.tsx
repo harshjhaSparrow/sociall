@@ -3,11 +3,11 @@ import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet/dist/leaflet.css";
 
-import { ChevronRight, Loader2, User, X, LocateFixed } from "lucide-react";
+import { ChevronRight, Loader2, LocateFixed, User, X } from "lucide-react";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-import { MapContainer, Marker, TileLayer, useMap, Circle } from "react-leaflet";
+import { Circle, MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 
 import { Instagram } from "lucide-react";
 import MarkerClusterGroup from "react-leaflet-markercluster";
@@ -62,13 +62,18 @@ const MapEventHandler: React.FC<{ onClick: () => void }> = ({ onClick }) => {
 };
 
 /* -------------------- LOCATE ME CONTROL -------------------- */
-const LocateMeControl: React.FC<{ coords: { lat: number, lng: number } }> = ({ coords }) => {
+const LocateMeControl: React.FC<{ coords: { lat: number; lng: number } }> = ({
+  coords,
+}) => {
   const map = useMap();
   return (
     <button
       onClick={(e) => {
         e.stopPropagation();
-        map.flyTo([coords.lat, coords.lng], 14, { animate: true, duration: 1.5 });
+        map.flyTo([coords.lat, coords.lng], 14, {
+          animate: true,
+          duration: 1.5,
+        });
       }}
       className="absolute right-4 bottom-32 z-[1001] bg-slate-900/90 backdrop-blur-md p-3 rounded-full border border-slate-800 shadow-xl hover:bg-slate-800 transition-colors"
     >
@@ -82,7 +87,8 @@ const LocateMeControl: React.FC<{ coords: { lat: number, lng: number } }> = ({ c
 const MapPage: React.FC = () => {
   const { location: myLocation } = useUserLocation();
   const { user: currentUser } = useAuth();
-  const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile | null>(null);
+  const [currentUserProfile, setCurrentUserProfile] =
+    useState<UserProfile | null>(null);
   const navigate = useNavigate();
 
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -90,8 +96,8 @@ const MapPage: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<NearbyUser | null>(null);
   const [isListOpen, setIsListOpen] = useState(false);
 
-  type FilterType = 'all' | 'friends' | 'interests';
-  const [filter, setFilter] = useState<FilterType>('all');
+  type FilterType = "all" | "friends" | "interests";
+  const [filter, setFilter] = useState<FilterType>("all");
 
   /* ---------------- FETCH USERS ---------------- */
 
@@ -123,33 +129,47 @@ const MapPage: React.FC = () => {
     const maxDistanceMeters = maxDistanceKm * 1000;
 
     return users
-      .filter(u => u.uid !== currentUser?.uid && u.lastLocation)
-      .map(u => {
+      .filter((u) => u.uid !== currentUser?.uid && u.lastLocation)
+      .map((u) => {
         const distMeters = getDistanceMeters(
-          myLocation.lat, myLocation.lng,
-          u.lastLocation!.lat, u.lastLocation!.lng
+          myLocation.lat,
+          myLocation.lng,
+          u.lastLocation!.lat,
+          u.lastLocation!.lng,
         );
         const distDisplay = calculateDistance(
-          myLocation.lat, myLocation.lng,
-          u.lastLocation!.lat, u.lastLocation!.lng
+          myLocation.lat,
+          myLocation.lng,
+          u.lastLocation!.lat,
+          u.lastLocation!.lng,
         );
         return { ...u, distMeters, distDisplay };
       })
-      .filter(u => {
+      .filter((u) => {
         if (u.distMeters > maxDistanceMeters) return false;
 
         // Apply Filters
-        if (filter === 'friends') {
+        if (filter === "friends") {
           return currentUserFriends.includes(u.uid);
         }
-        if (filter === 'interests') {
-          const common = (u.interests || []).filter(i => currentUserInterests.includes(i));
+        if (filter === "interests") {
+          const common = (u.interests || []).filter((i) =>
+            currentUserInterests.includes(i),
+          );
           return common.length > 0;
         }
         return true;
       })
       .sort((a, b) => a.distMeters - b.distMeters);
-  }, [users, myLocation, currentUser, currentUserProfile, filter, currentUserFriends, currentUserInterests]);
+  }, [
+    users,
+    myLocation,
+    currentUser,
+    currentUserProfile,
+    filter,
+    currentUserFriends,
+    currentUserInterests,
+  ]);
 
   console.log("nearbyUsersnearbyUsers", nearbyUsers);
 
@@ -163,10 +183,11 @@ const MapPage: React.FC = () => {
           <div class="w-12 h-12 relative group">
             <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-slate-800"></div>
             <div class="absolute bottom-1.5 left-0 right-0 top-0 rounded-full bg-slate-800 p-0.5 overflow-hidden border border-slate-700 shadow-md">
-              ${user.photoURL
-            ? `<img src="${user.photoURL}" class="w-full h-full object-cover rounded-full" />`
-            : `<div class="w-full h-full bg-slate-900 flex items-center justify-center text-slate-500 font-bold">${user.displayName[0]}</div>`
-          }
+              ${
+                user.photoURL
+                  ? `<img src="${user.photoURL}" class="w-full h-full object-cover rounded-full" />`
+                  : `<div class="w-full h-full bg-slate-900 flex items-center justify-center text-slate-500 font-bold">${user.displayName[0]}</div>`
+              }
             </div>
           </div>
         `,
@@ -175,6 +196,18 @@ const MapPage: React.FC = () => {
       }),
     [],
   );
+
+  const ResizeMap = () => {
+    const map = useMap();
+
+    useEffect(() => {
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 200);
+    }, [map]);
+
+    return null;
+  };
 
   const myIcon = L.divIcon({
     className: "bg-transparent",
@@ -201,7 +234,7 @@ const MapPage: React.FC = () => {
   /* ---------------- RENDER ---------------- */
 
   return (
-    <div className="h-[calc(100dvh-64px)] w-full relative bg-slate-950">
+    <div className="h-screen w-full relative bg-slate-950">
       {/* FILTER PILLS */}
       <div className="absolute top-4 left-0 right-0 z-[1001] flex justify-center pointer-events-none">
         <div className="bg-slate-900/90 backdrop-blur-md p-1.5 rounded-full border border-slate-800 shadow-xl flex gap-1 pointer-events-auto">
@@ -230,7 +263,11 @@ const MapPage: React.FC = () => {
         attributionControl={false}
         className="w-full h-full"
       >
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          updateWhenIdle={false}
+        />
+        <ResizeMap />
 
         <MapEventHandler onClick={() => setSelectedUser(null)} />
 
@@ -240,11 +277,11 @@ const MapPage: React.FC = () => {
           center={[myLocation.lat, myLocation.lng]}
           radius={(currentUserProfile?.discoveryRadius || 10) * 1000}
           pathOptions={{
-            color: '#8b5cf6',
-            fillColor: '#8b5cf6',
+            color: "#8b5cf6",
+            fillColor: "#8b5cf6",
             fillOpacity: 0.05,
             weight: 1,
-            dashArray: '4 4'
+            dashArray: "4 4",
           }}
         />
 
@@ -306,7 +343,7 @@ const MapPage: React.FC = () => {
       {!isListOpen && !selectedUser && nearbyUsers.length > 0 && (
         <button
           onClick={() => setIsListOpen(true)}
-          className="absolute bottom-6 left-4 z-[1001] bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-xl p-2 pr-4 flex items-center gap-3 border border-slate-800"
+          className="absolute bottom-20 left-4 z-[1001] bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-xl p-2 pr-4 flex items-center gap-3 border border-slate-800"
         >
           {/* Stacked Avatars */}
           <div className="flex -space-x-3 items-center">
