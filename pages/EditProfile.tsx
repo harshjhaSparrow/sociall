@@ -177,7 +177,7 @@ const EditProfile: React.FC = () => {
             <div className="relative group cursor-pointer">
               <div className={`w-36 h-36 rounded-full border-[6px] border-slate-900 shadow-2xl overflow-hidden bg-slate-800 flex items-center justify-center`}>
                 {photoURL ? (
-                  <img src={photoURL} alt="Profile" className="w-full h-full object-cover" />
+                  <img  draggable={false} src={photoURL} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
                   <UserIcon className="w-16 h-16 text-slate-600" />
                 )}

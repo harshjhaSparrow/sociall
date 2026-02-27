@@ -2,14 +2,9 @@ import L from "leaflet";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet/dist/leaflet.css";
-
-import { ChevronRight, Loader2, LocateFixed, User, X } from "lucide-react";
-
+import { ChevronRight, Instagram, Loader2, LocateFixed, User, X } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-
 import { Circle, MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
-
-import { Instagram } from "lucide-react";
 import MarkerClusterGroup from "react-leaflet-markercluster";
 import { useNavigate } from "react-router-dom";
 import { useUserLocation } from "../components/LocationGuard";
@@ -17,7 +12,6 @@ import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";
 import { POPULAR_INTERESTS, UserProfile } from "../types";
 import { calculateDistance } from "../util/location";
-
 /* -------------------- TYPES -------------------- */
 
 type NearbyUser = UserProfile & {
@@ -236,24 +230,10 @@ const MapPage: React.FC = () => {
   return (
     <div className="h-screen w-full relative bg-slate-950">
       {/* FILTER PILLS */}
-      <div className="absolute top-4 left-0 right-0 z-[1001] flex justify-center pointer-events-none">
+      {/* <div className="absolute top-4 left-0 right-0 z-[1001] flex justify-center pointer-events-none">
         <div className="bg-slate-900/90 backdrop-blur-md p-1.5 rounded-full border border-slate-800 shadow-xl flex gap-1 pointer-events-auto">
-          {/* {(['all', 'friends', 'interests'] as const).map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${filter === f
-                ? 'bg-primary-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                }`}
-            >
-              {f === 'all' && 'All'}
-              {f === 'friends' && 'Friends'}
-              {f === 'interests' && 'Match Interests'}
-            </button>
-          ))} */}
         </div>
-      </div>
+      </div> */}
 
       <MapContainer
         center={[myLocation.lat, myLocation.lng]}
@@ -312,6 +292,7 @@ const MapPage: React.FC = () => {
             <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-800 border border-slate-700">
               {selectedUser.photoURL ? (
                 <img
+                 draggable={false}
                   src={selectedUser.photoURL}
                   className="w-full h-full object-cover"
                 />
@@ -340,10 +321,10 @@ const MapPage: React.FC = () => {
       )}
 
       {/* FLOATING NEARBY BUTTON */}
-      {!isListOpen && !selectedUser && nearbyUsers.length > 0 && (
+      {!isListOpen && !selectedUser && nearbyUsers?.length > 0 && (
         <button
           onClick={() => setIsListOpen(true)}
-          className="absolute bottom-20 left-4 z-[1001] bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-xl p-2 pr-4 flex items-center gap-3 border border-slate-800"
+          className="absolute bottom-[20%] left-4 z-[1001] bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-xl p-2 pr-4 flex items-center gap-3 border border-slate-800"
         >
           {/* Stacked Avatars */}
           <div className="flex -space-x-3 items-center">
@@ -354,6 +335,7 @@ const MapPage: React.FC = () => {
               >
                 {u.photoURL ? (
                   <img
+                   draggable={false}
                     src={u.photoURL}
                     alt={u.displayName}
                     className="w-full h-full object-cover"
@@ -412,6 +394,7 @@ const MapPage: React.FC = () => {
                     <div className="w-14 h-14 rounded-full overflow-hidden bg-slate-800">
                       {u.photoURL ? (
                         <img
+                         draggable={false}
                           src={u.photoURL}
                           className="w-full h-full object-cover"
                         />

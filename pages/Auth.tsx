@@ -20,6 +20,8 @@ const AuthPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /* ---------------- EMAIL / PASSWORD LOGIN ---------------- */
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -44,100 +46,126 @@ const AuthPage: React.FC = () => {
     }
   };
 
+  /* ---------------- GOOGLE LOGIN ---------------- */
+
   const decodeJwt = (token: string) => {
     try {
       const base64Url = token.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join(''));
+      const jsonPayload = decodeURIComponent(
+        window
+          .atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
       return JSON.parse(jsonPayload);
-    } catch (e) {
+    } catch {
       return null;
     }
   };
 
   const handleCredentialResponse = async (response: any) => {
-    if (response.credential) {
-      const payload = decodeJwt(response.credential);
-      if (payload) {
-        try {
-          // Send profile info to backend to create/login user
-          const apiResponse = await api.auth.googleLogin(
-            payload.email,
-            payload.name,
-            payload.picture
-          );
-          login(apiResponse.user);
-        } catch (err) {
-          setError("Google login failed.");
-        }
-      }
+    if (!response.credential) return;
+
+    const payload = decodeJwt(response.credential);
+    if (!payload) return;
+
+    try {
+      const apiResponse = await api.auth.googleLogin(
+        payload.email,
+        payload.name,
+        payload.picture
+      );
+      login(apiResponse.user);
+    } catch {
+      setError("Google login failed.");
     }
   };
 
   useEffect(() => {
-    // Initialize Google Sign-In
-    const initializeGoogle = () => {
-      if (window.google) {
+    let isMounted = true;
+
+    const loadGoogleScript = () => {
+      return new Promise<void>((resolve, reject) => {
+        if (window.google?.accounts) {
+          resolve();
+          return;
+        }
+
+        const script = document.createElement("script");
+        script.src = "https://accounts.google.com/gsi/client";
+        script.async = true;
+        script.defer = true;
+
+        script.onload = () => resolve();
+        script.onerror = () => reject();
+
+        document.body.appendChild(script);
+      });
+    };
+
+    const initializeGoogle = async () => {
+      try {
+        await loadGoogleScript();
+        if (!isMounted) return;
+
+        if (!window.google) return;
+
         window.google.accounts.id.initialize({
-          client_id: "793742543220-aggmdtptgpbns7vrem2ftpelnv73g4e4.apps.googleusercontent.com",
-          callback: handleCredentialResponse
+          client_id:
+            "793742543220-aggmdtptgpbns7vrem2ftpelnv73g4e4.apps.googleusercontent.com",
+          callback: handleCredentialResponse,
         });
 
-        window.google.accounts.id.renderButton(
-          document.getElementById("googleBtn"),
-          {
+        const btnContainer = document.getElementById("googleBtn");
+
+        if (btnContainer) {
+          btnContainer.innerHTML = ""; // prevent duplicate renders
+
+          window.google.accounts.id.renderButton(btnContainer, {
             theme: "outline",
             size: "large",
-            width: "100%", // Will span the container
+            width: "100%",
             text: "continue_with",
             shape: "pill",
-            logo_alignment: "left"
-          }
-        );
+            logo_alignment: "left",
+          });
+        }
+      } catch (error) {
+        console.error("Google script failed to load", error);
       }
     };
 
-    // Check if script is loaded, if not wait a bit
-    if (window.google) {
-      initializeGoogle();
-    } else {
-      const interval = setInterval(() => {
-        if (window.google) {
-          initializeGoogle();
-          clearInterval(interval);
-        }
-      }, 100);
-      return () => clearInterval(interval);
-    }
+    initializeGoogle();
+
+    return () => {
+      isMounted = false;
+      if (window.google?.accounts?.id) {
+        window.google.accounts.id.cancel();
+      }
+    };
   }, []);
+
+  /* ---------------- UI ---------------- */
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 relative overflow-hidden">
-      {/* Dynamic Background */}
       <div className="absolute top-0 inset-x-0 h-[40vh] bg-gradient-to-b from-slate-900 to-slate-950 -z-10" />
       <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-primary-500/20 rounded-full blur-3xl opacity-50 -z-10 animate-pulse" />
       <div className="absolute top-[20%] left-[-10%] w-48 h-48 bg-purple-500/20 rounded-full blur-3xl opacity-50 -z-10" />
 
       <div className="flex-1 flex flex-col px-6 pt-12 pb-6 max-w-md mx-auto w-full justify-center">
-        {/* Header Section */}
-        <div className="flex flex-col items-center text-center animate-fade-in mb-8">
-          {/* <div className="relative mb-8 group">
-            <div className="absolute inset-0 bg-primary-500 blur-2xl opacity-40 group-hover:opacity-60 transition-opacity rounded-full"></div>
-            <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-xl shadow-primary-500/30 transform -rotate-3 transition-transform duration-300 hover:rotate-0 hover:scale-105 border border-primary-400/50">
-              <Heart className="w-10 h-10 fill-current animate-pulse" />
-            </div>
-          </div> */}
-
+        <div className="flex flex-col items-center text-center mb-8">
           <div className="flex py-8 items-center">
             <img
               src={MainLogo}
               alt="Orbyt Logo"
-              className="h-14 w-auto object-contain hover:scale-105 transition-transform duration-200"
+               draggable={false}
+              className="h-14 w-auto object-contain"
             />
-            {/* <div className="text-2xl pt-6 font-bold text-white">rbyt</div> */}
           </div>
+
           <p className="text-slate-400 text-lg max-w-[280px]">
             {isLogin
               ? 'Welcome back! Your community is waiting.'
@@ -145,8 +173,7 @@ const AuthPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Form Section */}
-        <div className="w-full animate-slide-up bg-slate-900/50 backdrop-blur-md p-6 rounded-3xl border border-slate-800 shadow-2xl" style={{ animationDelay: '0.1s' }}>
+        <div className="w-full bg-slate-900/50 backdrop-blur-md p-6 rounded-3xl border border-slate-800 shadow-2xl">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-4">
               <Input
@@ -158,6 +185,7 @@ const AuthPage: React.FC = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
+
               <Input
                 type="password"
                 placeholder="••••••••"
@@ -170,29 +198,32 @@ const AuthPage: React.FC = () => {
             </div>
 
             {error && (
-              <div className="p-4 rounded-2xl bg-red-500/10 text-red-400 text-sm font-medium border border-red-500/20 text-center animate-slide-up">
+              <div className="p-4 rounded-2xl bg-red-500/10 text-red-400 text-sm border border-red-500/20 text-center">
                 {error}
               </div>
             )}
 
             <div className="pt-4 space-y-4">
-              <Button type="submit" fullWidth isLoading={loading} className="shadow-xl shadow-primary-500/20">
+              <Button type="submit" fullWidth isLoading={loading}>
                 {isLogin ? 'Sign In' : 'Create Account'}
                 {!loading && <ArrowRight className="w-5 h-5 ml-2" />}
               </Button>
 
               <div className="relative flex py-2 items-center">
                 <div className="flex-grow border-t border-slate-800"></div>
-                <span className="flex-shrink-0 mx-4 text-slate-500 text-sm font-medium">Or continue with</span>
+                <span className="mx-4 text-slate-500 text-sm">
+                  Or continue with
+                </span>
                 <div className="flex-grow border-t border-slate-800"></div>
               </div>
 
-              {/* Google Button Container */}
-              <div id="googleBtn" className="w-full flex justify-center min-h-[48px]"></div>
+              <div
+                id="googleBtn"
+                className="w-full flex justify-center min-h-[48px]"
+              />
             </div>
           </form>
 
-          {/* Toggle View */}
           <div className="mt-6 text-center">
             <button
               onClick={() => {
@@ -201,12 +232,12 @@ const AuthPage: React.FC = () => {
                 setEmail('');
                 setPassword('');
               }}
-              className="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-primary-400 transition-colors py-2 px-4 rounded-xl hover:bg-slate-800"
+              className="text-sm font-semibold text-slate-500 hover:text-primary-400"
             >
               {isLogin ? (
-                <>New to Orbyt? <span className="text-primary-400 ml-1">Sign Up</span></>
+                <>New to Orbyt? <span className="text-primary-400">Sign Up</span></>
               ) : (
-                <>Have an account? <span className="text-primary-400 ml-1">Log In</span></>
+                <>Have an account? <span className="text-primary-400">Log In</span></>
               )}
             </button>
           </div>

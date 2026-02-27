@@ -226,7 +226,7 @@ const Chat: React.FC = () => {
                     ) : (
                         <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 overflow-hidden shrink-0">
                             {friend?.photoURL ? (
-                                <img src={friend.photoURL} alt={friend.displayName} className="w-full h-full object-cover" />
+                                <img  draggable={false} src={friend.photoURL} alt={friend.displayName} className="w-full h-full object-cover" />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center font-bold text-slate-500">
                                     {friend?.displayName[0]}
@@ -275,7 +275,7 @@ const Chat: React.FC = () => {
                                             <div className="w-6 h-6 rounded-full bg-slate-800 overflow-hidden shrink-0 mb-1 opacity-80 border border-slate-700">
                                                 {showAvatar && (
                                                     (isGroup ? msg.authorPhoto : friend?.photoURL) ? (
-                                                        <img src={isGroup ? msg.authorPhoto : friend?.photoURL} className="w-full h-full object-cover" />
+                                                        <img  draggable={false} src={isGroup ? msg.authorPhoto : friend?.photoURL} className="w-full h-full object-cover" />
                                                     ) : (
                                                         <div className="w-full h-full flex items-center justify-center text-[8px] font-bold text-slate-500">
                                                             {(isGroup ? msg.authorName : friend?.displayName)?.[0] || '?'}
@@ -351,7 +351,7 @@ const Chat: React.FC = () => {
                                     <div key={host.uid} className="flex items-center gap-3 p-3 rounded-2xl bg-slate-800/50 border border-slate-800">
                                         <div className="w-12 h-12 rounded-full bg-slate-800 overflow-hidden shrink-0 border-2 border-primary-500/50">
                                             {host.photoURL ? (
-                                                <img src={host.photoURL} className="w-full h-full object-cover" />
+                                                <img  draggable={false} src={host.photoURL} className="w-full h-full object-cover" />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center font-bold text-slate-500">{host.displayName[0]}</div>
                                             )}
@@ -388,7 +388,7 @@ const Chat: React.FC = () => {
                                             <div key={member.uid} className="flex items-center gap-3 p-3 rounded-2xl bg-slate-800 border border-slate-700">
                                                 <div className="w-10 h-10 rounded-full bg-slate-900 overflow-hidden shrink-0">
                                                     {member.photoURL ? (
-                                                        <img src={member.photoURL} className="w-full h-full object-cover" />
+                                                        <img  draggable={false} src={member.photoURL} className="w-full h-full object-cover" />
                                                     ) : (
                                                         <div className="w-full h-full flex items-center justify-center font-bold text-slate-500 text-xs">{member.displayName[0]}</div>
                                                     )}

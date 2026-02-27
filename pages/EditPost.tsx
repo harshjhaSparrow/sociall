@@ -104,7 +104,6 @@ const EditPost: React.FC = () => {
       {/* Header */}
       <div className="bg-slate-900/90 backdrop-blur-md px-4 py-3 shadow-sm z-30 sticky top-0 border-b border-slate-800">
         <div className="max-w-md mx-auto flex items-center justify-between">
-
           {/* Back Button */}
           <button
             onClick={() => navigate("/profile")}
@@ -114,9 +113,7 @@ const EditPost: React.FC = () => {
           </button>
 
           {/* Title */}
-          <span className="font-bold text-white text-lg">
-            Edit
-          </span>
+          <span className="font-bold text-white text-lg">Edit</span>
 
           {/* Save Button (Same as CreatePost) */}
           <button
@@ -124,13 +121,8 @@ const EditPost: React.FC = () => {
             disabled={saving || (!content.trim() && !image)}
             className="text-primary-500 font-bold text-base hover:text-primary-400 transition-colors disabled:opacity-50 flex items-center gap-1 px-2 py-1"
           >
-            {saving ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              "Save"
-            )}
+            {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save"}
           </button>
-
         </div>
       </div>
 
@@ -151,6 +143,7 @@ const EditPost: React.FC = () => {
         {image && (
           <div className="relative rounded-2xl overflow-hidden mb-6 border border-slate-800 animate-fade-in">
             <img
+              draggable={false}
               src={image}
               alt="Preview"
               className="w-full h-auto max-h-80 object-cover"

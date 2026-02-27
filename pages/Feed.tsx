@@ -1,21 +1,38 @@
-import { Bell, Check, Heart, Loader2, MessageCircle, RefreshCw, Settings, UserPlus, X } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useUserLocation } from '../components/LocationGuard';
-import PostItem from '../components/PostItem';
-import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
-import { Notification, Post, UserProfile } from '../types';
-import { usePushNotifications } from '../hooks/usePushNotifications';
-import { MainLogo } from '../util/Images';
+import {
+  Bell,
+  Check,
+  Heart,
+  Loader2,
+  MessageCircle,
+  RefreshCw,
+  Settings,
+  UserPlus,
+  X,
+} from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useUserLocation } from "../components/LocationGuard";
+import PostItem from "../components/PostItem";
+import { useAuth } from "../context/AuthContext";
+import { api } from "../services/api";
+import { Notification, Post, UserProfile } from "../types";
+import { usePushNotifications } from "../hooks/usePushNotifications";
+import { MainLogo } from "../util/Images";
 
-const getDistanceMeters = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+const getDistanceMeters = (
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+) => {
   const R = 6371e3;
-  const φ1 = lat1 * Math.PI / 180;
-  const φ2 = lat2 * Math.PI / 180;
-  const Δφ = (lat2 - lat1) * Math.PI / 180;
-  const Δλ = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 };
@@ -44,6 +61,7 @@ const Feed: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  console.log("postspostspostsposts",posts)
 
   // Notification State
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -72,7 +90,7 @@ const Feed: React.FC = () => {
 
       const [allPosts, profile] = await Promise.all([
         api.posts.getAll(user.uid),
-        api.profile.get(user.uid)
+        api.profile.get(user.uid),
       ]);
 
       setUserProfile(profile);
@@ -85,14 +103,16 @@ const Feed: React.FC = () => {
           // Always show own posts
           if (p.uid === user.uid) return true;
 
-          // If post has no location, we might choose to show or hide. 
+          // If post has no location, we might choose to show or hide.
           // Assuming global posts without location should show? Or hide?
           // Let's hide if we are strictly filtering by radius, but show if it's a friend?
           // For simplicity, if post has location, we filter. If not, we show (e.g. global/remote posts).
           if (p.location) {
             const dist = getDistanceMeters(
-              myLocation.lat, myLocation.lng,
-              p.location.lat, p.location.lng
+              myLocation.lat,
+              myLocation.lng,
+              p.location.lat,
+              p.location.lng,
             );
             return dist <= maxDistMeters;
           }
@@ -113,7 +133,7 @@ const Feed: React.FC = () => {
       try {
         const data = await api.notifications.get(user.uid);
         setNotifications(data);
-        setUnreadCount(data.filter(n => !n.read).length);
+        setUnreadCount(data.filter((n) => !n.read).length);
       } catch (e) {
         console.error("Failed to load notifications", e);
       }
@@ -170,26 +190,28 @@ const Feed: React.FC = () => {
     const isLiked = post.likedBy?.includes(user.uid);
     const newLikes = isLiked ? post.likes - 1 : post.likes + 1;
     const newLikedBy = isLiked
-      ? post.likedBy?.filter(id => id !== user.uid) || []
+      ? post.likedBy?.filter((id) => id !== user.uid) || []
       : [...(post.likedBy || []), user.uid];
 
-    setPosts(currentPosts => currentPosts.map(p =>
-      p._id === post._id
-        ? { ...p, likes: newLikes, likedBy: newLikedBy }
-        : p
-    ));
+    setPosts((currentPosts) =>
+      currentPosts.map((p) =>
+        p._id === post._id ? { ...p, likes: newLikes, likedBy: newLikedBy } : p,
+      ),
+    );
 
     try {
       const updatedData = await api.posts.toggleLike(post._id, user.uid);
-      setPosts(currentPosts => currentPosts.map(p =>
-        p._id === post._id
-          ? { ...p, likes: updatedData.likes, likedBy: updatedData.likedBy }
-          : p
-      ));
+      setPosts((currentPosts) =>
+        currentPosts.map((p) =>
+          p._id === post._id
+            ? { ...p, likes: updatedData.likes, likedBy: updatedData.likedBy }
+            : p,
+        ),
+      );
     } catch (error) {
-      setPosts(currentPosts => currentPosts.map(p =>
-        p._id === post._id ? post : p
-      ));
+      setPosts((currentPosts) =>
+        currentPosts.map((p) => (p._id === post._id ? post : p)),
+      );
     }
   };
 
@@ -197,15 +219,17 @@ const Feed: React.FC = () => {
     if (!user) return;
     try {
       const newComment = await api.posts.addComment(postId, user.uid, text);
-      setPosts(currentPosts => currentPosts.map(p => {
-        if (p._id === postId) {
-          return {
-            ...p,
-            comments: [...(p.comments || []), newComment]
-          };
-        }
-        return p;
-      }));
+      setPosts((currentPosts) =>
+        currentPosts.map((p) => {
+          if (p._id === postId) {
+            return {
+              ...p,
+              comments: [...(p.comments || []), newComment],
+            };
+          }
+          return p;
+        }),
+      );
     } catch (error) {
       console.error("Failed to add comment", error);
       throw error;
@@ -214,11 +238,11 @@ const Feed: React.FC = () => {
 
   const handleNotificationClick = async (n: Notification) => {
     setShowNotifications(false);
-    if (n.type === 'friend_request') {
+    if (n.type === "friend_request") {
       navigate(`/profile/${n.fromUid}`);
-    } else if (n.type === 'friend_accept') {
+    } else if (n.type === "friend_accept") {
       navigate(`/profile/${n.fromUid}`);
-    } else if ((n.type === 'like' || n.type === 'comment') && n.postId) {
+    } else if ((n.type === "like" || n.type === "comment") && n.postId) {
       navigate(`/post/${n.postId}`);
     }
   };
@@ -226,42 +250,76 @@ const Feed: React.FC = () => {
   const openNotifications = async () => {
     setShowNotifications(true);
     if (unreadCount > 0) {
-      const unreadIds = notifications.filter(n => !n.read).map(n => n._id);
+      const unreadIds = notifications.filter((n) => !n.read).map((n) => n._id);
       if (unreadIds.length > 0) {
         await api.notifications.markRead(unreadIds);
         setUnreadCount(0);
-        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
       }
     }
   };
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'friend_request': return <UserPlus className="w-4 h-4 text-white" />;
-      case 'friend_accept': return <Check className="w-4 h-4 text-white" />;
-      case 'like': return <Heart className="w-4 h-4 text-white fill-current" />;
-      case 'comment': return <MessageCircle className="w-4 h-4 text-white" />;
-      default: return <Bell className="w-4 h-4 text-white" />;
+      case "friend_request":
+        return <UserPlus className="w-4 h-4 text-white" />;
+      case "friend_accept":
+        return <Check className="w-4 h-4 text-white" />;
+      case "like":
+        return <Heart className="w-4 h-4 text-white fill-current" />;
+      case "comment":
+        return <MessageCircle className="w-4 h-4 text-white" />;
+      default:
+        return <Bell className="w-4 h-4 text-white" />;
     }
   };
 
   const getNotificationColor = (type: string) => {
     switch (type) {
-      case 'friend_request': return 'bg-blue-500 shadow-lg shadow-blue-500/30';
-      case 'friend_accept': return 'bg-green-500 shadow-lg shadow-green-500/30';
-      case 'like': return 'bg-red-500 shadow-lg shadow-red-500/30';
-      case 'comment': return 'bg-indigo-500 shadow-lg shadow-indigo-500/30';
-      default: return 'bg-slate-500';
+      case "friend_request":
+        return "bg-blue-500 shadow-lg shadow-blue-500/30";
+      case "friend_accept":
+        return "bg-green-500 shadow-lg shadow-green-500/30";
+      case "like":
+        return "bg-red-500 shadow-lg shadow-red-500/30";
+      case "comment":
+        return "bg-indigo-500 shadow-lg shadow-indigo-500/30";
+      default:
+        return "bg-slate-500";
     }
   };
 
   const getNotificationText = (n: Notification) => {
     switch (n.type) {
-      case 'friend_request': return <>sent you a <span className="font-bold text-slate-100">friend request</span></>;
-      case 'friend_accept': return <>accepted your <span className="font-bold text-slate-100">friend request</span></>;
-      case 'like': return <>liked your <span className="font-bold text-slate-100">post</span></>;
-      case 'comment': return <>commented on your <span className="font-bold text-slate-100">post</span></>;
-      default: return 'New notification';
+      case "friend_request":
+        return (
+          <>
+            sent you a{" "}
+            <span className="font-bold text-slate-100">friend request</span>
+          </>
+        );
+      case "friend_accept":
+        return (
+          <>
+            accepted your{" "}
+            <span className="font-bold text-slate-100">friend request</span>
+          </>
+        );
+      case "like":
+        return (
+          <>
+            liked your <span className="font-bold text-slate-100">post</span>
+          </>
+        );
+      case "comment":
+        return (
+          <>
+            commented on your{" "}
+            <span className="font-bold text-slate-100">post</span>
+          </>
+        );
+      default:
+        return "New notification";
     }
   };
 
@@ -297,6 +355,7 @@ const Feed: React.FC = () => {
         {/* <h1 className="text-xl font-bold text-white tracking-tight">Orbyt</h1> */}
         <div className="flex items-center">
           <img
+            draggable={false}
             src={MainLogo}
             alt="Orbyt Logo"
             className="h-10 w-auto object-contain hover:scale-105 transition-transform duration-200"
@@ -306,7 +365,7 @@ const Feed: React.FC = () => {
         <div className="flex items-center gap-2">
           {/* Settings Button */}
           <button
-            onClick={() => navigate('/settings')}
+            onClick={() => navigate("/settings")}
             className="p-2 rounded-full hover:bg-slate-800 transition-colors text-slate-400 hover:text-white"
           >
             <Settings className="w-6 h-6" />
@@ -320,14 +379,18 @@ const Feed: React.FC = () => {
             <Bell className="w-6 h-6 text-slate-400" />
             {unreadCount > 0 && (
               <div className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-slate-900 flex items-center justify-center text-[9px] font-bold text-white shadow-sm">
-                {unreadCount > 9 ? '9+' : unreadCount}
+                {unreadCount > 9 ? "9+" : unreadCount}
               </div>
             )}
           </button>
 
           {/* User Avatar */}
           <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden border border-slate-700 ml-1">
-            {user && <div className="w-full h-full bg-slate-800 flex items-center justify-center text-primary-500 font-bold text-xs">{user.email?.[0]?.toUpperCase()}</div>}
+            {user && (
+              <div className="w-full h-full bg-slate-800 flex items-center justify-center text-primary-500 font-bold text-xs">
+                {user.email?.[0]?.toUpperCase()}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -365,7 +428,10 @@ const Feed: React.FC = () => {
           </div>
         ) : posts.length === 0 ? (
           <div className="text-center py-20 text-slate-500 animate-fade-in">
-            <p>No posts found nearby. Try increasing your discovery radius in settings!</p>
+            <p>
+              No posts found nearby. Try increasing your discovery radius in
+              settings!
+            </p>
           </div>
         ) : (
           posts.map((post, index) => (
@@ -395,7 +461,10 @@ const Feed: React.FC = () => {
           <div className="bg-slate-900 w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl shadow-black relative z-10 flex flex-col max-h-[80vh] animate-slide-up overflow-hidden border border-slate-800">
             <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
               <h3 className="font-bold text-white text-lg">Notifications</h3>
-              <button onClick={() => setShowNotifications(false)} className="p-2 -mr-2 text-slate-400 hover:text-white">
+              <button
+                onClick={() => setShowNotifications(false)}
+                className="p-2 -mr-2 text-slate-400 hover:text-white"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -407,27 +476,38 @@ const Feed: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-1">
-                  {notifications.map(n => (
+                  {notifications.map((n) => (
                     <div
                       key={n._id}
                       onClick={() => handleNotificationClick(n)}
-                      className={`flex items-center gap-3 p-3 rounded-xl transition-colors cursor-pointer ${n.read ? 'bg-transparent hover:bg-slate-800' : 'bg-slate-800/60 hover:bg-slate-800'}`}
+                      className={`flex items-center gap-3 p-3 rounded-xl transition-colors cursor-pointer ${n.read ? "bg-transparent hover:bg-slate-800" : "bg-slate-800/60 hover:bg-slate-800"}`}
                     >
                       <div className="relative">
                         <div className="w-10 h-10 rounded-full bg-slate-800 overflow-hidden shrink-0 border border-slate-700">
                           {n.fromPhoto ? (
-                            <img src={n.fromPhoto} alt={n.fromName} className="w-full h-full object-cover" />
+                            <img
+                              draggable={false}
+                              src={n.fromPhoto}
+                              alt={n.fromName}
+                              className="w-full h-full object-cover"
+                            />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center font-bold text-slate-500 text-xs">{n.fromName[0]}</div>
+                            <div className="w-full h-full flex items-center justify-center font-bold text-slate-500 text-xs">
+                              {n.fromName[0]}
+                            </div>
                           )}
                         </div>
-                        <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-slate-900 flex items-center justify-center ${getNotificationColor(n.type)}`}>
+                        <div
+                          className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-slate-900 flex items-center justify-center ${getNotificationColor(n.type)}`}
+                        >
                           {getNotificationIcon(n.type)}
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-slate-400 leading-snug">
-                          <span className="font-bold text-slate-200 mr-1">{n.fromName}</span>
+                          <span className="font-bold text-slate-200 mr-1">
+                            {n.fromName}
+                          </span>
                           {getNotificationText(n)}
                         </p>
                         <span className="text-[10px] text-slate-600 font-medium">
