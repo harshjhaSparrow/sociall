@@ -438,7 +438,28 @@ export const api = {
       } catch (e) {
         console.error("Failed to mark notifications read:", e);
       }
-    }
+    },
+    markAllRead: async (uid: string) => {
+      try {
+        await fetch(`${API_BASE}/notifications/mark-all-read`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ uid }),
+        });
+      } catch (e) {
+        console.error("Failed to mark all notifications read:", e);
+      }
+    },
+    getUnreadCount: async (uid: string): Promise<number> => {
+      try {
+        const response = await fetch(`${API_BASE}/notifications/unread-count/${uid}`);
+        if (!response.ok) return 0;
+        const data = await response.json();
+        return data.count || 0;
+      } catch (e) {
+        return 0;
+      }
+    },
   },
 
   push: {

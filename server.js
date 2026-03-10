@@ -145,7 +145,7 @@ async function createNotification(type, fromUid, toUid, postId = null) {
       return;
     }
 
-    await notifications.insertOne({
+    const notifDoc = {
       type,
       fromUid,
       fromName: sender.displayName,
@@ -154,6 +154,12 @@ async function createNotification(type, fromUid, toUid, postId = null) {
       postId,
       read: false,
       createdAt: Date.now()
+    };
+    const notifResult = await notifications.insertOne(notifDoc);
+    // Push real-time in-app notification over WebSocket
+    sendToUser(toUid, {
+      type: 'notification',
+      notification: { ...notifDoc, _id: notifResult.insertedId }
     });
 
     // --- Send Web Push Notification ---
@@ -178,7 +184,7 @@ async function createNotification(type, fromUid, toUid, postId = null) {
           title = "Friend Request Accepted";
           body = `${sender.displayName} accepted your friend request.`;
           break;
-        case 'meetup_join':
+        case 'meetup_request':
           title = "Meetup Request";
           body = `${sender.displayName} requested to join your meetup.`;
           break;
@@ -1060,6 +1066,30 @@ app.post('/api/notifications/mark-read', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: "Failed to mark read" });
+  }
+});
+
+app.post('/api/notifications/mark-all-read', async (req, res) => {
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { uid } = req.body;
+    if (!uid) return res.status(400).json({ error: "Missing uid" });
+    const notifications = db.collection('notifications');
+    await notifications.updateMany({ toUid: uid, read: false }, { $set: { read: true } });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to mark all read" });
+  }
+});
+
+app.get('/api/notifications/unread-count/:uid', async (req, res) => {
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const notifications = db.collection('notifications');
+    const count = await notifications.countDocuments({ toUid: req.params.uid, read: false });
+    res.json({ count });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch unread count" });
   }
 });
 

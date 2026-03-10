@@ -1,5 +1,6 @@
 import {
   ArrowRight,
+  Bell,
   ChevronLeft,
   EyeOff,
   Ghost,
@@ -11,11 +12,15 @@ import {
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { usePushNotifications } from "../hooks/usePushNotifications";
 import { api } from "../services/api";
 
 const Settings: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { isSupported, isSubscribed, subscribe } = usePushNotifications();
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
 
   const [isGhostMode, setIsGhostMode] = useState(false);
   const [isDiscoverable, setIsDiscoverable] = useState(true);
@@ -23,6 +28,18 @@ const Settings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+
+  useEffect(() => {
+    setPushEnabled(isSubscribed);
+  }, [isSubscribed]);
+
+  const handlePushToggle = async () => {
+    if (pushEnabled) return; // can't unsubscribe programmatically; user must revoke in browser
+    setPushLoading(true);
+    const success = await subscribe();
+    if (success) setPushEnabled(true);
+    setPushLoading(false);
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -142,6 +159,50 @@ const Settings: React.FC = () => {
       </div>
 
       <div className="flex-1 max-w-md mx-auto w-full p-4 space-y-6">
+
+        {/* NOTIFICATIONS */}
+        <section>
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-2">
+            Notifications
+          </h3>
+
+          <div className="bg-slate-900 rounded-2xl border border-slate-800 p-4">
+            <div className="flex items-center gap-4">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${pushEnabled ? "bg-primary-500 text-white" : "bg-slate-800 text-slate-400"
+                }`}>
+                {pushLoading
+                  ? <Loader2 className="w-5 h-5 animate-spin" />
+                  : <Bell className="w-5 h-5" />}
+              </div>
+              <div className="flex-1">
+                <h4 className="text-white font-bold text-base">Push Notifications</h4>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {!isSupported
+                    ? "Not supported on this device"
+                    : pushEnabled
+                      ? "You'll get notified when away from the app"
+                      : "Enable to get notified when away from the app"}
+                </p>
+              </div>
+              <button
+                onClick={handlePushToggle}
+                disabled={!isSupported || pushEnabled || pushLoading}
+                className={`relative inline-flex h-7 w-12 rounded-full transition ${pushEnabled ? "bg-primary-500" : "bg-slate-700"
+                  } disabled:opacity-50`}
+              >
+                <span
+                  className={`inline-block h-6 w-6 bg-white rounded-full transform transition ${pushEnabled ? "translate-x-5" : "translate-x-0"
+                    }`}
+                />
+              </button>
+            </div>
+            {pushEnabled && (
+              <p className="text-xs text-slate-500 mt-3 pl-14">
+                To disable, revoke notification permission in your browser settings.
+              </p>
+            )}
+          </div>
+        </section>
 
         {/* DISCOVERY */}
         <section>

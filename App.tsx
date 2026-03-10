@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { api } from './services/api';
 import AuthPage from './pages/Auth';
 import Onboarding from './pages/Onboarding';
@@ -13,6 +14,7 @@ import PostDetail from './pages/PostDetail';
 import MapPage from './pages/MapPage';
 import Chat from './pages/Chat';
 import Inbox from './pages/Inbox';
+import NotificationsPage from './pages/Notifications';
 import Layout from './components/Layout';
 import LocationGuard from './components/LocationGuard';
 import Settings from './pages/Settings';
@@ -82,68 +84,71 @@ const AppRoutes = () => {
   const { status } = useAuth();
 
   return (
-    <div className="antialiased text-slate-900">
-      <Routes>
-        <Route path="/auth" element={status === 'authenticated' ? <Navigate to="/" /> : <AuthPage />} />
+    <NotificationProvider>
+      <div className="antialiased text-slate-900">
+        <Routes>
+          <Route path="/auth" element={status === 'authenticated' ? <Navigate to="/" /> : <AuthPage />} />
 
-        {/* Onboarding - Isolated */}
-        <Route path="/onboarding" element={
-          <ProtectedRoute>
-            <Onboarding />
-          </ProtectedRoute>
-        } />
+          {/* Onboarding - Isolated */}
+          <Route path="/onboarding" element={
+            <ProtectedRoute>
+              <Onboarding />
+            </ProtectedRoute>
+          } />
 
-        {/* Direct Chat - Isolated */}
-        <Route path="/chat/:uid" element={
-          <ProtectedRoute>
-            <LocationGuard>
-              <Chat />
-            </LocationGuard>
-          </ProtectedRoute>
-        } />
+          {/* Direct Chat - Isolated */}
+          <Route path="/chat/:uid" element={
+            <ProtectedRoute>
+              <LocationGuard>
+                <Chat />
+              </LocationGuard>
+            </ProtectedRoute>
+          } />
 
-        {/* Group Chat - Isolated */}
-        <Route path="/chat/group/:groupId" element={
-          <ProtectedRoute>
-            <LocationGuard>
-              <Chat />
-            </LocationGuard>
-          </ProtectedRoute>
-        } />
+          {/* Group Chat - Isolated */}
+          <Route path="/chat/group/:groupId" element={
+            <ProtectedRoute>
+              <LocationGuard>
+                <Chat />
+              </LocationGuard>
+            </ProtectedRoute>
+          } />
 
-        {/* Settings - Isolated */}
-        <Route path="/settings" element={
-          <ProtectedRoute>
-            <Settings />
-          </ProtectedRoute>
-        } />
+          {/* Settings - Isolated */}
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          } />
 
 
-        {/* Privacy & Terms - Isolated & Unprotected */}
-        <Route path="/privacy" element={<PrivacyPolicy />} />
-        <Route path="/terms" element={<TermsOfService />} />
+          {/* Privacy & Terms - Isolated & Unprotected */}
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
 
-        {/* Main App - Protected by Location & Layout */}
-        <Route element={
-          <ProtectedRoute>
-            <LocationGuard>
-              <Layout />
-            </LocationGuard>
-          </ProtectedRoute>
-        }>
-          <Route path="/" element={<Feed />} />
-          <Route path="/map" element={<MapPage />} />
-          <Route path="/inbox" element={<Inbox />} />
-          <Route path="/profile/:uid?" element={<Profile />} />
-          <Route path="/create-post" element={<CreatePost />} />
-          <Route path="/edit-post/:id" element={<EditPost />} />
-          <Route path="/post/:id" element={<PostDetail />} />
-          <Route path="/edit-profile" element={<EditProfile />} />
-        </Route>
+          {/* Main App - Protected by Location & Layout */}
+          <Route element={
+            <ProtectedRoute>
+              <LocationGuard>
+                <Layout />
+              </LocationGuard>
+            </ProtectedRoute>
+          }>
+            <Route path="/" element={<Feed />} />
+            <Route path="/map" element={<MapPage />} />
+            <Route path="/inbox" element={<Inbox />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/profile/:uid?" element={<Profile />} />
+            <Route path="/create-post" element={<CreatePost />} />
+            <Route path="/edit-post/:id" element={<EditPost />} />
+            <Route path="/post/:id" element={<PostDetail />} />
+            <Route path="/edit-profile" element={<EditProfile />} />
+          </Route>
 
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </div>
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </div>
+    </NotificationProvider>
   );
 };
 

@@ -18,6 +18,7 @@ import { api } from "../services/api";
 import { Notification, Post, UserProfile } from "../types";
 import { usePushNotifications } from "../hooks/usePushNotifications";
 import { MainLogo } from "../util/Images";
+import { useNotifications } from "@/context/NotificationContext";
 
 const getDistanceMeters = (
   lat1: number,
@@ -61,7 +62,7 @@ const Feed: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  console.log("postspostspostsposts",posts)
+  console.log("postspostspostsposts", posts);
 
   // Notification State
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -322,6 +323,11 @@ const Feed: React.FC = () => {
         return "New notification";
     }
   };
+  const { unreadCount: notifUnreadCount } = useNotifications();
+  const isActive = (path: string) => {
+    if (path === "/") return location.pathname === "/";
+    return location.pathname.startsWith(path);
+  };
 
   return (
     <div
@@ -373,16 +379,33 @@ const Feed: React.FC = () => {
 
           {/* Notification Bell */}
           <button
-            onClick={openNotifications}
+            onClick={() => navigate("/notifications")}
             className="relative p-2 rounded-full hover:bg-slate-800 transition-colors"
           >
             <Bell className="w-6 h-6 text-slate-400" />
-            {unreadCount > 0 && (
-              <div className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-slate-900 flex items-center justify-center text-[9px] font-bold text-white shadow-sm">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </div>
-            )}
+             {notifUnreadCount > 0 && (
+                <div className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-bold min-w-[16px] h-4 px-0.5 rounded-full flex items-center justify-center border-2 border-slate-900">
+                  {notifUnreadCount > 9 ? "9+" : notifUnreadCount}
+                </div>
+              )}
           </button>
+
+          {/* <button
+            onClick={() => navigate("/notifications")}
+            className={`flex flex-col items-center justify-center w-full h-full space-y-1 relative ${isActive("/notifications") ? "text-primary-500" : "text-slate-500 hover:text-slate-300"}`}
+          >
+            <div className="relative">
+              <Bell
+                className={`w-5 h-5 ${isActive("/notifications") ? "fill-current" : ""}`}
+              />
+              {notifUnreadCount > 0 && (
+                <div className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-bold min-w-[16px] h-4 px-0.5 rounded-full flex items-center justify-center border-2 border-slate-900">
+                  {notifUnreadCount > 9 ? "9+" : notifUnreadCount}
+                </div>
+              )}
+            </div>
+          
+          </button> */}
 
           {/* User Avatar */}
           <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden border border-slate-700 ml-1">
