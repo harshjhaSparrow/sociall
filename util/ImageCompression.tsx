@@ -1,5 +1,5 @@
-import * as nsfwjs from "nsfwjs";
 import "@tensorflow/tfjs";
+import * as nsfwjs from "nsfwjs";
 
 // Cache model instance
 let nsfwModel: Awaited<ReturnType<typeof nsfwjs.load>> | null = null;

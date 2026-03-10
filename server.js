@@ -1,12 +1,12 @@
 import cors from "cors";
+import dotenv from "dotenv";
 import express from "express";
 import http from "http";
-import path from "path";
-import WebSocket, { WebSocketServer } from "ws";
 import { MongoClient, ObjectId, ServerApiVersion } from "mongodb";
+import path from "path";
 import { fileURLToPath } from "url";
 import webpush from "web-push";
-import dotenv from "dotenv";
+import WebSocket, { WebSocketServer } from "ws";
 
 dotenv.config();
 
@@ -520,12 +520,19 @@ app.post('/api/auth/google', async (req, res) => {
       });
     } else {
       uid = user._id.toString();
-      if (photoURL || displayName) {
-        const updateFields = {};
-        if (photoURL) updateFields.photoURL = photoURL;
-        if (Object.keys(updateFields).length > 0) {
-          await profiles.updateOne({ uid }, { $set: updateFields });
-        }
+      // Only fill in Google data if the user hasn't already set their own values.
+      // This ensures a custom profile picture or display name set via Edit Profile
+      // is NEVER overwritten by the Google account data on subsequent logins.
+      const existingProfile = await profiles.findOne({ uid });
+      const updateFields = {};
+      if (!existingProfile?.photoURL && photoURL) {
+        updateFields.photoURL = photoURL;
+      }
+      if (!existingProfile?.displayName && displayName) {
+        updateFields.displayName = displayName;
+      }
+      if (Object.keys(updateFields).length > 0) {
+        await profiles.updateOne({ uid }, { $set: updateFields });
       }
     }
     res.json({ user: { uid, email } });
