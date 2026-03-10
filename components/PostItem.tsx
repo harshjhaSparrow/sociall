@@ -82,11 +82,11 @@ const PostItem: React.FC<any> = ({
   const distance =
     post?.location && myLocation
       ? calculateDistance(
-          myLocation?.lat,
-          myLocation?.lng,
-          post?.location?.lat,
-          post?.location?.lng,
-        )
+        myLocation?.lat,
+        myLocation?.lng,
+        post?.location?.lat,
+        post?.location?.lng,
+      )
       : null;
 
   return (
@@ -359,9 +359,9 @@ const PostItem: React.FC<any> = ({
 
           {commentsToShow && commentsToShow?.length > 0 && (
             <div className="space-y-3">
-              {commentsToShow.map((comment:any, idx:any) => (
+              {commentsToShow.map((comment: any, idx: any) => (
                 <div key={idx} className="flex gap-2.5 animate-fade-in">
-                  <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden shrink-0 mt-0.5 border border-slate-700">
+                  <Link to={`/profile/${comment?.uid}`} className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden shrink-0 mt-0.5 border border-slate-700 block cursor-pointer hover:opacity-80 transition-opacity">
                     {comment?.authorPhoto ? (
                       <img
                         src={comment?.authorPhoto}
@@ -373,11 +373,11 @@ const PostItem: React.FC<any> = ({
                         {comment?.authorName?.[0]}
                       </div>
                     )}
-                  </div>
+                  </Link>
                   <div className="bg-slate-800/80 px-4 py-2.5 rounded-2xl text-sm border border-slate-800 flex-1">
-                    <span className="font-bold text-slate-200 text-xs mr-2 block mb-0.5">
+                    <Link to={`/profile/${comment?.uid}`} className="font-bold text-slate-200 text-xs mr-2 block mb-0.5 hover:text-primary-400 transition-colors inline-block">
                       {comment?.authorName}
-                    </span>
+                    </Link>
                     <span className="text-slate-400 text-xs leading-relaxed">
                       {comment?.text}
                     </span>
