@@ -34,7 +34,7 @@ const DesktopLanding: React.FC = () => {
                 <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
                     <div className="flex items-center">
                         <img
-                         draggable={false}
+                            draggable={false}
                             src={MainLogo}
                             alt="Orbyt Logo"
                             className="h-12 w-auto object-contain hover:scale-105 transition-transform duration-200"
@@ -99,7 +99,7 @@ const DesktopLanding: React.FC = () => {
                                 <div className="flex -space-x-2">
                                     {[1, 2, 3, 4].map(i => (
                                         <div key={i} className={`w-8 h-8 rounded-full border-2 border-slate-950 bg-slate-800 overflow-hidden`}>
-                                            <img  draggable={false} src={`https://i.pravatar.cc/100?img=${10 + i}`} alt="User" className="w-full h-full object-cover" />
+                                            <img draggable={false} src={`https://i.pravatar.cc/100?img=${10 + i}`} alt="User" className="w-full h-full object-cover" />
                                         </div>
                                     ))}
                                     <div className="w-8 h-8 rounded-full border-2 border-slate-950 bg-slate-800 flex items-center justify-center text-[10px] font-bold text-white">
@@ -126,14 +126,14 @@ const DesktopLanding: React.FC = () => {
                                     {/* Mock Pins */}
                                     <div className="absolute top-1/4 left-1/4 animate-bounce duration-[3000ms]">
                                         <div className="w-12 h-12 rounded-full border-2 border-white bg-blue-500 overflow-hidden shadow-lg relative z-10">
-                                            <img  draggable={false} src="https://i.pravatar.cc/100?img=33" alt="User" className="w-full h-full object-cover" />
+                                            <img draggable={false} src="https://i.pravatar.cc/100?img=33" alt="User" className="w-full h-full object-cover" />
                                         </div>
                                         <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-white"></div>
                                     </div>
 
                                     <div className="absolute top-1/2 right-1/3 animate-bounce duration-[2500ms]">
                                         <div className="w-12 h-12 rounded-full border-2 border-white bg-primary-500 overflow-hidden shadow-lg relative z-10">
-                                            <img  draggable={false} src="https://i.pravatar.cc/100?img=47" alt="User" className="w-full h-full object-cover" />
+                                            <img draggable={false} src="https://i.pravatar.cc/100?img=47" alt="User" className="w-full h-full object-cover" />
                                         </div>
                                         <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-white"></div>
                                     </div>
@@ -280,7 +280,7 @@ const DesktopLanding: React.FC = () => {
                         <div className="flex-1 relative">
                             <div className="absolute inset-0 bg-gradient-to-r from-primary-500 to-purple-500 rounded-3xl blur-2xl opacity-20 transform rotate-3"></div>
                             <img
-                             draggable={false}
+                                draggable={false}
                                 src="https://images.unsplash.com/photo-1543269865-cbf427effbad?q=80&w=1000&auto=format&fit=crop"
                                 alt="Friends meeting"
                                 className="relative rounded-3xl shadow-2xl border border-slate-700 grayscale hover:grayscale-0 transition-all duration-500"
@@ -321,7 +321,7 @@ const DesktopLanding: React.FC = () => {
                                 </div>
                                 <p className="text-slate-300 mb-6 leading-relaxed">"{t.text}"</p>
                                 <div className="flex items-center gap-4">
-                                    <img  draggable={false} src={t.image} alt={t.author} className="w-10 h-10 rounded-full" />
+                                    <img draggable={false} src={t.image} alt={t.author} className="w-10 h-10 rounded-full" />
                                     <div>
                                         <p className="font-bold text-white text-sm">{t.author}</p>
                                         <p className="text-xs text-slate-500">{t.role}</p>
@@ -340,7 +340,7 @@ const DesktopLanding: React.FC = () => {
                     <div className="space-y-4">
                         {[
                             { q: "Is Orbyt free to use?", a: "Yes! Orbyt is completely free to download and use. We may introduce premium features in the future, but the core experience will always be free." },
-                            { q: "How does the location privacy work?", a: "Your privacy is our priority. You can choose to be visible only to friends, or go into 'Ghost Mode' to be completely invisible on the map whenever you want." },
+                            { q: "How does the location privacy work?", a: "Your privacy is our priority. You can choose to be visible only to friends, or pause your discoverability to be completely invisible on the map whenever you want." },
                             { q: "Is it available on iOS and Android?", a: "Currently, Orbyt is a Progressive Web App (PWA). This means you can add it to your home screen on both iOS and Android directly from your browser without visiting an app store." },
                             { q: "How do you verify users?", a: "We use a combination of email verification and community reporting. We are also rolling out photo verification to ensure profiles are authentic." }
                         ].map((item, i) => (
@@ -386,7 +386,7 @@ const DesktopLanding: React.FC = () => {
                         <div className="col-span-2 md:col-span-1">
                             <div className="flex py-4 items-center">
                                 <img
-                                 draggable={false}
+                                    draggable={false}
                                     src={MainLogo}
                                     alt="Orbyt Logo"
                                     className="h-12 w-auto object-contain hover:scale-105 transition-transform duration-200"

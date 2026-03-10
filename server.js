@@ -552,7 +552,6 @@ app.get('/api/profile/:uid', async (req, res) => {
   try {
     const profiles = db.collection('profiles');
     const profile = await profiles.findOne({ uid: req.params.uid });
-    if (profile && profile.isGhostMode) delete profile.lastLocation;
     res.json(profile || null);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch profile" });
@@ -593,7 +592,6 @@ app.get('/api/profiles', async (req, res) => {
     const profiles = db.collection('profiles');
     let filter = {
       lastLocation: { $exists: true, $ne: null },
-      isGhostMode: { $ne: true },
       isDiscoverable: { $ne: false } // Only show discoverable users
     };
     if (viewerUid) {
@@ -637,13 +635,7 @@ app.post('/api/profile/:uid', async (req, res) => {
     // 1. Update Profile
     const updateFields = { ...data, uid, updatedAt: new Date() };
     const updateDoc = { $set: updateFields };
-    if (data.isGhostMode === true) {
-      updateFields.isGhostMode = true;
-      updateDoc.$unset = { lastLocation: "" };
-      delete updateFields.lastLocation;
-    } else if (data.isGhostMode === false) {
-      updateFields.isGhostMode = false;
-    }
+
     await profiles.updateOne({ uid }, updateDoc, { upsert: true });
 
     // 2. Propagate updates to related collections (Posts, Comments, Messages, Notifications)
@@ -819,9 +811,7 @@ app.post('/api/posts', async (req, res) => {
   try {
     const postData = req.body;
     const posts = db.collection('posts');
-    const profiles = db.collection('profiles');
-    const profile = await profiles.findOne({ uid: postData.uid });
-    if (profile && profile.isGhostMode) delete postData.location;
+
     const result = await posts.insertOne({
       ...postData,
       likes: 0, likedBy: [], comments: [],

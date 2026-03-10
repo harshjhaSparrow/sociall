@@ -3,7 +3,6 @@ import {
   Bell,
   ChevronLeft,
   EyeOff,
-  Ghost,
   Loader2,
   PauseCircle,
   Radar,
@@ -22,7 +21,6 @@ const Settings: React.FC = () => {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
 
-  const [isGhostMode, setIsGhostMode] = useState(false);
   const [isDiscoverable, setIsDiscoverable] = useState(true);
   const [discoveryRadius, setDiscoveryRadius] = useState(10);
   const [loading, setLoading] = useState(true);
@@ -48,7 +46,6 @@ const Settings: React.FC = () => {
       try {
         const profile = await api.profile.get(user.uid);
         if (profile) {
-          setIsGhostMode(!!profile.isGhostMode);
           setIsDiscoverable(profile.isDiscoverable !== false);
           setDiscoveryRadius(profile.discoveryRadius || 10);
         }
@@ -62,19 +59,7 @@ const Settings: React.FC = () => {
     fetchProfile();
   }, [user]);
 
-  const toggleGhostMode = async () => {
-    if (!user) return;
-    const newValue = !isGhostMode;
-    setIsGhostMode(newValue);
 
-    try {
-      await api.profile.createOrUpdate(user.uid, {
-        isGhostMode: newValue,
-      });
-    } catch (e) {
-      setIsGhostMode(!newValue);
-    }
-  };
 
   const toggleDiscoverable = async () => {
     if (!user) return;
@@ -263,44 +248,6 @@ const Settings: React.FC = () => {
                 />
               </button>
             </div>
-          </div>
-        </section>
-
-        {/* PRIVACY */}
-        <section>
-          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-2">
-            Privacy & Safety
-          </h3>
-
-          <div className="bg-slate-900 rounded-2xl border border-slate-800 p-4">
-            <div className="flex items-center gap-4 mb-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isGhostMode ? "bg-purple-500 text-white" : "bg-slate-800 text-slate-400"}`}>
-                {isGhostMode ? <Ghost className="w-6 h-6" /> : <EyeOff className="w-6 h-6" />}
-              </div>
-              <div className="flex-1">
-                <h4 className="text-white font-bold text-base">
-                  Ghost Mode
-                </h4>
-                <p className="text-xs text-slate-400">
-                  Completely hide your presence.
-                </p>
-              </div>
-
-              <button
-                onClick={toggleGhostMode}
-                className={`relative inline-flex h-7 w-12 rounded-full transition ${isGhostMode ? "bg-purple-600" : "bg-slate-700"}`}
-              >
-                <span
-                  className={`inline-block h-6 w-6 bg-white rounded-full transform transition ${isGhostMode ? "translate-x-5" : "translate-x-0"}`}
-                />
-              </button>
-            </div>
-
-            {isGhostMode && (
-              <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-3 text-xs text-purple-200">
-                You are currently invisible.
-              </div>
-            )}
           </div>
         </section>
 

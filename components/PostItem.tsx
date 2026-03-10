@@ -223,7 +223,7 @@ const PostItem: React.FC<any> = ({
                   <DollarSign className="w-4 h-4" />
                 </div>
                 <span className="font-medium truncate">
-                  {post?.meetupDetails?.feeType}
+                  {post?.meetupDetails?.feeType} {post?.meetupDetails?.feeAmount ? `(${post.meetupDetails.feeAmount})` : ''}
                 </span>
               </div>
               {post?.meetupDetails?.maxGuests && (

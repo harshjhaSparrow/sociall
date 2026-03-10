@@ -35,7 +35,7 @@ const PrivacyPolicy: React.FC = () => {
                     <h2 className="text-xl font-bold text-white text-left pt-4">2. Information We Collect</h2>
                     <ul className="list-disc pl-5 space-y-2">
                         <li><strong>Account Information:</strong> When you register, we collect your email address, profile picture (optional), display name, and date of birth to ensure you meet our minimum age requirement (18+).</li>
-                        <li><strong>Location Data:</strong> To provide core features like the map and finding nearby users, we collect your precise geographic location. You can pause discoverability or enter "Ghost Mode" at any time to restrict this access.</li>
+                        <li><strong>Location Data:</strong> To provide core features like the map and finding nearby users, we collect your precise geographic location. You can pause discoverability at any time to restrict this access.</li>
                         <li><strong>User Generated Content:</strong> We collect and store text, images, and other data you choose to post, comment, or message through the Service.</li>
                         <li><strong>Usage Data:</strong> We automatically log interactions with the app, device information, and IP addresses to improve performance and prevent abuse.</li>
                     </ul>

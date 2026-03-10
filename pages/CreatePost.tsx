@@ -39,6 +39,7 @@ const CreatePost: React.FC = () => {
   const [meetupTitle, setMeetupTitle] = useState("");
   const [activity, setActivity] = useState(MEETUP_ACTIVITIES[0]);
   const [feeType, setFeeType] = useState(FEE_TYPES[0]);
+  const [feeAmount, setFeeAmount] = useState("");
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -113,8 +114,6 @@ const CreatePost: React.FC = () => {
         console.warn("Could not fetch profile", e);
       }
 
-      const isGhost = !!profile?.isGhostMode;
-
       const payload: any = {
         uid: user.uid,
         authorName: profile?.displayName || user.email?.split("@")[0] || "User",
@@ -122,7 +121,7 @@ const CreatePost: React.FC = () => {
         content: postType === "regular" ? content : content || meetupTitle, // Fallback content for legacy
         imageURL: image || undefined,
         location:
-          gpsLocation && !isGhost
+          gpsLocation
             ? {
               ...gpsLocation,
               name: locationName,
@@ -136,6 +135,7 @@ const CreatePost: React.FC = () => {
           title: meetupTitle,
           activity,
           feeType,
+          feeAmount: feeType === 'Attendance fee applicable' ? feeAmount : undefined,
           date,
           startTime,
           endTime,
@@ -315,6 +315,16 @@ const CreatePost: React.FC = () => {
                 </select>
               </div>
             </div>
+
+            {feeType === 'Attendance fee applicable' && (
+              <Input
+                type="number"
+                placeholder="Attendance Fee Amount"
+                icon={<DollarSign className="w-4 h-4" />}
+                value={feeAmount}
+                onChange={(e) => setFeeAmount(e.target.value)}
+              />
+            )}
 
             <div className="w-full space-y-2">
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">

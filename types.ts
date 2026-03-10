@@ -9,6 +9,7 @@ export interface MeetupDetails {
   title: string;
   activity: string;
   feeType: string;
+  feeAmount?: string;
   maxGuests?: number;
   date: string; // YYYY-MM-DD
   startTime: string; // HH:mm
@@ -31,9 +32,9 @@ export interface UserProfile {
   incomingRequests?: string[];
   outgoingRequests?: string[];
   friendRequestMessages?: Record<string, string>; // Map of uid -> message
-  blockedUsers?: string[]; 
+  blockedUsers?: string[];
   dob?: string;
-  isGhostMode?: boolean;
+
   isDiscoverable?: boolean;
   discoveryRadius?: number; // in km
 }
