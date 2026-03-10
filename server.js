@@ -7,6 +7,9 @@ import path from "path";
 import { fileURLToPath } from "url";
 import webpush from "web-push";
 import WebSocket, { WebSocketServer } from "ws";
+import { Expo } from 'expo-server-sdk';
+
+const expo = new Expo();
 
 dotenv.config();
 
@@ -201,13 +204,27 @@ async function createNotification(type, fromUid, toUid, postId = null) {
         data: { url: postId ? `/post/${postId}` : `/profile/${sender.uid}` }
       });
 
-      try {
-        await webpush.sendNotification(receiver.pushSubscription, payload);
-      } catch (err) {
-        console.error("Push Notification failed:", err);
-        // If subscription is invalid/expired, remove it from the profile
-        if (err.statusCode === 410 || err.statusCode === 404) {
-          await profiles.updateOne({ uid: toUid }, { $unset: { pushSubscription: "" } });
+      if (typeof receiver.pushSubscription === 'string' && Expo.isExpoPushToken(receiver.pushSubscription)) {
+        try {
+          await expo.sendPushNotificationsAsync([{
+            to: receiver.pushSubscription,
+            sound: 'default',
+            title,
+            body,
+            data: { url: postId ? `/post/${postId}` : `/profile/${sender.uid}` }
+          }]);
+        } catch (err) {
+          console.error("Expo Push Notification failed:", err);
+        }
+      } else {
+        try {
+          await webpush.sendNotification(receiver.pushSubscription, payload);
+        } catch (err) {
+          console.error("Push Notification failed:", err);
+          // If subscription is invalid/expired, remove it from the profile
+          if (err.statusCode === 410 || err.statusCode === 404) {
+            await profiles.updateOne({ uid: toUid }, { $unset: { pushSubscription: "" } });
+          }
         }
       }
     }

@@ -6,6 +6,7 @@ import { UserProfile, POPULAR_INTERESTS, InterestTag } from '../types';
 import Input from '../components/ui/Input';
 import { Camera, ChevronLeft, Loader2, User as UserIcon, Calendar, Briefcase } from 'lucide-react';
 import { compressImage } from '../util/ImageCompression';
+import ImageCropperModal from '../components/ImageCropperModal';
 
 
 const EditProfile: React.FC = () => {
@@ -22,6 +23,9 @@ const EditProfile: React.FC = () => {
   const [dob, setDob] = useState('');
   const [jobRole, setJobRole] = useState('');
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -57,16 +61,32 @@ const EditProfile: React.FC = () => {
         return;
       }
 
-      try {
-        setLoading(true);
-        setError(null);
-        const compressed = await compressImage(file, 800, 0.8);
-        setPhotoURL(compressed);
-      } catch (err: any) {
-        setError(err.message || "Failed to process image.");
-      } finally {
-        setLoading(false);
-      }
+      // Convert file to data URL for the cropper
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        setTempImageSrc(reader.result?.toString() || null);
+        setCropModalOpen(true);
+      });
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setCropModalOpen(false);
+    setTempImageSrc(null);
+
+    try {
+      setLoading(true);
+      setError(null);
+      // We still run it through our standard compression flow for size optimization
+      // We wrap the blob in a File object to match what compressImage expects
+      const file = new File([croppedBlob], "cropped.jpg", { type: "image/jpeg" });
+      const compressed = await compressImage(file, 800, 0.8);
+      setPhotoURL(compressed);
+    } catch (err: any) {
+      setError(err.message || "Failed to process image.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -177,7 +197,7 @@ const EditProfile: React.FC = () => {
             <div className="relative group cursor-pointer">
               <div className={`w-36 h-36 rounded-full border-[6px] border-slate-900 shadow-2xl overflow-hidden bg-slate-800 flex items-center justify-center`}>
                 {photoURL ? (
-                  <img  draggable={false} src={photoURL} alt="Profile" className="w-full h-full object-cover" />
+                  <img draggable={false} src={photoURL} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
                   <UserIcon className="w-16 h-16 text-slate-600" />
                 )}
@@ -270,6 +290,17 @@ const EditProfile: React.FC = () => {
           )}
         </form>
       </div>
+
+      <ImageCropperModal
+        isOpen={cropModalOpen}
+        imageSrc={tempImageSrc}
+        aspect={1} // Square for profiles
+        onClose={() => {
+          setCropModalOpen(false);
+          setTempImageSrc(null);
+        }}
+        onCropComplete={handleCropComplete}
+      />
     </div>
   );
 };

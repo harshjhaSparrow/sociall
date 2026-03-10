@@ -1,12 +1,14 @@
 import {
   ArrowRight,
+  Ban,
   Bell,
   ChevronLeft,
   EyeOff,
   Loader2,
   PauseCircle,
   Radar,
-  Trash2
+  Trash2,
+  UserX
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -26,6 +28,10 @@ const Settings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+
+  // Blocked Users
+  const [blockedUsers, setBlockedUsers] = useState<Array<{ uid: string; displayName: string; photoURL?: string }>>([]);
+  const [unblockingUid, setUnblockingUid] = useState<string | null>(null);
 
   useEffect(() => {
     setPushEnabled(isSubscribed);
@@ -48,6 +54,12 @@ const Settings: React.FC = () => {
         if (profile) {
           setIsDiscoverable(profile.isDiscoverable !== false);
           setDiscoveryRadius(profile.discoveryRadius || 10);
+
+          // Load blocked users
+          if (profile.blockedUsers && profile.blockedUsers.length > 0) {
+            const batchProfiles = await api.profile.getBatch(profile.blockedUsers);
+            setBlockedUsers(batchProfiles.map((p: any) => ({ uid: p.uid, displayName: p.displayName, photoURL: p.photoURL })));
+          }
         }
       } catch (e) {
         console.error("Failed to load settings", e);
@@ -115,6 +127,19 @@ const Settings: React.FC = () => {
   const handleLogout = async () => {
     await logout();
     navigate("/auth");
+  };
+
+  const handleUnblock = async (targetUid: string) => {
+    if (!user) return;
+    setUnblockingUid(targetUid);
+    try {
+      await api.userAction.unblock(user.uid, targetUid);
+      setBlockedUsers(prev => prev.filter(u => u.uid !== targetUid));
+    } catch (e) {
+      alert("Failed to unblock user");
+    } finally {
+      setUnblockingUid(null);
+    }
   };
 
   if (loading) {
@@ -260,7 +285,7 @@ const Settings: React.FC = () => {
           <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
             <button
               onClick={() => navigate("/edit-profile")}
-              className="w-full p-4 text-red-400 flex justify-between hover:bg-slate-800/50"
+              className="w-full p-4 text-slate-300 flex justify-between hover:bg-slate-800/50"
             >
               Edit Profile
               <ArrowRight className="w-4 h-4 text-slate-500" />
@@ -268,7 +293,7 @@ const Settings: React.FC = () => {
 
             <button
               onClick={handleLogout}
-              className="w-full p-4 text-red-400 flex justify-between hover:bg-slate-800/50"
+              className="w-full p-4 text-red-400 flex justify-between hover:bg-slate-800/50 border-t border-slate-800"
             >
               Sign Out
             </button>
@@ -282,6 +307,38 @@ const Settings: React.FC = () => {
             </button>
           </div>
         </section>
+
+        {/* BLOCKED USERS */}
+        {blockedUsers.length > 0 && (
+          <section>
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-2">
+              Blocked Users
+            </h3>
+            <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden divide-y divide-slate-800">
+              {blockedUsers.map(u => (
+                <div key={u.uid} className="flex items-center gap-3 p-4">
+                  <div className="w-10 h-10 rounded-full bg-slate-800 overflow-hidden shrink-0 border border-slate-700 flex items-center justify-center">
+                    {u.photoURL ? (
+                      <img src={u.photoURL} className="w-full h-full object-cover" alt={u.displayName} />
+                    ) : (
+                      <UserX className="w-5 h-5 text-slate-500" />
+                    )}
+                  </div>
+                  <span className="flex-1 text-white font-semibold text-sm truncate">{u.displayName}</span>
+                  <button
+                    onClick={() => handleUnblock(u.uid)}
+                    disabled={unblockingUid === u.uid}
+                    className="px-3 py-1.5 text-xs font-bold text-orange-400 bg-orange-500/10 rounded-lg border border-orange-500/20 hover:bg-orange-500/20 transition-colors disabled:opacity-50"
+                  >
+                    {unblockingUid === u.uid ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : 'Unblock'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Info */}
         <div className="text-center pt-8 pb-4">

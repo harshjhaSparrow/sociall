@@ -15,6 +15,7 @@ import MapPage from './pages/MapPage';
 import Chat from './pages/Chat';
 import Inbox from './pages/Inbox';
 import NotificationsPage from './pages/Notifications';
+import Discover from './pages/Discover';
 import Layout from './components/Layout';
 import LocationGuard from './components/LocationGuard';
 import Settings from './pages/Settings';
@@ -137,6 +138,7 @@ const AppRoutes = () => {
             <Route path="/" element={<Feed />} />
             <Route path="/map" element={<MapPage />} />
             <Route path="/inbox" element={<Inbox />} />
+            <Route path="/discover" element={<Discover />} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/profile/:uid?" element={<Profile />} />
             <Route path="/create-post" element={<CreatePost />} />

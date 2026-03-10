@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Home, PlusSquare, User, Map, Bell, MessageCircle } from 'lucide-react';
+import { Home, PlusSquare, User, Map, Bell, MessageCircle, Compass } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 import { api } from '../services/api';
@@ -9,7 +9,6 @@ const Layout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { unreadCount: notifUnreadCount } = useNotifications();
   const [unreadMessages, setUnreadMessages] = useState(0);
 
   const isActive = (path: string) => {
@@ -65,6 +64,15 @@ const Layout: React.FC = () => {
             <span className="text-[10px] font-medium">Map</span>
           </button>
 
+          {/* Discover */}
+          <button
+            onClick={() => navigate('/discover')}
+            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/discover') ? 'text-primary-500' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+            <Compass className={`w-5 h-5 ${isActive('/discover') ? 'fill-current' : ''}`} />
+            <span className="text-[10px] font-medium">Discover</span>
+          </button>
+
           {/* Create Post — elevated center */}
           <button
             onClick={() => navigate('/create-post')}
@@ -90,7 +98,7 @@ const Layout: React.FC = () => {
             </div>
             <span className="text-[10px] font-medium">Activity</span>
           </button> */}
-           <button
+          <button
             onClick={() => navigate('/inbox')}
             className={`flex flex-col items-center justify-center w-full h-full space-y-1 relative ${isActive('/inbox') || isActive('/chat') ? 'text-primary-500' : 'text-slate-500 hover:text-slate-300'}`}
           >
@@ -105,7 +113,7 @@ const Layout: React.FC = () => {
             <span className="text-[10px] font-medium">Chat</span>
           </button>
 
-          
+
 
           {/* Profile */}
           <button

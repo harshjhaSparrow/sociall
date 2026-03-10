@@ -21,6 +21,7 @@ import { useUserLocation } from "../components/LocationGuard";
 import { MEETUP_ACTIVITIES, FEE_TYPES } from "../types";
 import Input from "../components/ui/Input";
 import { compressImage } from "../util/ImageCompression";
+import ImageCropperModal from "../components/ImageCropperModal";
 
 const CreatePost: React.FC = () => {
   const { user } = useAuth();
@@ -34,6 +35,9 @@ const CreatePost: React.FC = () => {
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
 
   // Meetup Specific State
   const [meetupTitle, setMeetupTitle] = useState("");
@@ -75,17 +79,30 @@ const CreatePost: React.FC = () => {
         return;
       }
 
-      try {
-        setLoading(true);
-        setError(null);
-        const compressed = await compressImage(file, 1600, 0.85);
-        setImage(compressed);
-      } catch (err: any) {
-        console.error(err);
-        setError(err.message || "Failed to process image.");
-      } finally {
-        setLoading(false);
-      }
+      // Show cropper first
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        setTempImageSrc(reader.result?.toString() || null);
+        setCropModalOpen(true);
+      });
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setCropModalOpen(false);
+    setTempImageSrc(null);
+    try {
+      setLoading(true);
+      setError(null);
+      const file = new File([croppedBlob], "cropped.jpg", { type: "image/jpeg" });
+      const compressed = await compressImage(file, 1600, 0.85);
+      setImage(compressed);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Failed to process image.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -393,6 +410,14 @@ const CreatePost: React.FC = () => {
           </div>
         )}
       </div>
+
+      <ImageCropperModal
+        isOpen={cropModalOpen}
+        imageSrc={tempImageSrc}
+        aspect={4 / 3}
+        onClose={() => { setCropModalOpen(false); setTempImageSrc(null); }}
+        onCropComplete={handleCropComplete}
+      />
     </div>
   );
 };
