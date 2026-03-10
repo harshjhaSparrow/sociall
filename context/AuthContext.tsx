@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AuthStatus } from '../types';
 
-// Simplified User type for our internal auth
+
 interface User {
   uid: string;
   email: string | null;
@@ -41,6 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setStatus('unauthenticated');
     }
   }, []);
+
 
   const login = (userData: User) => {
     setUser(userData);
