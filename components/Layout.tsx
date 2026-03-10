@@ -114,11 +114,11 @@ const Layout: React.FC = () => {
           >
             <div className="relative">
               <User className={`w-5 h-5 ${isActive('/profile') ? 'fill-current' : ''}`} />
-              {unreadMessages > 0 && (
+              {/* {unreadMessages > 0 && (
                 <div className="absolute -top-1.5 -right-1.5 bg-blue-500 text-white text-[9px] font-bold min-w-[16px] h-4 px-0.5 rounded-full flex items-center justify-center border-2 border-slate-900">
                   {unreadMessages > 9 ? '9+' : unreadMessages}
                 </div>
-              )}
+              )} */}
             </div>
             <span className="text-[10px] font-medium">Profile</span>
           </button>
