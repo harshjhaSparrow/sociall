@@ -53,14 +53,12 @@ export function usePushNotifications() {
                 return true;
             }
 
-            console.log("VAPID Key from env:", publicVapidKey);
 
             if (!publicVapidKey) {
                 console.error("VAPID Public Key is missing from Vite Environment Variables!");
             }
 
             const applicationServerKey = urlBase64ToUint8Array(publicVapidKey);
-            console.log("Generated Uint8Array length:", applicationServerKey.length);
 
             const subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,

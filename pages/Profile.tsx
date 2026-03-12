@@ -43,7 +43,6 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState("regular"); // "regular" or "meetup"
   const [myPosts, setMyPosts] = useState<Post[]>([]);
   const filteredPosts = myPosts?.filter((post) => post?.type === activeTab);
-  console.log("myPosts", myPosts);
 
   // Location Name State
   const [locationName, setLocationName] = useState<string>("Unknown Location");
@@ -141,7 +140,6 @@ export default function Profile() {
 
             // Only fetch posts if not blocked
             const posts = await api.posts.getUserPosts(targetUid);
-            console.log("postsposts", posts);
             setMyPosts(posts);
 
             // Record profile view if not own profile

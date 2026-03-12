@@ -23,21 +23,17 @@ const getBaseUrl = () => {
   // 1️⃣ Local or network testing
   if (isLocal) {
     const localUrl = `http://${hostname}:${PORT}/api`;
-    console.log("🏠 Using Local API:", localUrl);
     return localUrl;
   }
 
   // 2️⃣ If frontend is deployed on Vercel
   if (isVercel) {
     const vercelUrl = "https://backend.strangerchat.space/api";
-    console.log("🚀 Using Backend for Vercel:", vercelUrl);
     return vercelUrl;
   }
 
   // 3️⃣ Production (Beanstalk / custom domain / Load Balancer)
   const prodUrl = `${protocol}//${hostname}/api`;
-  console.log("🌐 Using Production API:", prodUrl);
-
   return prodUrl;
 };
 

@@ -63,7 +63,6 @@ const Feed: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  console.log("postspostspostsposts", posts);
 
   // Notification State
   const [notifications, setNotifications] = useState<Notification[]>([]);

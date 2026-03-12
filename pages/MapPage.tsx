@@ -165,7 +165,6 @@ const MapPage: React.FC = () => {
     currentUserInterests,
   ]);
 
-  console.log("nearbyUsersnearbyUsers", nearbyUsers);
 
   /* ---------------- USER ICON ---------------- */
 
@@ -274,7 +273,7 @@ const MapPage: React.FC = () => {
               position={[user.lastLocation!.lat, user.lastLocation!.lng]}
               icon={createUserIcon(user)}
               eventHandlers={{
-                click: (e) => {
+                click: (e: any) => {
                   L.DomEvent.stopPropagation(e);
                   setSelectedUser(user);
                   setIsListOpen(false);

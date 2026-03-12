@@ -59,7 +59,6 @@ app.use(
       ) {
         callback(null, true);
       } else {
-        console.log("❌ CORS blocked:", origin);
         callback(new Error("Not allowed by CORS"));
       }
     },
@@ -237,7 +236,6 @@ async function createNotification(type, fromUid, toUid, postId = null) {
 // --- DATABASE CLEANUP UTILITY ---
 async function cleanupOrphanedData() {
   if (!db) return;
-  console.log("Starting cleanup of orphaned data...");
   try {
     const users = db.collection('users');
     const profiles = db.collection('profiles');
@@ -250,15 +248,11 @@ async function cleanupOrphanedData() {
     const validUids = new Set(allUsers.map(u => u._id.toString()));
     const validUidArray = Array.from(validUids);
 
-    console.log(`Found ${validUids.size} valid users.`);
-
     // 2. Delete Orphaned Profiles
     const profRes = await profiles.deleteMany({ uid: { $nin: validUidArray } });
-    console.log(`Deleted ${profRes.deletedCount} orphaned profiles`);
 
     // 3. Delete Orphaned Posts
     const postRes = await posts.deleteMany({ uid: { $nin: validUidArray } });
-    console.log(`Deleted ${postRes.deletedCount} orphaned posts`);
 
     // 4. Delete Orphaned Messages (Invalid sender OR invalid recipient)
     const msgRes = await messages.deleteMany({
@@ -267,7 +261,7 @@ async function cleanupOrphanedData() {
         { toUid: { $exists: true, $nin: validUidArray } }
       ]
     });
-    console.log(`Deleted ${msgRes.deletedCount} orphaned messages`);
+
 
     // 5. Delete Orphaned Notifications
     const notifRes = await notifications.deleteMany({
@@ -276,7 +270,7 @@ async function cleanupOrphanedData() {
         { toUid: { $nin: validUidArray } }
       ]
     });
-    console.log(`Deleted ${notifRes.deletedCount} orphaned notifications`);
+
 
     // 6. Clean Arrays (Comments, Likes, Attendees, Friend Lists)
 
@@ -321,7 +315,6 @@ async function cleanupOrphanedData() {
         postUpdates++;
       }
     }
-    console.log(`Cleaned up arrays in ${postUpdates} posts`);
 
     // Iterate Profiles to clean friend lists
     const allProfiles = await profiles.find({}).toArray();
@@ -345,8 +338,7 @@ async function cleanupOrphanedData() {
         profileUpdates++;
       }
     }
-    console.log(`Cleaned up lists in ${profileUpdates} profiles`);
-    console.log("Cleanup finished.");
+
 
   } catch (e) {
     console.error("Error during cleanup:", e);
@@ -357,7 +349,6 @@ async function run() {
   try {
     await client.connect();
     db = client.db(DB_NAME);
-    console.log("Connected to MongoDB!");
 
     // Run cleanup on startup to sync state
     await cleanupOrphanedData();
@@ -877,7 +868,7 @@ app.get('/api/posts/:id', async (req, res) => {
   if (!db) return res.status(503).json({ error: "Database not connected" });
   try {
     const postId = req.params.id;
-    console.log(`Fetching post ID: ${postId}`);
+
 
     if (!ObjectId.isValid(postId)) {
       return res.status(400).json({ error: "Invalid ID format" });
@@ -887,7 +878,6 @@ app.get('/api/posts/:id', async (req, res) => {
     const post = await posts.findOne({ _id: new ObjectId(postId) });
 
     if (!post) {
-      console.log(`Post ${postId} not found.`);
       return res.status(404).json({ error: "Post not found" });
     }
 
