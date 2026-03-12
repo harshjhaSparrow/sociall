@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, MapPin, SearchX, User as UserIcon, Heart, X, ChevronLeft } from 'lucide-react';
+import { Briefcase, MapPin, SearchX, User as UserIcon, Heart, X } from 'lucide-react';
 import { api } from '../services/api';
 import { useUserLocation } from '../components/LocationGuard';
 import { calculateDistance } from '../util/location';
@@ -40,11 +40,15 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profile, distText, onSwip
         setTransform({ x: dx, rot, opacity: 1 });
     }, []);
 
-    const onPointerUp = useCallback(() => {
+    const onPointerUp = useCallback((e: React.PointerEvent) => {
         if (!isDragging.current) return;
         isDragging.current = false;
         const dx = currentX.current;
         currentX.current = 0;
+
+        try {
+            cardRef.current?.releasePointerCapture(e.pointerId);
+        } catch(err) {}
 
         if (Math.abs(dx) > 100) {
             const dir = dx > 0 ? 'right' : 'left';
@@ -193,13 +197,12 @@ export default function Discover() {
         fetchDiscover();
     }, [user, myLocation]);
 
-    const handleSwipe = useCallback(async (index: number, dir: 'left' | 'right') => {
+    const handleSwipe = useCallback((index: number, dir: 'left' | 'right') => {
         if (dir === 'right' && user) {
-            try {
-                await api.friends.sendRequest(user.uid, profiles[index].uid);
-            } catch (e) {
+            // Do not await to avoid blocking the UI swipe update
+            api.friends.sendRequest(user.uid, profiles[index].uid).catch(e => {
                 console.error("Failed to send request", e);
-            }
+            });
         }
         setTopIndex(i => i + 1);
     }, [profiles, user]);
@@ -226,17 +229,9 @@ export default function Discover() {
 
     return (
         <div className="flex flex-col pb-24">
-            <div className="px-6 pt-6 mb-4 flex items-center gap-4">
-                <button 
-                    onClick={() => navigate('/map')} 
-                    className="p-2 bg-slate-800/80 hover:bg-slate-700/80 rounded-full text-slate-300 backdrop-blur-md transition-colors border border-slate-700/50"
-                >
-                    <ChevronLeft className="w-5 h-5" />
-                </button>
-                <div>
-                    <h1 className="text-3xl font-bold text-white mb-0.5 tracking-tight">Discover</h1>
-                    <p className="text-slate-400 text-xs font-medium">Swipe Right to Add Friend · Left to Pass</p>
-                </div>
+            <div className="px-6 pt-6 mb-4">
+                <h1 className="text-3xl font-bold text-white mb-0.5 tracking-tight">Discover</h1>
+                <p className="text-slate-400 text-xs font-medium">Swipe Right to Add Friend · Left to Pass</p>
             </div>
 
             {/* Card Stack */}

@@ -63,6 +63,29 @@ const Layout: React.FC = () => {
             <span className="text-[10px] font-medium">Map</span>
           </button>
 
+          {/* Discover */}
+          <button
+            onClick={() => navigate('/discover')}
+            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/discover') ? 'text-primary-500' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+            <div className="relative">
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                viewBox="0 0 24 24" 
+                fill={isActive('/discover') ? "currentColor" : "none"} 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={`w-5 h-5 ${isActive('/discover') ? 'text-primary-500' : ''}`}
+              >
+                <path d="m3 11 18-5v12L3 14v-3z"/>
+                <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>
+              </svg>
+            </div>
+            <span className="text-[10px] font-medium">Discover</span>
+          </button>
+
           {/* Create Post — elevated center */}
           <button
             onClick={() => navigate('/create-post')}
