@@ -23,6 +23,7 @@ import { Loader2 } from 'lucide-react';
 import DesktopLanding from './pages/DeskTopLandingPage';
 import TermsOfService from './pages/TermsOfService';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import DeveloperProfile from './pages/DeveloperProfile';
 
 // Guard component to protect routes and check profile existence
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -119,6 +120,13 @@ const AppRoutes = () => {
           <Route path="/settings" element={
             <ProtectedRoute>
               <Settings />
+            </ProtectedRoute>
+          } />
+
+          {/* Developer Profile - Isolated */}
+          <Route path="/developer" element={
+            <ProtectedRoute>
+              <DeveloperProfile />
             </ProtectedRoute>
           } />
 

@@ -8,7 +8,8 @@ import {
   PauseCircle,
   Radar,
   Trash2,
-  UserX
+  UserX,
+  Code
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -339,6 +340,25 @@ const Settings: React.FC = () => {
             </div>
           </section>
         )}
+
+        {/* ABOUT */}
+        <section>
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-2">
+            About
+          </h3>
+          <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+            <button
+              onClick={() => navigate("/developer")}
+              className="w-full p-4 text-slate-300 flex justify-between items-center hover:bg-slate-800/50"
+            >
+              <div className="flex items-center gap-3">
+                <Code className="w-5 h-5 text-primary-500" />
+                <span>Developer Profile</span>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-500" />
+            </button>
+          </div>
+        </section>
 
         {/* Info */}
         <div className="text-center pt-8 pb-4">
