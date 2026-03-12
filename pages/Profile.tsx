@@ -271,6 +271,28 @@ export default function Profile() {
     setActionLoading(false);
   };
 
+  const handleWithdrawRequest = async (targetUserId: string) => {
+    if (!user) return;
+    setActionLoading(true);
+    try {
+      // Withdrawing a sent request is technically rejecting it as the requester
+      await api.friends.rejectRequest(targetUserId, user?.uid);
+      
+      if (isOwnProfile) {
+        setSentRequestsList((prev) => prev.filter((r) => r?.uid !== targetUserId));
+        setProfile((prev) => prev ? {
+          ...prev,
+          outgoingRequests: prev?.outgoingRequests?.filter((id) => id !== targetUserId)
+        } : null);
+      } else {
+        setRelationship("none");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setActionLoading(false);
+  };
+
   const handleRejectRequest = async (requesterUid: string) => {
     if (!user) return;
     try {
@@ -665,11 +687,16 @@ export default function Profile() {
                   )}
                   {relationship === "sent" && (
                     <button
-                      disabled
-                      className="inline-flex items-center gap-2 px-5 py-3 bg-slate-800 text-slate-500 rounded-2xl font-semibold text-sm border border-slate-700"
+                      onClick={() => handleWithdrawRequest(profile?.uid)}
+                      disabled={actionLoading}
+                      className="inline-flex items-center gap-2 px-5 py-3 bg-red-600/10 text-red-500 hover:bg-red-600/20 rounded-2xl font-semibold text-sm border border-red-500/20 transition-colors active:scale-95"
                     >
-                      <Clock className="w-5 h-5" />
-                      Request Sent
+                      {actionLoading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <X className="w-5 h-5" />
+                      )}
+                      Withdraw Request
                     </button>
                   )}
                   {relationship === "received" && (
@@ -1023,9 +1050,20 @@ export default function Profile() {
                               <span className="text-slate-300 font-bold text-sm flex-1">
                                 {friend?.displayName}
                               </span>
-                              <span className="text-xs text-slate-500 italic">
+                              <span className="text-xs text-slate-500 italic mr-2">
                                 Sent
                               </span>
+                              <button
+                                onClick={() => handleWithdrawRequest(friend?.uid)}
+                                disabled={actionLoading}
+                                className="p-2 bg-slate-800 text-slate-400 rounded-xl hover:bg-red-500/20 hover:text-red-400 transition-colors border border-slate-700"
+                              >
+                                {actionLoading ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <X className="w-4 h-4" />
+                                )}
+                              </button>
                             </div>
                           ))}
                         </div>

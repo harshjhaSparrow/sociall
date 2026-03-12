@@ -165,12 +165,19 @@ export default function Discover() {
                 const maxDistanceMeters = (myProf?.discoveryRadius || 10) * 1000;
 
                 // Exclude yourself, friends, people you've already sent a request to, and people who sent you one
+                let localSwiped: string[] = [];
+                try {
+                    const stored = localStorage.getItem(`swipedUsers_${user.uid}`);
+                    if (stored) localSwiped = JSON.parse(stored);
+                } catch (e) { }
+
                 const excluded = new Set<string>([
                     user.uid,
                     ...(myProf?.friends || []),
                     ...(myProf?.outgoingRequests || []),
                     ...(myProf?.incomingRequests || []),
                     ...(myProf?.blockedUsers || []),
+                    ...localSwiped,
                 ]);
 
                 const filtered = allUsers.filter((u: any) => {
@@ -198,12 +205,27 @@ export default function Discover() {
     }, [user, myLocation]);
 
     const handleSwipe = useCallback((index: number, dir: 'left' | 'right') => {
+        const targetUid = profiles[index].uid;
         if (dir === 'right' && user) {
             // Do not await to avoid blocking the UI swipe update
-            api.friends.sendRequest(user.uid, profiles[index].uid).catch(e => {
+            api.friends.sendRequest(user.uid, targetUid).catch(e => {
                 console.error("Failed to send request", e);
             });
         }
+        
+        // Save to local storage to never see them again
+        if (user) {
+            try {
+                const key = `swipedUsers_${user.uid}`;
+                const stored = localStorage.getItem(key);
+                const swipedIds = stored ? JSON.parse(stored) : [];
+                swipedIds.push(targetUid);
+                localStorage.setItem(key, JSON.stringify(swipedIds));
+            } catch (e) {
+                console.error("Failed to save swipe locally", e);
+            }
+        }
+        
         setTopIndex(i => i + 1);
     }, [profiles, user]);
 
