@@ -2,8 +2,8 @@ import L from "leaflet";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet/dist/leaflet.css";
-import { ChevronRight, Instagram, Loader2, LocateFixed, User, X } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { ChevronRight, Compass, Instagram, Loader2, LocateFixed, User, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Circle, MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-markercluster";
 import { useNavigate } from "react-router-dom";
@@ -317,6 +317,22 @@ const MapPage: React.FC = () => {
             </button>
           </div>
         </div>
+      )}
+
+      {/* FLOATING DISCOVER BUTTON */}
+      {!isListOpen && !selectedUser && (
+        <button
+          onClick={() => navigate('/discover')}
+          className="absolute bottom-[30%] left-4 z-[1001] bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-xl px-4 py-3 flex items-center gap-3 border border-slate-800 hover:bg-slate-800 transition-colors"
+        >
+          <div className="w-10 h-10 rounded-full bg-primary-500/20 flex items-center justify-center">
+            <Compass className="w-5 h-5 text-primary-400" />
+          </div>
+          <div className="text-left pr-2">
+            <p className="font-bold text-white text-sm">Discover</p>
+            <p className="text-[10px] text-primary-400 font-medium">Find new people</p>
+          </div>
+        </button>
       )}
 
       {/* FLOATING NEARBY BUTTON */}

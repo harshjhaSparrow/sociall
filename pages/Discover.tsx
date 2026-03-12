@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, MapPin, SearchX, User as UserIcon, Heart, X } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { Briefcase, MapPin, SearchX, User as UserIcon, Heart, X, ChevronLeft } from 'lucide-react';
 import { api } from '../services/api';
 import { useUserLocation } from '../components/LocationGuard';
 import { calculateDistance } from '../util/location';
 import { POPULAR_INTERESTS, UserProfile } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 /* ──────────────────────────────────────────────────────────────────────────
    Swipeable card — pure pointer-events, no library required
@@ -226,9 +226,17 @@ export default function Discover() {
 
     return (
         <div className="flex flex-col pb-24">
-            <div className="px-6 pt-6 mb-4">
-                <h1 className="text-3xl font-bold text-white mb-1">Discover</h1>
-                <p className="text-slate-400 text-sm">Swipe Right to Add Friend · Left to Pass</p>
+            <div className="px-6 pt-6 mb-4 flex items-center gap-4">
+                <button 
+                    onClick={() => navigate('/map')} 
+                    className="p-2 bg-slate-800/80 hover:bg-slate-700/80 rounded-full text-slate-300 backdrop-blur-md transition-colors border border-slate-700/50"
+                >
+                    <ChevronLeft className="w-5 h-5" />
+                </button>
+                <div>
+                    <h1 className="text-3xl font-bold text-white mb-0.5 tracking-tight">Discover</h1>
+                    <p className="text-slate-400 text-xs font-medium">Swipe Right to Add Friend · Left to Pass</p>
+                </div>
             </div>
 
             {/* Card Stack */}

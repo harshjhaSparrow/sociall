@@ -1,8 +1,7 @@
+import { Home, Map, MessageCircle, PlusSquare, User } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Home, PlusSquare, User, Map, Bell, MessageCircle, Compass } from 'lucide-react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useNotifications } from '../context/NotificationContext';
 import { api } from '../services/api';
 
 const Layout: React.FC = () => {
@@ -62,15 +61,6 @@ const Layout: React.FC = () => {
           >
             <Map className={`w-5 h-5 ${isActive('/map') ? 'fill-current' : ''}`} />
             <span className="text-[10px] font-medium">Map</span>
-          </button>
-
-          {/* Discover */}
-          <button
-            onClick={() => navigate('/discover')}
-            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/discover') ? 'text-primary-500' : 'text-slate-500 hover:text-slate-300'}`}
-          >
-            <Compass className={`w-5 h-5 ${isActive('/discover') ? 'fill-current' : ''}`} />
-            <span className="text-[10px] font-medium">Discover</span>
           </button>
 
           {/* Create Post — elevated center */}
