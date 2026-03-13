@@ -1090,6 +1090,39 @@ app.get('/api/notifications/unread-count/:uid', async (req, res) => {
   }
 });
 
+// --- HELPER: Send Push Notification (Expo & Web) ---
+async function sendPushNotification(receiverUid, payloadStr, expoPayload) {
+  if (!db) return;
+  try {
+    const profiles = db.collection('profiles');
+    const receiver = await profiles.findOne({ uid: receiverUid });
+    if (!receiver || !receiver.pushSubscription) return;
+
+    if (typeof receiver.pushSubscription === 'string' && Expo.isExpoPushToken(receiver.pushSubscription)) {
+      try {
+        await expo.sendPushNotificationsAsync([{
+          to: receiver.pushSubscription,
+          sound: 'default',
+          ...expoPayload
+        }]);
+      } catch (err) {
+        console.error("Expo Push Notification failed:", err);
+      }
+    } else {
+      try {
+        await webpush.sendNotification(receiver.pushSubscription, payloadStr);
+      } catch (err) {
+        console.error("Web Push Notification failed:", err);
+        if (err.statusCode === 410 || err.statusCode === 404) {
+          await profiles.updateOne({ uid: receiverUid }, { $unset: { pushSubscription: "" } });
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Error in sendPushNotification helper", e);
+  }
+}
+
 app.post('/api/chat/send', async (req, res) => {
   if (!db) return res.status(503).json({ error: "Database not connected" });
   try {
@@ -1113,22 +1146,41 @@ app.post('/api/chat/send', async (req, res) => {
         return res.status(403).json({ error: "You are not a member of this group" });
       }
 
+      const groupTitle = post.meetupDetails?.title || "Meetup Group";
       newMessage.groupId = String(groupId); // Force string for consistency
-      newMessage.groupTitle = post.meetupDetails?.title || "Meetup Group";
+      newMessage.groupTitle = groupTitle;
+      
       const result = await messages.insertOne(newMessage);
       const fullMessage = { ...newMessage, _id: result.insertedId };
       const recipients = new Set([...(post.attendees || []), post.uid]);
-      recipients.forEach(uid => sendToUser(uid, fullMessage));
+      
+      // Dispatch WebSockets & Push
+      const expoPayload = { title: groupTitle, body: `${authorName}: ${text}`, data: { url: `/chat/group/${groupId}` } };
+      const webPayloadStr = JSON.stringify({ title: groupTitle, body: `${authorName}: ${text}`, icon: authorPhoto || "/pwa-192x192.png", data: { url: `/chat/group/${groupId}` } });
+      
+      recipients.forEach(uid => {
+        sendToUser(uid, fullMessage);
+        if (uid !== fromUid) sendPushNotification(uid, webPayloadStr, expoPayload);
+      });
+      
       return res.json(fullMessage);
     } else {
       newMessage.toUid = toUid;
       const result = await messages.insertOne(newMessage);
       const fullMessage = { ...newMessage, _id: result.insertedId };
+      
       sendToUser(toUid, fullMessage);
       sendToUser(fromUid, fullMessage);
+
+      // Dispatch Push to receiver
+      const expoPayload = { title: authorName, body: text, data: { url: `/chat/${fromUid}` } };
+      const webPayloadStr = JSON.stringify({ title: authorName, body: text, icon: authorPhoto || "/pwa-192x192.png", data: { url: `/chat/${fromUid}` } });
+      sendPushNotification(toUid, webPayloadStr, expoPayload);
+      
       return res.json(fullMessage);
     }
   } catch (error) {
+    console.error("Chat Send Error:", error);
     res.status(500).json({ error: "Failed to send message" });
   }
 });
