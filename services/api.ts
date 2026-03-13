@@ -391,7 +391,7 @@ export const api = {
         socket.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data);
-            if (data.type === "ping" || data.type === "pong") return;
+            if (data.type === "ping" || data.type === "pong" || data.type === "notification") return;
             onMessage(data);
           } catch (e) {
             console.error("WS Parse Error", e);

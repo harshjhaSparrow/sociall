@@ -145,7 +145,19 @@ const Feed: React.FC = () => {
     fetchPosts();
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchPosts();
+        fetchNotifications();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [user, myLocation]); // Re-fetch/filter if location changes
 
   const handleRefresh = async () => {

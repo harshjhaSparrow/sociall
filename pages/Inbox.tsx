@@ -33,12 +33,21 @@ const Inbox: React.FC = () => {
     } catch (e) {
       console.error("Failed to load inbox", e);
     } finally {
-      setLoading(false);
+      if (loading) setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchInbox();
+  }, [user]);
+
+  // Refetch on visibility change (tab switch / focus)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") fetchInbox();
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, [user]);
 
   // Real-time subscription for Inbox updates
@@ -47,45 +56,30 @@ const Inbox: React.FC = () => {
 
     const unsubscribe = api.chat.subscribe(user.uid, (newMsg: Message) => {
       setConversations((prev) => {
-        // Check if this conversation already exists in our list
-        let exists = false;
-        let updated = prev.map((conv) => {
-          let isMatch: any = false;
-          if (newMsg.groupId) {
-            isMatch = conv.type === "group" && conv.groupId === newMsg.groupId;
-          } else {
-            // Direct message match
-            const partnerId = conv.partner?.uid;
-            isMatch =
-              conv.type === "direct" &&
-              partnerId &&
-              (newMsg.fromUid === partnerId || newMsg.toUid === partnerId);
-          }
-
-          if (isMatch) {
-            exists = true;
-            // Update last message and increment unread if it's incoming
-            const isIncoming = newMsg.fromUid !== user.uid;
-            return {
-              ...conv,
-              lastMessage: newMsg,
-              unreadCount: isIncoming
-                ? (conv.unreadCount || 0) + 1
-                : conv.unreadCount,
-            };
-          }
-          return conv;
+        const existingIndex = prev.findIndex(conv => {
+            if (newMsg.groupId) {
+                return conv.type === "group" && conv.groupId === newMsg.groupId;
+            } else {
+                return conv.type === "direct" && conv.partner && (newMsg.fromUid === conv.partner.uid || newMsg.toUid === conv.partner.uid);
+            }
         });
 
-        if (exists) {
-          // Sort by newest first
-          return updated.sort(
-            (a, b) => b.lastMessage.createdAt - a.lastMessage.createdAt,
-          );
+        if (existingIndex > -1) {
+            const existingConv = prev[existingIndex];
+            const isIncoming = newMsg.fromUid !== user.uid;
+            const updatedConv: InboxItem = {
+                ...existingConv,
+                lastMessage: newMsg,
+                unreadCount: isIncoming ? (existingConv.unreadCount || 0) + 1 : existingConv.unreadCount,
+            };
+            const nextConvs = [...prev];
+            nextConvs.splice(existingIndex, 1);
+            nextConvs.unshift(updatedConv);
+            return nextConvs;
         } else {
-          // New conversation detected - fetch full inbox to get details properly
-          fetchInbox();
-          return prev;
+            // New conversation detected - fetch full inbox to get details properly
+            fetchInbox();
+            return prev;
         }
       });
     });

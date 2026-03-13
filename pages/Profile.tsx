@@ -22,7 +22,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useUserLocation } from "../components/LocationGuard";
 import PostItem from "../components/PostItem";
@@ -42,7 +42,9 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("regular"); // "regular" or "meetup"
   const [myPosts, setMyPosts] = useState<Post[]>([]);
-  const filteredPosts = myPosts?.filter((post) => post?.type === activeTab);
+const filteredPosts = useMemo(() => {
+    return myPosts?.filter(post => post?.type === activeTab);
+}, [myPosts, activeTab]);
 
   // Location Name State
   const [locationName, setLocationName] = useState<string>("Unknown Location");
@@ -158,6 +160,13 @@ export default function Profile() {
       }
     };
     fetchData();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') fetchData();
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, [targetUid, isOwnProfile, navigate, user]);
 
   // Fetch viewers if own profile

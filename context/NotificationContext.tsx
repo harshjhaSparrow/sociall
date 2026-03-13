@@ -48,54 +48,33 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     useEffect(() => {
         if (!user) return;
 
-        const { protocol, hostname, port } = window.location;
-        const isLocal = hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.') || hostname.startsWith('10.');
-        const isVercel = hostname.includes('vercel.app');
-
-        let wsUrl: string;
-        if (isLocal) {
-            wsUrl = `ws://${hostname}:5000?uid=${user.uid}`;
-        } else if (isVercel) {
-            wsUrl = `wss://backend.strangerchat.space?uid=${user.uid}`;
-        } else {
-            const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
-            const portPart = port ? `:${port}` : '';
-            wsUrl = `${wsProtocol}//${hostname}${portPart}?uid=${user.uid}`;
-        }
-
-        const connect = () => {
-            const ws = new WebSocket(wsUrl);
-            wsRef.current = ws;
-
-            ws.onopen = () => {
-                keepAliveRef.current = setInterval(() => {
-                    if (ws.readyState === WebSocket.OPEN) {
-                        ws.send(JSON.stringify({ type: 'ping' }));
-                    }
-                }, 30000);
-            };
-
-            ws.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    if (data.type === 'notification' && data.notification) {
-                        setNotifications(prev => [data.notification as Notification, ...prev]);
-                    }
-                } catch (e) {
-                    // non-JSON or unrelated message
-                }
-            };
-
-            ws.onclose = () => {
-                clearInterval(keepAliveRef.current);
-            };
+        const playSound = (type: 'message' | 'notification') => {
+            try {
+                // Using standard HTML5 Audio. Web browsers may block this if the user hasn't interacted with the page yet.
+                const audioUrl = type === 'message' ? '/sounds/message.wav' : '/sounds/notification.wav';
+                const audio = new Audio(audioUrl);
+                audio.play().catch(e => console.log("Audio play prevented:", e));
+            } catch (e) {
+                console.log("Failed to play sound", e);
+            }
         };
 
-        connect();
+        const unsubscribe = api.chat.subscribe(user.uid, (data: any) => {
+            if (data.type === 'notification' && data.notification) {
+                setNotifications(prev => {
+                    if (prev.find(n => n._id === data.notification._id)) return prev;
+                    playSound('notification');
+                    return [data.notification as Notification, ...prev];
+                });
+            } else if (data.text || data.type === 'message') {
+                if (data.fromUid !== user.uid && data.fromUid !== 'system') {
+                    playSound('message');
+                }
+            }
+        });
 
         return () => {
-            clearInterval(keepAliveRef.current);
-            wsRef.current?.close();
+            unsubscribe();
         };
     }, [user]);
 

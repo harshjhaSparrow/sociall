@@ -202,6 +202,13 @@ export default function Discover() {
             }
         };
         fetchDiscover();
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') fetchDiscover();
+        };
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
+        return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
     }, [user, myLocation]);
 
     const handleSwipe = useCallback((index: number, dir: 'left' | 'right') => {
