@@ -162,19 +162,31 @@ const AppRoutes = () => {
   );
 };
 
+// Public routes accessible on any screen size without auth
+const PUBLIC_HASH_ROUTES = ['/privacy', '/terms'];
+
 const App: React.FC = () => {
   const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
 
-  useEffect(() => {
-    const handleResize = () => {
-      setIsDesktop(window.innerWidth > 768);
-    };
+  // Read the current hash path, e.g. "/#/privacy" -> "/privacy"
+  const [hashPath, setHashPath] = useState(() => window.location.hash.replace('#', '') || '/');
 
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth > 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  if (isDesktop) {
+  useEffect(() => {
+    const handleHashChange = () => {
+      setHashPath(window.location.hash.replace('#', '') || '/');
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // On desktop, show landing page UNLESS we are on a public route like /privacy or /terms
+  if (isDesktop && !PUBLIC_HASH_ROUTES.includes(hashPath)) {
     return <DesktopLanding />;
   }
 

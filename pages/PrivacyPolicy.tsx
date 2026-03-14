@@ -5,12 +5,20 @@ import { ChevronLeft, Shield } from 'lucide-react';
 const PrivacyPolicy: React.FC = () => {
     const navigate = useNavigate();
 
+    const handleBack = () => {
+        if (window.history.length > 1) {
+            navigate(-1);
+        } else {
+            navigate('/');
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
             {/* Header */}
             <div className="bg-slate-900/80 backdrop-blur-md px-4 py-3 shadow-sm z-30 sticky top-0 border-b border-slate-800 flex items-center justify-between">
                 <button
-                    onClick={() => navigate(-1)}
+                    onClick={handleBack}
                     className="p-2 -ml-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-800 transition-colors"
                 >
                     <ChevronLeft className="w-6 h-6" />
@@ -19,7 +27,7 @@ const PrivacyPolicy: React.FC = () => {
                 <div className="w-10"></div>
             </div>
 
-            <div className="flex-1 max-w-2xl mx-auto w-full p-6 space-y-8 animate-fade-in">
+            <div className="flex-1 max-w-4xl mx-auto w-full p-6 md:p-10 space-y-8 animate-fade-in">
                 <div className="text-center mb-8 mt-4">
                     <div className="w-16 h-16 bg-primary-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-primary-500/20">
                         <Shield className="w-8 h-8 text-primary-500" />
@@ -28,9 +36,9 @@ const PrivacyPolicy: React.FC = () => {
                     <p className="text-slate-400 text-sm border-b border-slate-800 pb-6 inline-block">Last Updated: {new Date().toLocaleDateString()}</p>
                 </div>
 
-                <section className="space-y-4 text-slate-300 leading-relaxed text-sm">
+                <section className="space-y-6 text-slate-300 leading-relaxed text-sm md:text-base">
                     <h2 className="text-xl font-bold text-white text-left">1. Introduction</h2>
-                    <p>Welcome to Orbyt ("We", "Us", or "Our"). We are committed to protecting your privacy and ensuring your personal data is handled securely and responsibly. This Privacy Policy explains how we collect, use, and share information when you use the Orbyt application (the "Service").</p>
+                    <p>Welcome to Orbyt (&quot;We&quot;, &quot;Us&quot;, or &quot;Our&quot;). We are committed to protecting your privacy and ensuring your personal data is handled securely and responsibly. This Privacy Policy explains how we collect, use, and share information when you use the Orbyt application (the &quot;Service&quot;).</p>
 
                     <h2 className="text-xl font-bold text-white text-left pt-4">2. Information We Collect</h2>
                     <ul className="list-disc pl-5 space-y-2">
@@ -38,6 +46,7 @@ const PrivacyPolicy: React.FC = () => {
                         <li><strong>Location Data:</strong> To provide core features like the map and finding nearby users, we collect your precise geographic location. You can pause discoverability at any time to restrict this access.</li>
                         <li><strong>User Generated Content:</strong> We collect and store text, images, and other data you choose to post, comment, or message through the Service.</li>
                         <li><strong>Usage Data:</strong> We automatically log interactions with the app, device information, and IP addresses to improve performance and prevent abuse.</li>
+                        <li><strong>Push Notification Token:</strong> A device token used solely to deliver push notifications to you. This is not shared with third parties.</li>
                     </ul>
 
                     <h2 className="text-xl font-bold text-white text-left pt-4">3. How We Use Your Information</h2>
@@ -46,7 +55,7 @@ const PrivacyPolicy: React.FC = () => {
                         <li>Provide, personalize, and improve the Orbyt experience.</li>
                         <li>Calculate distances between you and other users for local discovery.</li>
                         <li>Enforce our Terms of Service and protect the community from abusive behavior.</li>
-                        <li>Send essential notifications regarding updates or security.</li>
+                        <li>Send essential notifications for messages, friend requests, and meetup updates.</li>
                     </ul>
 
                     <h2 className="text-xl font-bold text-white text-left pt-4">4. Sharing Your Information</h2>
@@ -57,14 +66,19 @@ const PrivacyPolicy: React.FC = () => {
                     </ul>
 
                     <h2 className="text-xl font-bold text-white text-left pt-4">5. Data Retention and Deletion</h2>
-                    <p>We retain your data as long as your account is active. You have the right to request deletion of your account and all associated data at any time via the "Settings" page. Upon deletion, your profile, posts, messages, and location history are permanently removed from our active databases.</p>
+                    <p>We retain your data as long as your account is active. You have the right to request deletion of your account and all associated data at any time via the &quot;Settings&quot; page. Upon deletion, your profile, posts, messages, and location history are permanently removed from our active databases.</p>
 
                     <h2 className="text-xl font-bold text-white text-left pt-4">6. Security</h2>
-                    <p>We implement industry-standard security measures to protect your data. However, no electronic transmission or storage is 100% secure. You use the Service at your own risk.</p>
+                    <p>We implement industry-standard security measures including HTTPS encryption for all data in transit. However, no electronic transmission or storage is 100% secure. You use the Service at your own risk.</p>
 
-                    <h2 className="text-xl font-bold text-white text-left pt-4">7. Contact Us</h2>
-                    <p>If you have questions about this Privacy Policy, please contact us at privacy@orbyt.app.</p>
+                    <h2 className="text-xl font-bold text-white text-left pt-4">7. Children's Privacy</h2>
+                    <p>Orbyt is intended for users aged 18 and above. We do not knowingly collect personal information from anyone under 18. If we become aware that a minor has registered, we will immediately delete their account.</p>
+
+                    <h2 className="text-xl font-bold text-white text-left pt-4">8. Contact Us</h2>
+                    <p>If you have questions about this Privacy Policy, please contact us at <a href="mailto:privacy@orbyt.app" className="text-primary-400 hover:underline">privacy@orbyt.app</a>.</p>
                 </section>
+
+                <p className="text-center text-slate-600 text-xs pt-4 pb-10">© {new Date().getFullYear()} Orbyt Inc. All rights reserved.</p>
             </div>
         </div>
     );
