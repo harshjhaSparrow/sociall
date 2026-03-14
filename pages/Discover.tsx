@@ -290,7 +290,7 @@ export default function Discover() {
                                 distText={distText}
                                 isTop={isTop}
                                 onSwipe={(dir) => handleSwipe(topIndex + stackIdx, dir)}
-                                onNavigate={() => navigate(`/profile/${profile.uid}`)}
+                                onNavigate={() => navigate(`/app/profile/${profile.uid}`)}
                             />
                         </div>
                     );

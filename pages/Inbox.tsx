@@ -140,8 +140,8 @@ const Inbox: React.FC = () => {
           const isGroup = conv.type === "group";
           const isUnread = (conv.unreadCount || 0) > 0;
           const link = isGroup
-            ? `/chat/group/${conv.groupId}`
-            : `/chat/${conv.partner?.uid}`;
+            ? `/app/chat/group/${conv.groupId}`
+            : `/app/chat/${conv.partner?.uid}`;
 
           // Skip broken direct items
           if (!isGroup && !conv.partner) return null;

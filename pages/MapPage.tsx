@@ -310,7 +310,7 @@ const MapPage: React.FC = () => {
             </div>
 
             <button
-              onClick={() => navigate(`/profile/${selectedUser.uid}`)}
+              onClick={() => navigate(`/app/profile/${selectedUser.uid}`)}
               className="h-12 w-12 bg-primary-600 rounded-xl flex items-center justify-center"
             >
               <ChevronRight className="w-6 h-6 text-white" />
@@ -410,7 +410,7 @@ const MapPage: React.FC = () => {
                         <div>
                           <h3
                             className="font-bold text-white text-lg leading-tight cursor-pointer hover:text-primary-400 transition-colors"
-                            onClick={() => navigate(`/profile/${u.uid}`)}
+                            onClick={() => navigate(`/app/profile/${u.uid}`)}
                           >
                             {u.displayName}
                           </h3>
@@ -473,7 +473,7 @@ const MapPage: React.FC = () => {
 
                   {/* Action Button */}
                   <button
-                    onClick={() => navigate(`/profile/${u.uid}`)}
+                    onClick={() => navigate(`/app/profile/${u.uid}`)}
                     className="w-full py-2.5 bg-slate-800 text-white rounded-xl text-xs font-bold shadow-md hover:bg-slate-700 transition-colors flex items-center justify-center gap-1 mt-1 active:scale-[0.98] border border-slate-700"
                   >
                     View Full Profile <ChevronRight className="w-3 h-3" />

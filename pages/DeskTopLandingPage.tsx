@@ -14,13 +14,25 @@ import {
     X,
     Zap
 } from 'lucide-react';
-import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import Button from '../components/ui/Button';
 import { MainLogo } from '../util/Images';
+import { useState } from 'react';
 
 const DesktopLanding: React.FC = () => {
     const [activeFaq, setActiveFaq] = useState<number | null>(null);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const navigate = useNavigate();
+    const { user } = useAuth();
+
+    const handleLaunchApp = () => {
+        if (user) {
+            navigate('/app');
+        } else {
+            navigate('/auth');
+        }
+    };
 
     const toggleFaq = (index: number) => {
         setActiveFaq(activeFaq === index ? null : index);
@@ -45,9 +57,9 @@ const DesktopLanding: React.FC = () => {
                     <div className="hidden md:flex gap-8 text-slate-400 text-sm font-medium items-center">
                         <a href="#features" className="hover:text-white transition-colors">Features</a>
                         <a href="#how-it-works" className="hover:text-white transition-colors">How it Works</a>
-                        <a href="/privacy" className="hover:text-white transition-colors">Safety</a>
+                        <a href="/#/privacy" className="hover:text-white transition-colors">Safety</a>
                         <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
-                        <Button variant="primary" className="rounded-full px-6 h-10 text-sm ml-4">
+                        <Button variant="primary" onClick={handleLaunchApp} className="rounded-full px-6 h-10 text-sm ml-4">
                             Get the App
                         </Button>
                     </div>
@@ -85,7 +97,10 @@ const DesktopLanding: React.FC = () => {
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-6 justify-center lg:justify-start pt-4">
-                            <div className="flex items-center gap-4 p-1 pr-6 bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800 hover:border-slate-700 transition-colors group cursor-pointer">
+                            <div
+                                onClick={handleLaunchApp}
+                                className="flex items-center gap-4 p-1 pr-6 bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800 hover:border-slate-700 transition-colors group cursor-pointer"
+                            >
                                 <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center">
                                     <QrCode className="w-10 h-10 text-slate-900" />
                                 </div>
@@ -370,7 +385,7 @@ const DesktopLanding: React.FC = () => {
                     <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Ready to explore your world?</h2>
                     <p className="text-xl text-slate-400 mb-10 max-w-2xl mx-auto">Join the fastest growing social discovery community today. Your next adventure is just around the corner.</p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <Button variant="primary" className="rounded-full px-8 h-12 text-base shadow-xl shadow-primary-500/25">
+                        <Button variant="primary" onClick={handleLaunchApp} className="rounded-full px-8 h-12 text-base shadow-xl shadow-primary-500/25">
                             Launch Web App
                             <ArrowRight className="w-5 h-5 ml-2" />
                         </Button>
@@ -400,8 +415,8 @@ const DesktopLanding: React.FC = () => {
                         <div>
                             <h4 className="font-bold text-white mb-6">Product</h4>
                             <ul className="space-y-4 text-sm text-slate-400">
-                                <li><a href="#" className="hover:text-primary-400 transition-colors">Features</a></li>
-                                <li><a href="#" className="hover:text-primary-400 transition-colors">Safety</a></li>
+                                <li><a href="#features" className="hover:text-primary-400 transition-colors">Features</a></li>
+                                <li><a href="/#/privacy" className="hover:text-primary-400 transition-colors">Safety</a></li>
                                 <li><a href="#" className="hover:text-primary-400 transition-colors">Integrations</a></li>
                                 <li><a href="#" className="hover:text-primary-400 transition-colors">Download</a></li>
                             </ul>
@@ -420,8 +435,8 @@ const DesktopLanding: React.FC = () => {
                         <div>
                             <h4 className="font-bold text-white mb-6">Legal</h4>
                             <ul className="space-y-4 text-sm text-slate-400">
-                                <li><a href="#" className="hover:text-primary-400 transition-colors">Privacy Policy</a></li>
-                                <li><a href="#" className="hover:text-primary-400 transition-colors">Terms of Service</a></li>
+                                <li><a href="/#/privacy" className="hover:text-primary-400 transition-colors">Privacy Policy</a></li>
+                                <li><a href="/#/terms" className="hover:text-primary-400 transition-colors">Terms of Service</a></li>
                                 <li><a href="#" className="hover:text-primary-400 transition-colors">Cookie Policy</a></li>
                                 <li><a href="#" className="hover:text-primary-400 transition-colors">Guidelines</a></li>
                             </ul>

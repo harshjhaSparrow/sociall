@@ -285,7 +285,7 @@ const Settings: React.FC = () => {
 
           <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
             <button
-              onClick={() => navigate("/edit-profile")}
+              onClick={() => navigate("/app/edit-profile")}
               className="w-full p-4 text-slate-300 flex justify-between hover:bg-slate-800/50"
             >
               Edit Profile
@@ -348,7 +348,7 @@ const Settings: React.FC = () => {
           </h3>
           <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
             <button
-              onClick={() => navigate("/developer")}
+              onClick={() => navigate("/app/developer")}
               className="w-full p-4 text-slate-300 flex justify-between items-center hover:bg-slate-800/50"
             >
               <div className="flex items-center gap-3">
