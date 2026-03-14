@@ -12,7 +12,8 @@ import {
     Star,
     Users,
     X,
-    Zap
+    Zap,
+    Download
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -32,6 +33,15 @@ const DesktopLanding: React.FC = () => {
         } else {
             navigate('/auth');
         }
+    };
+
+    const handleDownloadAPK = () => {
+        const link = document.createElement('a');
+        link.href = '/download/orbyt.apk';
+        link.download = 'orbyt.apk';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     const toggleFaq = (index: number) => {
@@ -107,7 +117,20 @@ const DesktopLanding: React.FC = () => {
                             </Button>
 
                             <button
+                                onClick={handleDownloadAPK}
                                 className="inline-flex items-center gap-3 px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-colors group"
+                            >
+                                <div className="w-10 h-10 bg-primary-500/10 rounded-lg flex items-center justify-center">
+                                    <Download className="w-6 h-6 text-primary-500" />
+                                </div>
+                                <div className="text-left">
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Android App</p>
+                                    <p className="font-bold text-white text-sm group-hover:text-primary-400">Download APK</p>
+                                </div>
+                            </button>
+
+                            <button
+                                className="inline-flex items-center gap-3 px-6 py-4 bg-slate-910 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-colors group"
                             >
                                 <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
                                     <QrCode className="w-7 h-7 text-slate-900" />
@@ -422,7 +445,7 @@ const DesktopLanding: React.FC = () => {
                                 <li><a href="#features" className="hover:text-primary-400 transition-colors">Features</a></li>
                                 <li><a href="/#/privacy" className="hover:text-primary-400 transition-colors">Safety</a></li>
                                 <li><a href="#" className="hover:text-primary-400 transition-colors">Integrations</a></li>
-                                <li><a href="#" className="hover:text-primary-400 transition-colors">Download</a></li>
+                                <li><a href="/download/orbyt.apk" download className="hover:text-primary-400 transition-colors">Download App</a></li>
                             </ul>
                         </div>
 
