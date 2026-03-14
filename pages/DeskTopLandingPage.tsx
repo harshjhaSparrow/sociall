@@ -60,7 +60,7 @@ const DesktopLanding: React.FC = () => {
                         <a href="/#/privacy" className="hover:text-white transition-colors">Safety</a>
                         <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
                         <Button variant="primary" onClick={handleLaunchApp} className="rounded-full px-6 h-10 text-sm ml-4">
-                            Get the App
+                            Enter Orbyt
                         </Button>
                     </div>
 
@@ -96,19 +96,28 @@ const DesktopLanding: React.FC = () => {
                             Orbyt bridges the gap between digital interactions and real-world connections. Discover who's nearby, join local conversations, and make meaningful friendships instantly.
                         </p>
 
-                        <div className="flex flex-col sm:flex-row gap-6 justify-center lg:justify-start pt-4">
-                            <div
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
+                            <Button 
+                                variant="primary" 
                                 onClick={handleLaunchApp}
-                                className="flex items-center gap-4 p-1 pr-6 bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800 hover:border-slate-700 transition-colors group cursor-pointer"
+                                className="rounded-2xl px-8 py-6 text-lg font-bold shadow-xl shadow-primary-500/20 flex items-center gap-3 active:scale-95 transition-transform"
                             >
-                                <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center">
-                                    <QrCode className="w-10 h-10 text-slate-900" />
+                                Launch Orbyt Web
+                                <ArrowRight className="w-5 h-5" />
+                            </Button>
+
+                            <button
+                                className="inline-flex items-center gap-3 px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-colors group"
+                            >
+                                <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                                    <QrCode className="w-7 h-7 text-slate-900" />
                                 </div>
                                 <div className="text-left">
-                                    <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Scan to Launch</p>
-                                    <p className="font-bold text-white text-lg group-hover:text-primary-400 transition-colors">Open Web App</p>
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Mobile Hub</p>
+                                    <p className="font-bold text-white text-sm group-hover:text-primary-400">Scan for App</p>
                                 </div>
-                            </div>
+                            </button>
+                        </div>
 
                             <div className="flex flex-col justify-center text-left space-y-2">
                                 <div className="flex -space-x-2">
@@ -121,53 +130,48 @@ const DesktopLanding: React.FC = () => {
                                         +2k
                                     </div>
                                 </div>
-                                <p className="text-sm text-slate-500">Join 2,000+ people exploring today</p>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Phone Mockup with floating elements */}
-                    <div className="flex-1 relative w-full max-w-[400px] lg:max-w-none">
-                        <div className="relative mx-auto border-slate-800 bg-slate-950 border-[8px] rounded-[3rem] h-[700px] w-[350px] shadow-2xl flex flex-col overflow-hidden ring-1 ring-slate-700/50">
+                        {/* Phone Mockup with Live Preview */}
+                    <div className="flex-1 relative w-full max-w-[400px] lg:max-w-none group/phone">
+                        <div className="absolute -inset-4 bg-primary-500/10 rounded-[4rem] blur-2xl opacity-0 group-hover/phone:opacity-100 transition-opacity duration-700"></div>
+                        
+                        <div className="relative mx-auto border-slate-800 bg-slate-950 border-[12px] rounded-[3.5rem] h-[720px] w-[350px] shadow-2xl flex flex-col overflow-hidden ring-1 ring-slate-700/50 scale-95 hover:scale-100 transition-transform duration-500 z-10">
                             {/* Notch */}
-                            <div className="absolute top-0 inset-x-0 h-6 bg-slate-950 z-20 rounded-b-xl w-40 mx-auto"></div>
+                            <div className="absolute top-0 inset-x-0 h-7 bg-slate-950 z-30 rounded-b-2xl w-36 mx-auto flex items-center justify-center gap-2">
+                                <div className="w-10 h-1 bg-slate-800 rounded-full"></div>
+                                <div className="w-2 h-2 bg-slate-800 rounded-full"></div>
+                            </div>
+                            
+                            {/* StatusBar Mock */}
+                            <div className="absolute top-0 inset-x-0 h-12 bg-transparent z-20 flex justify-between items-end px-8 pb-1 text-[10px] font-bold text-white/40">
+                                <span>9:41</span>
+                                <div className="flex gap-1.5">
+                                    <div className="w-3.5 h-2 border border-white/20 rounded-[2px]"></div>
+                                    <Zap className="w-2 h-2 fill-current" />
+                                </div>
+                            </div>
 
                             <div className="rounded-[2.5rem] overflow-hidden w-full h-full bg-slate-900 relative">
-                                {/* Mock Map UI */}
-                                <div className="absolute inset-0 bg-slate-800">
-                                    {/* Map Background Pattern */}
-                                    <div className="w-full h-full opacity-30" style={{ backgroundImage: 'radial-gradient(#475569 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+                                {/* Live App Iframe */}
+                                <iframe 
+                                    src="/#/app" 
+                                    className="w-full h-full border-none"
+                                    title="Orbyt Web App Preview"
+                                    loading="lazy"
+                                />
 
-                                    {/* Mock Pins */}
-                                    <div className="absolute top-1/4 left-1/4 animate-bounce duration-[3000ms]">
-                                        <div className="w-12 h-12 rounded-full border-2 border-white bg-blue-500 overflow-hidden shadow-lg relative z-10">
-                                            <img draggable={false} src="https://i.pravatar.cc/100?img=33" alt="User" className="w-full h-full object-cover" />
-                                        </div>
-                                        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-white"></div>
+                                {/* Interactive Overlay (removes itself on first click to allow interaction) */}
+                                <div 
+                                    className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] z-40 flex flex-col items-center justify-center text-center p-8 transition-opacity duration-300 hover:opacity-0 pointer-events-none group-hover/phone:opacity-100"
+                                    id="preview-overlay"
+                                >
+                                    <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-4 border border-white/10">
+                                        <Sparkles className="w-8 h-8 text-primary-400 animate-pulse" />
                                     </div>
-
-                                    <div className="absolute top-1/2 right-1/3 animate-bounce duration-[2500ms]">
-                                        <div className="w-12 h-12 rounded-full border-2 border-white bg-primary-500 overflow-hidden shadow-lg relative z-10">
-                                            <img draggable={false} src="https://i.pravatar.cc/100?img=47" alt="User" className="w-full h-full object-cover" />
-                                        </div>
-                                        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-white"></div>
-                                    </div>
-
-                                    {/* Bottom Card Mock */}
-                                    <div className="absolute bottom-6 left-4 right-4 bg-slate-900/90 backdrop-blur-md p-4 rounded-2xl border border-slate-700 shadow-xl">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-primary-500/20 flex items-center justify-center text-primary-500">
-                                                <MapPin className="w-5 h-5 fill-current" />
-                                            </div>
-                                            <div>
-                                                <h4 className="font-bold text-white text-sm">3 Friends Nearby</h4>
-                                                <p className="text-xs text-slate-400">Within 2km range</p>
-                                            </div>
-                                            <div className="ml-auto px-3 py-1.5 bg-primary-600 rounded-lg text-xs font-bold text-white">
-                                                View
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <h4 className="text-white font-bold text-lg mb-2">Live App Preview</h4>
+                                    <p className="text-slate-300 text-sm">Experience Orbyt directly from your browser. Try the feed and explore the map.</p>
                                 </div>
                             </div>
                         </div>
