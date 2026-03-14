@@ -11,11 +11,11 @@ const Layout: React.FC = () => {
   const [unreadMessages, setUnreadMessages] = useState(0);
 
   const isActive = (path: string) => {
-    if (path === '/') return location.pathname === '/';
+    if (path === '/app') return location.pathname === '/app';
     return location.pathname.startsWith(path);
   };
 
-  const profilePath = user ? `/profile/${user.uid}` : '/auth';
+  const profilePath = user ? `/app/profile/${user.uid}` : '/auth';
 
   // Poll for unread messages
   useEffect(() => {
@@ -47,26 +47,26 @@ const Layout: React.FC = () => {
 
           {/* Home */}
           <button
-            onClick={() => navigate('/')}
-            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/') ? 'text-primary-500' : 'text-slate-500 hover:text-slate-300'}`}
+            onClick={() => navigate('/app')}
+            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/app') ? 'text-primary-500' : 'text-slate-500 hover:text-slate-300'}`}
           >
-            <Home className={`w-5 h-5 ${isActive('/') ? 'fill-current' : ''}`} />
+            <Home className={`w-5 h-5 ${isActive('/app') ? 'fill-current' : ''}`} />
             <span className="text-[10px] font-medium">Home</span>
           </button>
 
           {/* Map */}
           <button
-            onClick={() => navigate('/map')}
-            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/map') ? 'text-primary-500' : 'text-slate-500 hover:text-slate-300'}`}
+            onClick={() => navigate('/app/map')}
+            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/app/map') ? 'text-primary-500' : 'text-slate-500 hover:text-slate-300'}`}
           >
-            <Map className={`w-5 h-5 ${isActive('/map') ? 'fill-current' : ''}`} />
+            <Map className={`w-5 h-5 ${isActive('/app/map') ? 'fill-current' : ''}`} />
             <span className="text-[10px] font-medium">Map</span>
           </button>
 
           {/* Discover */}
           <button
-            onClick={() => navigate('/discover')}
-            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/discover') ? 'text-primary-500' : 'text-slate-500 hover:text-slate-300'}`}
+            onClick={() => navigate('/app/discover')}
+            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/app/discover') ? 'text-primary-500' : 'text-slate-500 hover:text-slate-300'}`}
           >
             <div className="relative">
               <svg 
@@ -77,7 +77,7 @@ const Layout: React.FC = () => {
                 strokeWidth="2" 
                 strokeLinecap="round" 
                 strokeLinejoin="round" 
-                className={`w-5 h-5 ${isActive('/discover') ? 'text-primary-500' : ''}`}
+                className={`w-5 h-5 ${isActive('/app/discover') ? 'text-primary-500' : ''}`}
               >
                 <path d="m3 11 18-5v12L3 14v-3z"/>
                 <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>
@@ -88,7 +88,7 @@ const Layout: React.FC = () => {
 
           {/* Create Post — elevated center */}
           <button
-            onClick={() => navigate('/create-post')}
+            onClick={() => navigate('/app/create-post')}
             className="relative -top-5"
           >
             <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-primary-500 to-primary-600 shadow-lg shadow-primary-500/30 flex items-center justify-center text-white transform transition-transform active:scale-95 border-4 border-slate-950">
@@ -112,11 +112,11 @@ const Layout: React.FC = () => {
             <span className="text-[10px] font-medium">Activity</span>
           </button> */}
           <button
-            onClick={() => navigate('/inbox')}
-            className={`flex flex-col items-center justify-center w-full h-full space-y-1 relative ${isActive('/inbox') || isActive('/chat') ? 'text-primary-500' : 'text-slate-500 hover:text-slate-300'}`}
+            onClick={() => navigate('/app/inbox')}
+            className={`flex flex-col items-center justify-center w-full h-full space-y-1 relative ${isActive('/app/inbox') || isActive('/app/chat') ? 'text-primary-500' : 'text-slate-500 hover:text-slate-300'}`}
           >
             <div className="relative">
-              <MessageCircle className={`w-5 h-5 ${isActive('/inbox') || isActive('/chat') ? 'fill-current' : ''}`} />
+              <MessageCircle className={`w-5 h-5 ${isActive('/app/inbox') || isActive('/app/chat') ? 'fill-current' : ''}`} />
               {unreadMessages > 0 && (
                 <div className="absolute -top-1.5 -right-1.5 bg-blue-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border-2 border-slate-900">
                   {unreadMessages > 9 ? '9+' : unreadMessages}
@@ -131,10 +131,10 @@ const Layout: React.FC = () => {
           {/* Profile */}
           <button
             onClick={() => navigate(profilePath)}
-            className={`flex flex-col items-center justify-center w-full h-full space-y-1 relative ${isActive('/profile') ? 'text-primary-500' : 'text-slate-500 hover:text-slate-300'}`}
+            className={`flex flex-col items-center justify-center w-full h-full space-y-1 relative ${isActive('/app/profile') ? 'text-primary-500' : 'text-slate-500 hover:text-slate-300'}`}
           >
             <div className="relative">
-              <User className={`w-5 h-5 ${isActive('/profile') ? 'fill-current' : ''}`} />
+              <User className={`w-5 h-5 ${isActive('/app/profile') ? 'fill-current' : ''}`} />
               {/* {unreadMessages > 0 && (
                 <div className="absolute -top-1.5 -right-1.5 bg-blue-500 text-white text-[9px] font-bold min-w-[16px] h-4 px-0.5 rounded-full flex items-center justify-center border-2 border-slate-900">
                   {unreadMessages > 9 ? '9+' : unreadMessages}

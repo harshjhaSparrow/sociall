@@ -188,7 +188,7 @@ const PostDetail: React.FC = () => {
             {isHost && isMeetup && (
               <div className="animate-fade-in space-y-4">
                 <button
-                  onClick={() => navigate(`/chat/group/${post._id}`)}
+                  onClick={() => navigate(`/app/chat/group/${post._id}`)}
                   className="w-full py-3 bg-slate-800 border border-slate-700 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-700 transition-colors"
                 >
                   <MessageCircle className="w-5 h-5 text-primary-500" />
@@ -219,7 +219,7 @@ const PostDetail: React.FC = () => {
                         >
                           <div
                             className="flex items-center gap-3 cursor-pointer"
-                            onClick={() => navigate(`/profile/${reqUser.uid}`)}
+                            onClick={() => navigate(`/app/profile/${reqUser.uid}`)}
                           >
                             <div className="w-10 h-10 rounded-full bg-slate-800 overflow-hidden shrink-0 border border-slate-700">
                               {reqUser.photoURL ? (

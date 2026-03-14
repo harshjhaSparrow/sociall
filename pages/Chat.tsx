@@ -72,7 +72,7 @@ const Chat: React.FC = () => {
                     // 1:1 Mode
                     const friendProfile = await api.profile.get(uid);
                     if (!friendProfile) {
-                        navigate('/');
+                        navigate('/app');
                         return;
                     }
                     setFriend(friendProfile);
@@ -217,7 +217,7 @@ const Chat: React.FC = () => {
                         if (isGroup) {
                             setShowGroupInfo(true);
                         } else if (friend) {
-                            navigate(`/profile/${uid}`);
+                            navigate(`/app/profile/${uid}`);
                         }
                     }}
                 >
@@ -366,7 +366,7 @@ const Chat: React.FC = () => {
                                             <p className="text-xs text-slate-400">Event Organizer</p>
                                         </div>
                                         <button
-                                            onClick={() => navigate(`/profile/${host.uid}`)}
+                                            onClick={() => navigate(`/app/profile/${host.uid}`)}
                                             className="text-xs bg-slate-800 px-3 py-1.5 rounded-lg text-slate-300 hover:text-white transition-colors"
                                         >
                                             View
@@ -401,7 +401,7 @@ const Chat: React.FC = () => {
 
                                                 <div className="flex items-center gap-2">
                                                     <button
-                                                        onClick={() => navigate(`/profile/${member.uid}`)}
+                                                        onClick={() => navigate(`/app/profile/${member.uid}`)}
                                                         className="text-xs bg-slate-900 px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition-colors border border-slate-700"
                                                     >
                                                         View

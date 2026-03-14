@@ -3,7 +3,6 @@ import {
   Briefcase,
   Check,
   ChevronRight,
-  Clock,
   Edit2,
   Eye,
   Flag,
@@ -20,17 +19,17 @@ import {
   UserCheck,
   UserPlus,
   Users,
-  X,
+  X
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useUserLocation } from "../components/LocationGuard";
 import PostItem from "../components/PostItem";
+import ConfirmModal from "../components/ui/ConfirmModal";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";
 import { POPULAR_INTERESTS, Post, UserProfile } from "../types";
 import { calculateDistance } from "../util/location";
-import ConfirmModal from "../components/ui/ConfirmModal";
 
 export default function Profile() {
   const { user, logout } = useAuth();
@@ -92,7 +91,7 @@ const filteredPosts = useMemo(() => {
             // Check if blocked
             if (user && userProfile?.blockedUsers?.includes(user?.uid)) {
               // They blocked me (server usually filters this, but just in case)
-              navigate("/");
+              navigate("/app");
               return;
             }
 
@@ -149,7 +148,7 @@ const filteredPosts = useMemo(() => {
               api.profile.recordView(user?.uid, targetUid);
             }
           } else if (isOwnProfile) {
-            navigate("/onboarding");
+            navigate("/app/onboarding");
             return;
           }
         } catch (error) {
@@ -230,7 +229,7 @@ const filteredPosts = useMemo(() => {
 
   const handleLogout = async () => {
     await logout();
-    navigate("/");
+    navigate("/app");
   };
 
   const handleSendRequest = async () => {
@@ -475,7 +474,7 @@ const filteredPosts = useMemo(() => {
   };
 
   const handleEditPost = (postId: string) => {
-    navigate(`/edit-post/${postId}`);
+    navigate(`/app/edit-post/${postId}`);
   };
 
   if (loading) {
@@ -510,7 +509,7 @@ const filteredPosts = useMemo(() => {
           Unblock User
         </button>
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/app")}
           className="mt-4 text-slate-500 hover:text-white"
         >
           Go Home
@@ -672,7 +671,7 @@ const filteredPosts = useMemo(() => {
 
               {isOwnProfile ? (
                 <button
-                  onClick={() => navigate("/edit-profile")}
+                  onClick={() => navigate("/app/edit-profile")}
                   className="inline-flex items-center gap-2 px-5 py-3 bg-slate-800 text-slate-200 rounded-2xl font-semibold text-sm hover:bg-slate-700 transition-colors active:scale-95 border border-slate-700"
                 >
                   <Edit2 className="w-4 h-4" />
@@ -733,7 +732,7 @@ const filteredPosts = useMemo(() => {
                         Friends
                       </button>
                       <button
-                        onClick={() => navigate(`/chat/${profile?.uid}`)}
+                        onClick={() => navigate(`/app/chat/${profile?.uid}`)}
                         className="inline-flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-2xl font-semibold text-sm hover:bg-blue-500 transition-colors active:scale-95 shadow-lg shadow-blue-500/20"
                       >
                         <MessageCircle className="w-5 h-5" />
@@ -769,7 +768,7 @@ const filteredPosts = useMemo(() => {
                       <div className="flex items-center justify-between">
                         <div
                           className="flex items-center gap-3 cursor-pointer"
-                          onClick={() => navigate(`/profile/${reqUser?.uid}`)}
+                          onClick={() => navigate(`/app/profile/${reqUser?.uid}`)}
                         >
                           <div className="w-10 h-10 rounded-full bg-slate-800 overflow-hidden">
                             {reqUser?.photoURL ? (
@@ -898,7 +897,7 @@ const filteredPosts = useMemo(() => {
               </p>
               {isOwnProfile && (
                 <button
-                  onClick={() => navigate("/create-post")}
+                  onClick={() => navigate("/app/create-post")}
                   className="mt-4 text-primary-500 font-bold hover:text-primary-400 text-sm"
                 >
                   Create {activeTab === "meetup" ? "a meetup" : "a post"}
@@ -1093,7 +1092,7 @@ const filteredPosts = useMemo(() => {
                             className="flex items-center gap-3 p-3 rounded-2xl bg-slate-800 border border-slate-700 cursor-pointer hover:bg-slate-700 transition-colors"
                             onClick={() => {
                               setIsFriendsModalOpen(false);
-                              navigate(`/profile/${friend?.uid}`);
+                              navigate(`/app/profile/${friend?.uid}`);
                             }}
                           >
                             <div className="w-12 h-12 rounded-full bg-slate-900 overflow-hidden shrink-0 border border-slate-600">
@@ -1123,7 +1122,7 @@ const filteredPosts = useMemo(() => {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setIsFriendsModalOpen(false);
-                                  navigate(`/chat/${friend?.uid}`);
+                                  navigate(`/app/chat/${friend?.uid}`);
                                 }}
                                 className="p-2.5 rounded-full bg-blue-600 text-white shadow-lg shadow-blue-500/30 hover:bg-blue-500 transition-all active:scale-95 z-10"
                               >
@@ -1181,7 +1180,7 @@ const filteredPosts = useMemo(() => {
                         className="flex items-center gap-3 p-3 rounded-2xl bg-slate-800 border border-slate-700 cursor-pointer hover:bg-slate-700 transition-colors"
                         onClick={() => {
                           setIsViewersModalOpen(false);
-                          navigate(`/profile/${viewer?.uid}`);
+                          navigate(`/app/profile/${viewer?.uid}`);
                         }}
                       >
                         <div className="w-12 h-12 rounded-full bg-slate-900 overflow-hidden shrink-0 border border-slate-600">

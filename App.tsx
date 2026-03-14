@@ -76,7 +76,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   // Prevent accessing Onboarding if profile is already completed
   if (status === 'authenticated' && hasProfile && location.pathname === '/onboarding') {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/app" replace />;
   }
 
   return <>{children}</>;
@@ -89,7 +89,11 @@ const AppRoutes = () => {
     <NotificationProvider>
       <div className="antialiased text-slate-900">
         <Routes>
-          <Route path="/auth" element={status === 'authenticated' ? <Navigate to="/" /> : <AuthPage />} />
+          {/* Public landing — always root */}
+          <Route path="/" element={<DesktopLanding />} />
+
+          {/* Auth */}
+          <Route path="/auth" element={status === 'authenticated' ? <Navigate to="/app" /> : <AuthPage />} />
 
           {/* Onboarding - Isolated */}
           <Route path="/onboarding" element={
@@ -98,8 +102,12 @@ const AppRoutes = () => {
             </ProtectedRoute>
           } />
 
+          {/* Privacy & Terms - Isolated & Unprotected */}
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
+
           {/* Direct Chat - Isolated */}
-          <Route path="/chat/:uid" element={
+          <Route path="/app/chat/:uid" element={
             <ProtectedRoute>
               <LocationGuard>
                 <Chat />
@@ -108,7 +116,7 @@ const AppRoutes = () => {
           } />
 
           {/* Group Chat - Isolated */}
-          <Route path="/chat/group/:groupId" element={
+          <Route path="/app/chat/group/:groupId" element={
             <ProtectedRoute>
               <LocationGuard>
                 <Chat />
@@ -117,23 +125,18 @@ const AppRoutes = () => {
           } />
 
           {/* Settings - Isolated */}
-          <Route path="/settings" element={
+          <Route path="/app/settings" element={
             <ProtectedRoute>
               <Settings />
             </ProtectedRoute>
           } />
 
           {/* Developer Profile - Isolated */}
-          <Route path="/developer" element={
+          <Route path="/app/developer" element={
             <ProtectedRoute>
               <DeveloperProfile />
             </ProtectedRoute>
           } />
-
-
-          {/* Privacy & Terms - Isolated & Unprotected */}
-          <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/terms" element={<TermsOfService />} />
 
           {/* Main App - Protected by Location & Layout */}
           <Route element={
@@ -143,16 +146,16 @@ const AppRoutes = () => {
               </LocationGuard>
             </ProtectedRoute>
           }>
-            <Route path="/" element={<Feed />} />
-            <Route path="/map" element={<MapPage />} />
-            <Route path="/inbox" element={<Inbox />} />
-            <Route path="/discover" element={<Discover />} />
-            <Route path="/notifications" element={<NotificationsPage />} />
-            <Route path="/profile/:uid?" element={<Profile />} />
-            <Route path="/create-post" element={<CreatePost />} />
-            <Route path="/edit-post/:id" element={<EditPost />} />
-            <Route path="/post/:id" element={<PostDetail />} />
-            <Route path="/edit-profile" element={<EditProfile />} />
+            <Route path="/app" element={<Feed />} />
+            <Route path="/app/map" element={<MapPage />} />
+            <Route path="/app/inbox" element={<Inbox />} />
+            <Route path="/app/discover" element={<Discover />} />
+            <Route path="/app/notifications" element={<NotificationsPage />} />
+            <Route path="/app/profile/:uid?" element={<Profile />} />
+            <Route path="/app/create-post" element={<CreatePost />} />
+            <Route path="/app/edit-post/:id" element={<EditPost />} />
+            <Route path="/app/post/:id" element={<PostDetail />} />
+            <Route path="/app/edit-profile" element={<EditProfile />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" />} />
@@ -163,21 +166,6 @@ const AppRoutes = () => {
 };
 
 const App: React.FC = () => {
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsDesktop(window.innerWidth > 768);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  if (isDesktop) {
-    return <DesktopLanding />;
-  }
-
   return (
     <AuthProvider>
       <Router>

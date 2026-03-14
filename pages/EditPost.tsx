@@ -29,7 +29,7 @@ const EditPost: React.FC = () => {
         const post = await api.posts.getPost(id);
         if (post) {
           if (post.uid !== user.uid) {
-            navigate("/"); // Unauthorized
+            navigate("/app"); // Unauthorized
             return;
           }
           setContent(post.content);
@@ -77,7 +77,7 @@ const EditPost: React.FC = () => {
 
     try {
       await api.posts.updatePost(id, user.uid, content, image);
-      navigate("/profile");
+      navigate("/app/profile");
     } catch (err: unknown) {
       console.error(err);
       if (err instanceof Error) {
@@ -106,7 +106,7 @@ const EditPost: React.FC = () => {
         <div className="max-w-md mx-auto flex items-center justify-between">
           {/* Back Button */}
           <button
-            onClick={() => navigate("/profile")}
+            onClick={() => navigate("/app/profile")}
             className="p-2 -ml-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-800 transition-colors"
           >
             <ChevronLeft className="w-7 h-7" />

@@ -253,11 +253,11 @@ const Feed: React.FC = () => {
   const handleNotificationClick = async (n: Notification) => {
     setShowNotifications(false);
     if (n.type === "friend_request") {
-      navigate(`/profile/${n.fromUid}`);
+      navigate(`/app/profile/${n.fromUid}`);
     } else if (n.type === "friend_accept") {
-      navigate(`/profile/${n.fromUid}`);
+      navigate(`/app/profile/${n.fromUid}`);
     } else if ((n.type === "like" || n.type === "comment") && n.postId) {
-      navigate(`/post/${n.postId}`);
+      navigate(`/app/post/${n.postId}`);
     }
   };
 
@@ -384,7 +384,7 @@ const Feed: React.FC = () => {
         <div className="flex items-center gap-2">
           {/* Settings Button */}
           <button
-            onClick={() => navigate("/settings")}
+            onClick={() => navigate("/app/settings")}
             className="p-2 rounded-full hover:bg-slate-800 transition-colors text-slate-400 hover:text-white"
           >
             <Settings className="w-6 h-6" />
@@ -392,7 +392,7 @@ const Feed: React.FC = () => {
 
           {/* Notification Bell */}
           <button
-            onClick={() => navigate("/notifications")}
+            onClick={() => navigate("/app/notifications")}
             className="relative p-2 rounded-full hover:bg-slate-800 transition-colors"
           >
             <Bell className="w-6 h-6 text-slate-400" />
@@ -404,7 +404,7 @@ const Feed: React.FC = () => {
           </button>
 
           {/* <button
-            onClick={() => navigate("/notifications")}
+            onClick={() => navigate("/app/notifications")}
             className={`flex flex-col items-center justify-center w-full h-full space-y-1 relative ${isActive("/notifications") ? "text-primary-500" : "text-slate-500 hover:text-slate-300"}`}
           >
             <div className="relative">

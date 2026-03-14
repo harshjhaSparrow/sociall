@@ -164,7 +164,7 @@ const CreatePost: React.FC = () => {
       }
 
       await api.posts.create(payload);
-      navigate("/");
+      navigate("/app");
     } catch (err: unknown) {
       console.error(err);
       if (err instanceof Error) {
@@ -191,7 +191,7 @@ const CreatePost: React.FC = () => {
       <div className="bg-slate-900/90 backdrop-blur-md px-4 py-3 shadow-sm z-30 sticky top-0 border-b border-slate-800">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/app")}
             className="p-2 -ml-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-800 transition-colors"
           >
             <ChevronLeft className="w-7 h-7" />
