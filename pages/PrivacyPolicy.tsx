@@ -68,13 +68,22 @@ const PrivacyPolicy: React.FC = () => {
                     <h2 className="text-xl font-bold text-white text-left pt-4">5. Data Retention and Deletion</h2>
                     <p>We retain your data as long as your account is active. You have the right to request deletion of your account and all associated data at any time via the &quot;Settings&quot; page. Upon deletion, your profile, posts, messages, and location history are permanently removed from our active databases.</p>
 
-                    <h2 className="text-xl font-bold text-white text-left pt-4">6. Security</h2>
+                    <h2 className="text-xl font-bold text-white text-left pt-4">6. Your Rights</h2>
+                    <p>Depending on your location, you may have rights under the GDPR, CCPA, or other privacy laws. These rights include:</p>
+                    <ul className="list-disc pl-5 space-y-2">
+                        <li><strong>Access:</strong> The right to request copies of your personal data.</li>
+                        <li><strong>Rectification:</strong> The right to request that we correct any information you believe is inaccurate.</li>
+                        <li><strong>Erasure:</strong> The right to request that we erase your personal data under certain conditions.</li>
+                        <li><strong>Portability:</strong> The right to request that we transfer the data that we have collected to another organization.</li>
+                    </ul>
+
+                    <h2 className="text-xl font-bold text-white text-left pt-4">7. Security</h2>
                     <p>We implement industry-standard security measures including HTTPS encryption for all data in transit. However, no electronic transmission or storage is 100% secure. You use the Service at your own risk.</p>
 
-                    <h2 className="text-xl font-bold text-white text-left pt-4">7. Children's Privacy</h2>
-                    <p>Orbyt is intended for users aged 18 and above. We do not knowingly collect personal information from anyone under 18. If we become aware that a minor has registered, we will immediately delete their account.</p>
+                    <h2 className="text-xl font-bold text-white text-left pt-4">8. Children's Privacy (Strict 18+)</h2>
+                    <p>Orbyt is strictly intended for users aged 18 and above. We do not knowingly collect personal information from minors. For detailed information on our age verification and minor removal process, please read our <a href="/#/child-policy" className="text-primary-400 hover:underline">Child Safety Policy</a>.</p>
 
-                    <h2 className="text-xl font-bold text-white text-left pt-4">8. Contact Us</h2>
+                    <h2 className="text-xl font-bold text-white text-left pt-4">9. Contact Us</h2>
                     <p>If you have questions about this Privacy Policy, please contact us at <a href="mailto:privacy@orbyt.app" className="text-primary-400 hover:underline">privacy@orbyt.app</a>.</p>
                 </section>
 

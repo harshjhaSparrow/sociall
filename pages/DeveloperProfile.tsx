@@ -23,21 +23,28 @@ export default function DeveloperProfile() {
         <div className="flex flex-col items-center py-6 text-center">
           <div className="w-32 h-32 rounded-full border-4 border-primary-500 bg-slate-800 mb-4 overflow-hidden shadow-[0_4px_16px_rgba(59,130,246,0.3)]">
             <img 
-                src="https://via.placeholder.com/150" 
+                src="/Images/developer_pfp.png" 
                 alt="Harsh Jha" 
                 className="w-full h-full object-cover"
             />
           </div>
           <h2 className="text-3xl font-bold mb-2">Harsh Jha</h2>
           
-          <div className="inline-flex items-center gap-2 bg-slate-800 px-4 py-2 rounded-full border border-slate-700 mb-4">
-            <Briefcase className="w-4 h-4 text-primary-500" />
-            <span className="text-slate-300 text-sm font-medium">Software Engineer</span>
+          <div className="flex flex-col items-center gap-2 mb-4">
+            <div className="inline-flex items-center gap-2 bg-slate-800 px-4 py-2 rounded-full border border-slate-700">
+              <Briefcase className="w-4 h-4 text-primary-500" />
+              <span className="text-slate-300 text-sm font-medium">Software Engineer</span>
+            </div>
+            <div className="text-primary-400 text-xs font-bold uppercase tracking-widest bg-primary-500/10 px-3 py-1 rounded-lg border border-primary-500/20">
+              Certified Stack Overflow Archaeologist
+            </div>
           </div>
 
-          <p className="text-slate-400 text-sm max-w-sm">
-            Passionate about building beautiful, high-performance web applications and scalable backend systems. Let's create something amazing together!
+          <p className="text-slate-400 text-sm max-w-sm leading-relaxed">
+            Full-stack developer who specializes in copy-pasting from Stack Overflow and then wondering why it doesn't work. I write code that works on my machine. If it doesn't work on yours, that's a "you" problem.
           </p>
+
+
         </div>
 
         {/* Tech Stack */}
@@ -101,14 +108,17 @@ export default function DeveloperProfile() {
               className="flex items-center gap-4 py-3 hover:bg-slate-800/50 transition-colors rounded-lg px-2"
             >
               <Coffee className="w-6 h-6 text-yellow-400" />
-              <span className="flex-1 font-medium text-slate-200">Buy me a coffee</span>
+              <div className="flex-1">
+                <span className="block font-medium text-slate-200">Buy me a coffee</span>
+                <span className="block text-sm text-slate-500">"Code is like coffee. It's better when it's hot and someone else made it."</span>
+              </div>
               <Heart className="w-5 h-5 text-red-500" />
             </a>
           </div>
         </div>
 
         <div className="text-center py-8">
-          <p className="text-slate-500 text-sm">Made with ❤️ by Harsh Jha</p>
+          <p className="text-slate-500 text-sm">Maintained with sarcasm by Harsh Jha</p>
         </div>
 
       </div>

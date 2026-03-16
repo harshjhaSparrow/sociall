@@ -40,13 +40,14 @@ const TermsOfService: React.FC = () => {
                     <ul className="list-disc pl-5 space-y-2">
                         <li>Post or share content that is illegal, abusive, harassing, threatening, discriminatory, defamatory, or obscene.</li>
                         <li>Post explicit, pornographic, or excessively violent imagery.</li>
-                        <li>Impersonate giving false identity or misleading information.</li>
-                        <li>Spam or solicit other users for commercial purposes.</li>
-                        <li>Use the app to facilitate illegal activities.</li>
+                        <li>Post content that promotes or facilitates self-harm, eating disorders, or violence.</li>
+                        <li>Impersonate others or provide false identity information.</li>
+                        <li>Spam, scam, or solicit other users for commercial purposes.</li>
+                        <li>Use the app to facilitate illegal activities or drug-related transactions.</li>
                     </ul>
 
                     <h2 className="text-xl font-bold text-white text-left pt-4">4. Moderation & Zero Tolerance Policy</h2>
-                    <p>We have a <strong>zero-tolerance policy</strong> for objectionable content or abusive users. We reserve the right, but not the obligation, to monitor, review, and remove any content or accounts that violate these Terms. Users have the ability to report inappropriate content and block abusive users. We will act on reports promptly, typically within 24 hours.</p>
+                    <p>We have a <strong>zero-tolerance policy</strong> for objectionable content or abusive users. We reserve the right, but not the obligation, to monitor, review, and remove any content or accounts that violate these Terms. Users have the ability to report inappropriate content and block abusive users. We will act on reports promptly, typically within 24 hours. Accounts found in violation may be permanently banned without a refund of any potential fees.</p>
 
                     <h2 className="text-xl font-bold text-white text-left pt-4">5. Safety and Real-World Interactions</h2>
                     <p>Orbyt facilitates real-world meetups. We do not verify the criminal background of our users. You use the Service at your own risk. Always exercise caution, meet in public places, and trust your instincts when interacting with people you meet through the app.</p>

@@ -23,7 +23,13 @@ import { Loader2 } from 'lucide-react';
 import DesktopLanding from './pages/DeskTopLandingPage';
 import TermsOfService from './pages/TermsOfService';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import ChildPolicy from './pages/ChildPolicy';
 import DeveloperProfile from './pages/DeveloperProfile';
+import Guidelines from './pages/Guidelines';
+import CookiePolicy from './pages/CookiePolicy';
+import About from './pages/About';
+import Blog from './pages/Blog';
+import Contact from './pages/Contact';
 
 // Guard component to protect routes and check profile existence
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -105,6 +111,12 @@ const AppRoutes = () => {
           {/* Privacy & Terms - Isolated & Unprotected */}
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/child-policy" element={<ChildPolicy />} />
+          <Route path="/guidelines" element={<Guidelines />} />
+          <Route path="/cookies" element={<CookiePolicy />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/contact" element={<Contact />} />
 
           {/* Direct Chat - Isolated */}
           <Route path="/app/chat/:uid" element={

@@ -14,12 +14,12 @@ import { useNavigate } from "react-router-dom";
 import { useUserLocation } from "../components/LocationGuard";
 import PostItem from "../components/PostItem";
 import { useAuth } from "../context/AuthContext";
+import { useNotifications } from "../context/NotificationContext";
+import { usePushNotifications } from "../hooks/usePushNotifications";
 import { api } from "../services/api";
 import { Notification, Post, UserProfile } from "../types";
-import { usePushNotifications } from "../hooks/usePushNotifications";
-import { MainLogo } from "../util/Images";
-import { useNotifications } from "@/context/NotificationContext";
 import { triggerHaptic } from "../util/haptics";
+import { MainLogo } from "../util/Images";
 
 const getDistanceMeters = (
   lat1: number,
@@ -75,9 +75,25 @@ const Feed: React.FC = () => {
   const startY = useRef(0);
   const isDragging = useRef(false);
 
+  // Scroll to top state
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   // Push Notifications
   const { isSupported, isSubscribed, subscribe } = usePushNotifications();
   const [subscribing, setSubscribing] = useState(false);
+
 
   const handleSubscribe = async () => {
     setSubscribing(true);
@@ -372,12 +388,12 @@ const Feed: React.FC = () => {
         style={{ transform: `translateY(${pullY * 0.5}px)` }}
       >
         {/* <h1 className="text-xl font-bold text-white tracking-tight">Orbyt</h1> */}
-        <div className="flex items-center">
+        <div className="flex items-center cursor-pointer group" onClick={() => navigate('/')}>
           <img
             draggable={false}
             src={MainLogo}
             alt="Orbyt Logo"
-            className="h-10 w-auto object-contain hover:scale-105 transition-transform duration-200"
+            className="h-10 w-auto object-contain group-hover:scale-105 transition-transform duration-200 drop-shadow-[0_0_8px_rgba(139,92,246,0.3)]"
           />
         </div>
 
@@ -558,7 +574,29 @@ const Feed: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Scroll to Top Button */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-24 right-6 p-3 bg-primary-500 text-white rounded-full shadow-lg shadow-primary-500/30 active:scale-95 transition-all animate-in fade-in zoom-in duration-300 z-[1900]"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m18 15-6-6-6 6" />
+          </svg>
+        </button>
+      )}
     </div>
+
   );
 };
 

@@ -3,12 +3,43 @@ import React, { useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import DeviceFrame from './DeviceFrame';
+// import MainLogo from '../assets/logo.png'; 
 
 const Layout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    const path = location.pathname;
+    let title = "Orbyt";
+    if (path === '/app') title = "Feed | Orbyt";
+    else if (path === '/app/map') title = "Live Map | Orbyt";
+    else if (path === '/app/inbox') title = "Chat | Orbyt";
+    else if (path === '/app/discover') title = "Discover | Orbyt";
+    else if (path.startsWith('/app/profile')) title = "Profile | Orbyt";
+    else if (path === '/app/settings') title = "Settings | Orbyt";
+    else if (path === '/app/create-post') title = "New Post | Orbyt";
+
+    document.title = title;
+  }, [location.pathname]);
+
 
   const isActive = (path: string) => {
     if (path === '/app') return location.pathname === '/app';
@@ -34,15 +65,55 @@ const Layout: React.FC = () => {
     return () => clearInterval(interval);
   }, [user]);
 
-  return (
-    <div className="flex flex-col min-h-[100dvh] bg-slate-950">
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+
+  useEffect(() => {
+    let timeoutId: any;
+    const handleResize = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        setIsDesktop(window.innerWidth >= 768);
+      }, 200);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(timeoutId);
+    };
+  }, []);
+
+  const content = React.useMemo(() => (
+    <div className={`flex flex-col min-h-[100dvh] bg-slate-950 ${isDesktop ? 'h-[820px]' : ''} overflow-hidden`}>
+      {/* Desktop Top Navigation */}
+      {/* <div className="hidden md:flex sticky top-0 z-[3000] bg-slate-900/80 backdrop-blur-xl border-b border-slate-800 items-center justify-between px-8 h-16">
+        <div className="flex items-center cursor-pointer group" onClick={() => navigate('/')}>
+          <img
+            draggable={false}
+            src={MainLogo}
+            alt="Orbyt Logo"
+            className="h-10 w-auto object-contain group-hover:scale-105 transition-transform duration-200"
+          />
+        </div>
+        <div className="flex items-center gap-4 text-slate-300 font-bold text-sm">
+           <span>Welcome to Orbyt Web</span>
+        </div>
+      </div> */}
+
+      {/* Offline Banner */}
+      {isOffline && (
+        <div className="bg-red-500 text-white text-xs font-bold py-2 px-4 flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top duration-300 sticky top-0 z-[4000]">
+          <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+          You are currently offline. Some features may be limited.
+        </div>
+      )}
+
       {/* Main Content Area */}
-      <div className="flex-1 pb-20">
+      <div className={`flex-1 ${isDesktop ? 'overflow-y-auto' : 'pb-20'}`}>
         <Outlet />
       </div>
 
       {/* Bottom Navigation — 5 tabs */}
-      <div className="fixed bottom-0 inset-x-0 bg-slate-900/80 backdrop-blur-xl border-t border-slate-800 pb-[max(env(safe-area-inset-bottom),0px)] z-[2000]">
+      <div className={`${isDesktop ? 'absolute' : 'fixed'} bottom-0 inset-x-0 bg-slate-900/80 backdrop-blur-xl border-t border-slate-800 pb-[max(env(safe-area-inset-bottom),0px)] z-[2000]`}>
         <div className="flex justify-around items-center h-16 max-w-md mx-auto px-1">
 
           {/* Home */}
@@ -69,18 +140,18 @@ const Layout: React.FC = () => {
             className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/app/discover') ? 'text-primary-500' : 'text-slate-500 hover:text-slate-300'}`}
           >
             <div className="relative">
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                viewBox="0 0 24 24" 
-                fill={isActive('/discover') ? "currentColor" : "none"} 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill={isActive('/discover') ? "currentColor" : "none"}
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 className={`w-5 h-5 ${isActive('/app/discover') ? 'text-primary-500' : ''}`}
               >
-                <path d="m3 11 18-5v12L3 14v-3z"/>
-                <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>
+                <path d="m3 11 18-5v12L3 14v-3z" />
+                <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
               </svg>
             </div>
             <span className="text-[10px] font-medium">Discover</span>
@@ -147,7 +218,13 @@ const Layout: React.FC = () => {
         </div>
       </div>
     </div>
-  );
+  ), [isDesktop, isOffline, unreadMessages, location.pathname, user]);
+
+  return isDesktop ? (
+    <DeviceFrame>
+      {content}
+    </DeviceFrame>
+  ) : content;
 };
 
 export default Layout;

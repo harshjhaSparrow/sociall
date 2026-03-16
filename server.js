@@ -359,6 +359,18 @@ async function run() {
 }
 run().catch(console.dir);
 
+// --- HELPERS ---
+function calculateAge(dateString) {
+  const birthDate = new Date(dateString);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+}
+
 // --- HELPER: Get Blocked Lists ---
 async function getMutualBlockedUids(viewerUid) {
   if (!viewerUid || viewerUid === 'undefined' || viewerUid === 'null') return [];
@@ -639,6 +651,14 @@ app.post('/api/profile/:uid', async (req, res) => {
     const { uid } = req.params;
     const data = req.body;
     const profiles = db.collection('profiles');
+
+    // Server-side 18+ validation
+    if (data.dob) {
+      const age = calculateAge(data.dob);
+      if (age < 18) {
+        return res.status(400).json({ error: "You must be at least 18 years old." });
+      }
+    }
 
     // 1. Update Profile
     const updateFields = { ...data, uid, updatedAt: new Date() };
