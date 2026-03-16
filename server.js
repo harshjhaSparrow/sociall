@@ -208,6 +208,8 @@ async function createNotification(type, fromUid, toUid, postId = null) {
           await expo.sendPushNotificationsAsync([{
             to: receiver.pushSubscription,
             sound: 'default',
+            priority: 'high',
+            channelId: 'default',
             title,
             body,
             data: { url: postId ? `/post/${postId}` : `/profile/${sender.uid}` }
@@ -1123,6 +1125,8 @@ async function sendPushNotification(receiverUid, payloadStr, expoPayload) {
         await expo.sendPushNotificationsAsync([{
           to: receiver.pushSubscription,
           sound: 'default',
+          priority: 'high',
+          channelId: 'default',
           ...expoPayload
         }]);
       } catch (err) {

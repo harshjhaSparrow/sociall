@@ -124,6 +124,11 @@ const EditProfile: React.FC = () => {
       }
     }
 
+    if (bio.trim().length < 20 || bio.trim().length > 500) {
+      setError("Bio must be between 20 and 500 characters.");
+      return;
+    }
+
     if (instagram.trim()) {
       const instagramRegex = /^[a-zA-Z0-9._]+$/;
       if (!instagramRegex.test(instagram)) {
@@ -243,6 +248,9 @@ const EditProfile: React.FC = () => {
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
               />
+              <div className="text-right text-[10px] text-slate-500 font-bold uppercase tracking-tighter mt-1">
+                {bio.length} / 500
+              </div>
             </div>
 
             <Input

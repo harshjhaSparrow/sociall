@@ -69,7 +69,15 @@ const EditPost: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!content.trim() && !image) return;
+    const trimmed = content.trim();
+    if (trimmed.length < 10 && !image) {
+      setError("Post content must be at least 10 characters long.");
+      return;
+    }
+    if (trimmed.length > 2000) {
+      setError("Post content cannot exceed 2000 characters.");
+      return;
+    }
     if (!user || !id) return;
 
     setSaving(true);
@@ -138,6 +146,9 @@ const EditPost: React.FC = () => {
           }}
           autoFocus
         />
+        <div className="text-right text-[10px] text-slate-500 font-bold uppercase tracking-tighter mt-1">
+          {content.length} / 2000
+        </div>
 
         {/* Image Preview */}
         {image && (

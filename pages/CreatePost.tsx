@@ -110,12 +110,29 @@ const CreatePost: React.FC = () => {
     if (!user) return;
 
     // Validation
-    if (postType === "regular" && !content.trim() && !image) return;
+    if (postType === "regular") {
+      const trimmed = content.trim();
+      if (trimmed.length < 10 && !image) {
+        setError("Post content must be at least 10 characters long.");
+        return;
+      }
+      if (trimmed.length > 2000) {
+        setError("Post content cannot exceed 2000 characters.");
+        return;
+      }
+    }
+
     if (postType === "meetup") {
       if (!meetupTitle.trim() || !date || !startTime || !endTime) {
-        setError(
-          "Please fill in all required meetup fields (Title, Date, Time).",
-        );
+        setError("Please fill in all required meetup fields (Title, Date, Time).");
+        return;
+      }
+      if (meetupTitle.trim().length < 5 || meetupTitle.trim().length > 100) {
+        setError("Meetup title must be between 5 and 100 characters.");
+        return;
+      }
+      if (content.trim().length < 20 || content.trim().length > 1000) {
+        setError("Meetup description must be between 20 and 1000 characters.");
         return;
       }
     }
@@ -179,9 +196,15 @@ const CreatePost: React.FC = () => {
 
   const isFormValid = () => {
     if (loading) return false;
-    if (postType === "regular") return content.trim() || image;
-    if (postType === "meetup")
-      return meetupTitle.trim() && date && startTime && endTime;
+    if (postType === "regular") {
+      const trimmed = content.trim();
+      return (trimmed.length >= 10 || image) && trimmed.length <= 2000;
+    }
+    if (postType === "meetup") {
+      const titleLen = meetupTitle.trim().length;
+      const descLen = content.trim().length;
+      return titleLen >= 5 && titleLen <= 100 && descLen >= 20 && descLen <= 1000 && date && startTime && endTime;
+    }
     return false;
   };
 
@@ -244,6 +267,9 @@ const CreatePost: React.FC = () => {
               }}
               autoFocus
             />
+            <div className="text-right text-[10px] text-slate-500 font-bold uppercase tracking-tighter mt-1">
+              {content.length} / 2000
+            </div>
           </>
         ) : (
           /* MEETUP FORM */
@@ -353,6 +379,9 @@ const CreatePost: React.FC = () => {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
               />
+              <div className="text-right text-[10px] text-slate-500 font-bold uppercase tracking-tighter mt-1">
+                {content.length} / 1000
+              </div>
             </div>
 
             <Input
