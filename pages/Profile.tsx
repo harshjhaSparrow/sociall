@@ -30,9 +30,11 @@ import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";
 import { POPULAR_INTERESTS, Post, UserProfile } from "../types";
 import { calculateDistance } from "../util/location";
+import { useTheme } from "../context/ThemeContext";
 
 export default function Profile() {
   const { user, logout } = useAuth();
+  const { isDark } = useTheme();
   const { uid } = useParams<{ uid: string }>();
   const navigate = useNavigate();
   const { location: myLocation } = useUserLocation();
@@ -479,7 +481,7 @@ const filteredPosts = useMemo(() => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full min-h-[50vh]">
+      <div className="flex items-center justify-center h-full min-h-[50vh] transition-colors duration-300">
         <Loader2 className="w-10 h-10 text-primary-500 animate-spin" />
       </div>
     );
@@ -491,11 +493,11 @@ const filteredPosts = useMemo(() => {
   // If blocked, show limited view
   if (isBlocked) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center mb-4 border border-slate-800">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center transition-colors duration-300">
+        <div className="w-20 h-20 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center mb-4 border border-slate-200 dark:border-slate-800 shadow-lg">
           <Ban className="w-10 h-10 text-red-500" />
         </div>
-        <h1 className="text-xl font-bold text-white mb-2">
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
           You blocked this user
         </h1>
         <p className="text-slate-400 mb-6 max-w-xs">
@@ -504,7 +506,7 @@ const filteredPosts = useMemo(() => {
         </p>
         <button
           onClick={handleUnblockUser}
-          className="px-6 py-3 bg-slate-800 text-white rounded-xl font-bold border border-slate-700 hover:bg-slate-700 transition-colors"
+          className="px-6 py-3 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm"
         >
           Unblock User
         </button>
@@ -529,11 +531,11 @@ const filteredPosts = useMemo(() => {
       : null;
 
   return (
-    <div className="bg-slate-950 min-h-screen">
+    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-300">
       {/* Dynamic Header */}
-      <div className="h-64 bg-gradient-to-b from-slate-900 to-slate-950 relative overflow-hidden">
+      <div className="h-64 bg-gradient-to-b from-slate-100 to-slate-50 dark:from-slate-900 dark:to-slate-950 relative overflow-hidden">
         {/* Abstract shapes */}
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary-900/40 via-purple-900/20 to-slate-950 opacity-60"></div>
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary-500/20 via-purple-500/10 to-transparent dark:from-primary-900/40 dark:via-purple-900/20 dark:to-slate-950 opacity-60"></div>
 
         {/* Top Actions */}
         <div className="absolute top-0 inset-x-0 p-4 flex justify-between z-10">
@@ -543,21 +545,21 @@ const filteredPosts = useMemo(() => {
               <div className="relative">
                 <button
                   onClick={() => setShowMenu(!showMenu)}
-                  className="p-3 bg-slate-900/50 backdrop-blur-md text-white rounded-full hover:bg-slate-800 transition-all active:scale-95 shadow-lg border border-slate-700"
+                  className="p-3 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md text-slate-900 dark:text-white rounded-full hover:bg-white/80 dark:hover:bg-slate-800 transition-all active:scale-95 shadow-lg border border-slate-200 dark:border-slate-700"
                 >
                   <MoreVertical className="w-5 h-5" />
                 </button>
                 {showMenu && (
-                  <div className="absolute right-0 top-12 w-40 bg-slate-900 rounded-xl shadow-xl border border-slate-800 py-1 overflow-hidden animate-slide-up z-50">
+                  <div className="absolute right-0 top-12 w-40 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 py-1 overflow-hidden animate-slide-up z-50">
                     <button
                       onClick={() => setReportModalOpen(true)}
-                      className="w-full text-left px-4 py-3 text-sm text-yellow-400 hover:bg-slate-800 flex items-center gap-2"
+                      className="w-full text-left px-4 py-3 text-sm text-yellow-600 dark:text-yellow-400 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2"
                     >
                       <Flag className="w-4 h-4" /> Report
                     </button>
                     <button
                       onClick={handleBlockUser}
-                      className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-slate-800 flex items-center gap-2"
+                      className="w-full text-left px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2"
                     >
                       <Ban className="w-4 h-4" /> Block
                     </button>
@@ -568,7 +570,7 @@ const filteredPosts = useMemo(() => {
             {isOwnProfile && (
               <button
                 onClick={handleLogout}
-                className="p-3 bg-slate-900/50 backdrop-blur-md text-white rounded-full hover:bg-slate-800 transition-all active:scale-95 shadow-lg border border-slate-700"
+                className="p-3 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md text-slate-900 dark:text-white rounded-full hover:bg-white/80 dark:hover:bg-slate-800 transition-all active:scale-95 shadow-lg border border-slate-200 dark:border-slate-700"
                 title="Logout"
               >
                 <LogOut className="w-5 h-5" />
@@ -580,12 +582,12 @@ const filteredPosts = useMemo(() => {
 
       {/* Main Content Container */}
       <div className="px-4 -mt-20 max-w-md mx-auto relative z-10 pb-6">
-        <div className="bg-slate-900 rounded-[2rem] shadow-2xl shadow-black/50 border border-slate-800 relative">
+        <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl shadow-black/10 dark:shadow-black/50 border border-slate-100 dark:border-slate-800 relative transition-colors duration-300">
           {/* Header Info */}
           <div className="pt-20 pb-8 px-6 relative text-center">
             {/* Floating Avatar */}
             <div className="absolute -top-16 left-1/2 -translate-x-1/2">
-              <div className="w-32 h-32 rounded-full border-[6px] border-slate-900 shadow-xl bg-slate-800 overflow-hidden">
+              <div className="w-32 h-32 rounded-full border-[6px] border-white dark:border-slate-900 shadow-xl bg-slate-50 dark:bg-slate-800 overflow-hidden transition-colors duration-300">
                 {profile?.photoURL ? (
                   <img
                     draggable={false}
@@ -600,17 +602,17 @@ const filteredPosts = useMemo(() => {
                 )}
               </div>
               {/* Online Indicator */}
-              <div className="absolute bottom-1 right-1 bg-green-500 w-5 h-5 rounded-full border-4 border-slate-900"></div>
+              <div className="absolute bottom-1 right-1 bg-green-500 w-5 h-5 rounded-full border-4 border-white dark:border-slate-900"></div>
             </div>
 
-            <h1 className="text-3xl font-bold text-white tracking-tight">
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
               {profile?.displayName}
             </h1>
 
             {/* Location & Job */}
             <div className="flex flex-col items-center gap-1 mt-2">
               {profile?.jobRole && (
-                <div className="flex items-center gap-1.5 text-slate-300 font-medium text-sm">
+                <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 font-medium text-sm transition-colors">
                   <Briefcase className="w-3.5 h-3.5" />
                   <span>{profile?.jobRole}</span>
                 </div>
@@ -628,29 +630,28 @@ const filteredPosts = useMemo(() => {
               </div>
             )}
 
-            {/* Friend Stats (Clickable) */}
-            <div className="flex justify-center mt-4">
+            <div className="flex justify-center mt-4 gap-2">
               <button
                 onClick={handleOpenFriendsList}
-                className="bg-slate-800 px-4 py-2 rounded-2xl flex items-center gap-2 border border-slate-700 hover:bg-slate-700 transition-colors active:scale-95 group"
+                className="bg-slate-50 dark:bg-slate-800 px-4 py-2 rounded-2xl flex items-center gap-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors active:scale-95 group"
               >
-                <Users className="w-4 h-4 text-slate-400 group-hover:text-primary-400 transition-colors" />
-                <span className="font-bold text-white">
+                <Users className="w-4 h-4 text-slate-400 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-colors" />
+                <span className="font-bold text-slate-900 dark:text-white transition-colors">
                   {profile?.friends?.length || 0}
                 </span>
-                <span className="text-slate-400 text-sm">Friends</span>
+                <span className="text-slate-500 dark:text-slate-400 text-sm transition-colors">Friends</span>
               </button>
 
               {isOwnProfile && (
                 <button
                   onClick={() => setIsViewersModalOpen(true)}
-                  className="bg-slate-800 px-4 py-2 rounded-2xl flex items-center gap-2 border border-slate-700 hover:bg-slate-700 transition-colors active:scale-95 group"
+                  className="bg-slate-50 dark:bg-slate-800 px-4 py-2 rounded-2xl flex items-center gap-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors active:scale-95 group"
                 >
-                  <Eye className="w-4 h-4 text-slate-400 group-hover:text-primary-400 transition-colors" />
-                  <span className="font-bold text-white">
+                  <Eye className="w-4 h-4 text-slate-400 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-colors" />
+                  <span className="font-bold text-slate-900 dark:text-white transition-colors">
                     {viewers?.length}
                   </span>
-                  <span className="text-slate-400 text-sm">Views</span>
+                  <span className="text-slate-500 dark:text-slate-400 text-sm transition-colors">Views</span>
                 </button>
               )}
             </div>
@@ -672,7 +673,7 @@ const filteredPosts = useMemo(() => {
               {isOwnProfile ? (
                 <button
                   onClick={() => navigate("/app/edit-profile")}
-                  className="inline-flex items-center gap-2 px-5 py-3 bg-slate-800 text-slate-200 rounded-2xl font-semibold text-sm hover:bg-slate-700 transition-colors active:scale-95 border border-slate-700"
+                  className="inline-flex items-center gap-2 px-5 py-3 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-200 rounded-2xl font-semibold text-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors active:scale-95 border border-slate-200 dark:border-slate-700"
                 >
                   <Edit2 className="w-4 h-4" />
                   Edit
@@ -745,7 +746,7 @@ const filteredPosts = useMemo(() => {
             </div>
           </div>
 
-          <div className="h-px bg-slate-800 mx-6" />
+          <div className="h-px bg-slate-100 dark:bg-slate-800 mx-6 transition-colors" />
 
           {/* Friend Requests (Only visible on own profile) */}
           {isOwnProfile && friendRequests?.length > 0 && (

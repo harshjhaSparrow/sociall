@@ -2,7 +2,7 @@ import L from "leaflet";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet/dist/leaflet.css";
-import { ChevronRight, Instagram, Loader2, LocateFixed, User, X } from "lucide-react";
+import { ChevronRight, Instagram, Loader2, LocateFixed, User, X, MapPin } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Circle, MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-markercluster";
@@ -12,6 +12,7 @@ import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";
 import { POPULAR_INTERESTS, UserProfile } from "../types";
 import { calculateDistance } from "../util/location";
+import { useTheme } from "../context/ThemeContext";
 /* -------------------- TYPES -------------------- */
 
 type NearbyUser = UserProfile & {
@@ -69,7 +70,7 @@ const LocateMeControl: React.FC<{ coords: { lat: number; lng: number } }> = ({
           duration: 1.5,
         });
       }}
-      className="absolute right-4 bottom-32 z-[1001] bg-slate-900/90 backdrop-blur-md p-3 rounded-full border border-slate-800 shadow-xl hover:bg-slate-800 transition-colors"
+      className="absolute right-4 bottom-32 z-[1001] bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-3 rounded-full border border-slate-200 dark:border-slate-800 shadow-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
     >
       <LocateFixed className="w-6 h-6 text-primary-500" />
     </button>
@@ -81,6 +82,7 @@ const LocateMeControl: React.FC<{ coords: { lat: number; lng: number } }> = ({
 const MapPage: React.FC = () => {
   const { location: myLocation } = useUserLocation();
   const { user: currentUser } = useAuth();
+  const { isDark } = useTheme();
   const [currentUserProfile, setCurrentUserProfile] =
     useState<UserProfile | null>(null);
   const navigate = useNavigate();
@@ -174,12 +176,12 @@ const MapPage: React.FC = () => {
         className: "bg-transparent",
         html: `
           <div class="w-12 h-12 relative group">
-            <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-slate-800"></div>
-            <div class="absolute bottom-1.5 left-0 right-0 top-0 rounded-full bg-slate-800 p-0.5 overflow-hidden border border-slate-700 shadow-md">
+            <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-slate-200 dark:border-t-slate-800"></div>
+            <div class="absolute bottom-1.5 left-0 right-0 top-0 rounded-full bg-white dark:bg-slate-800 p-0.5 overflow-hidden border border-slate-200 dark:border-slate-700 shadow-md">
               ${
                 user.photoURL
                   ? `<img src="${user.photoURL}" class="w-full h-full object-cover rounded-full" />`
-                  : `<div class="w-full h-full bg-slate-900 flex items-center justify-center text-slate-500 font-bold">${user.displayName[0]}</div>`
+                  : `<div class="w-full h-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-slate-500 font-bold">${user.displayName[0]}</div>`
               }
             </div>
           </div>
@@ -207,7 +209,7 @@ const MapPage: React.FC = () => {
     html: `
       <div class="relative w-6 h-6">
         <div class="absolute inset-0 bg-primary-500 rounded-full animate-ping opacity-75"></div>
-        <div class="absolute inset-0 bg-primary-600 rounded-full border-2 border-slate-900 shadow-lg"></div>
+        <div class="absolute inset-0 bg-primary-600 rounded-full border-2 border-white dark:border-slate-900 shadow-lg"></div>
       </div>
     `,
     iconSize: [24, 24],
@@ -218,7 +220,7 @@ const MapPage: React.FC = () => {
 
   if (loading || !myLocation) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-950">
+      <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
         <Loader2 className="w-10 h-10 text-primary-500 animate-spin" />
       </div>
     );
@@ -227,13 +229,7 @@ const MapPage: React.FC = () => {
   /* ---------------- RENDER ---------------- */
 
   return (
-    <div className="h-screen w-full relative bg-slate-950">
-      {/* FILTER PILLS */}
-      {/* <div className="absolute top-4 left-0 right-0 z-[1001] flex justify-center pointer-events-none">
-        <div className="bg-slate-900/90 backdrop-blur-md p-1.5 rounded-full border border-slate-800 shadow-xl flex gap-1 pointer-events-auto">
-        </div>
-      </div> */}
-
+    <div className={`h-screen w-full relative bg-slate-50 dark:bg-slate-950 transition-colors duration-300 ${isDark ? 'dark' : ''}`}>
       <MapContainer
         center={[myLocation.lat, myLocation.lng]}
         zoom={14}
@@ -243,7 +239,10 @@ const MapPage: React.FC = () => {
         className="w-full h-full"
       >
         <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          url={isDark 
+            ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          }
           updateWhenIdle={false}
         />
         <ResizeMap />
@@ -286,9 +285,9 @@ const MapPage: React.FC = () => {
 
       {/* SELECTED USER CARD */}
       {selectedUser && (
-        <div className="absolute bottom-6 left-4 right-4 z-[1002] bg-slate-900 rounded-2xl p-4 border border-slate-800 shadow-2xl">
+        <div className="absolute bottom-6 left-4 right-4 z-[1002] bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-2xl transition-colors duration-300">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-800 border border-slate-700">
+            <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
               {selectedUser.photoURL ? (
                 <img
                  draggable={false}
@@ -296,22 +295,22 @@ const MapPage: React.FC = () => {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <User className="w-8 h-8 m-auto text-slate-500" />
+                <User className="w-8 h-8 m-auto text-slate-400 dark:text-slate-500" />
               )}
             </div>
 
             <div className="flex-1">
-              <h3 className="font-bold text-white text-lg">
+              <h3 className="font-bold text-slate-900 dark:text-white text-lg">
                 {selectedUser.displayName}
               </h3>
-              <p className="text-sm text-primary-400">
+              <p className="text-sm text-primary-600 dark:text-primary-400 font-medium">
                 {selectedUser.distDisplay} away
               </p>
             </div>
 
             <button
               onClick={() => navigate(`/app/profile/${selectedUser.uid}`)}
-              className="h-12 w-12 bg-primary-600 rounded-xl flex items-center justify-center"
+              className="h-12 w-12 bg-primary-500 dark:bg-primary-600 rounded-xl flex items-center justify-center shadow-lg active:scale-95 transition-transform"
             >
               <ChevronRight className="w-6 h-6 text-white" />
             </button>
@@ -323,14 +322,14 @@ const MapPage: React.FC = () => {
       {!isListOpen && !selectedUser && nearbyUsers?.length > 0 && (
         <button
           onClick={() => setIsListOpen(true)}
-          className="absolute bottom-[20%] left-4 z-[1001] bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-xl p-2 pr-4 flex items-center gap-3 border border-slate-800"
+          className="absolute bottom-[20%] left-4 z-[1001] bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-xl p-2 pr-4 flex items-center gap-3 border border-slate-200 dark:border-slate-800"
         >
           {/* Stacked Avatars */}
           <div className="flex -space-x-3 items-center">
             {nearbyUsers.slice(0, 3).map((u, i) => (
               <div
                 key={u.uid}
-                className={`w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-800 overflow-hidden relative z-[${3 - i}]`}
+                className={`w-10 h-10 rounded-full border-2 border-slate-50 dark:border-slate-900 bg-slate-50 dark:bg-slate-800 overflow-hidden relative z-[${3 - i}]`}
               >
                 {u.photoURL ? (
                   <img
@@ -340,25 +339,25 @@ const MapPage: React.FC = () => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-xs font-bold text-slate-500">
+                  <div className="w-full h-full flex items-center justify-center text-xs font-bold text-slate-400 dark:text-slate-500">
                     {u.displayName[0]}
                   </div>
                 )}
               </div>
             ))}
             {nearbyUsers.length > 3 && (
-              <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-400 relative z-0">
+              <div className="w-10 h-10 rounded-full border-2 border-slate-50 dark:border-slate-900 bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-500 dark:text-slate-400 relative z-0">
                 +{nearbyUsers.length - 3}
               </div>
             )}
           </div>
 
           <div className="text-left">
-            <p className="font-bold text-white text-sm">
+            <p className="font-bold text-slate-900 dark:text-white text-sm">
               {nearbyUsers.length} Nearby
             </p>
-            <p className="text-[10px] text-primary-400 font-medium">
-              Tap to view list
+            <p className="text-[10px] text-primary-600 dark:text-primary-400 font-bold uppercase tracking-wider">
+              view list
             </p>
           </div>
         </button>
@@ -368,29 +367,32 @@ const MapPage: React.FC = () => {
       {isListOpen && (
         <div className="fixed inset-0 z-[2050] flex flex-col justify-end">
           <div
-            className="absolute inset-0 bg-black/60"
+            className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm"
             onClick={() => setIsListOpen(false)}
           />
 
-          <div className="bg-slate-900 rounded-t-3xl max-h-[85vh] flex flex-col border-t border-slate-800 relative z-10">
-            <div className="px-6 py-4 border-b border-slate-800 flex justify-between">
-              <h2 className="text-lg font-bold text-white">People Nearby</h2>
+          <div className="bg-white dark:bg-slate-900 rounded-t-3xl max-h-[85vh] flex flex-col border-t border-slate-100 dark:border-slate-800 relative z-10 shadow-2xl transition-colors duration-300">
+            <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">People Nearby</h2>
+                <p className="text-xs text-slate-500 font-medium uppercase tracking-widest mt-0.5">{nearbyUsers.length} connections found</p>
+              </div>
               <button
                 onClick={() => setIsListOpen(false)}
-                className="text-slate-400"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
               >
-                <X />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="overflow-y-auto p-4 space-y-3 bg-slate-950">
+            <div className="overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-950/50">
               {nearbyUsers.map((u) => (
                 <div
                   key={u.uid}
-                  className="bg-slate-900 p-4 rounded-2xl border border-slate-800"
+                  className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:border-primary-500/30"
                 >
                   <div className="flex gap-4">
-                    <div className="w-14 h-14 rounded-full overflow-hidden bg-slate-800">
+                    <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-inner">
                       {u.photoURL ? (
                         <img
                          draggable={false}
@@ -398,7 +400,7 @@ const MapPage: React.FC = () => {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-slate-500 font-bold">
+                        <div className="w-full h-full flex items-center justify-center text-slate-300 dark:text-slate-600 font-bold text-xl uppercase">
                           {u.displayName[0]}
                         </div>
                       )}
@@ -409,18 +411,18 @@ const MapPage: React.FC = () => {
                       <div className="flex justify-between items-start">
                         <div>
                           <h3
-                            className="font-bold text-white text-lg leading-tight cursor-pointer hover:text-primary-400 transition-colors"
+                            className="font-bold text-slate-900 dark:text-white text-lg leading-tight cursor-pointer hover:text-primary-500 transition-colors"
                             onClick={() => navigate(`/app/profile/${u.uid}`)}
                           >
                             {u.displayName}
                           </h3>
                           {u.lastLocation?.name ? (
-                            <p className="text-xs text-slate-400 mt-0.5">
-                              {u.lastLocation.name}
+                            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider flex items-center gap-1">
+                              <MapPin className="w-3 h-3" /> {u.lastLocation.name} · {u.distDisplay}
                             </p>
                           ) : (
-                            <p className="text-xs text-slate-500 mt-0.5 italic">
-                              {u.distDisplay}
+                            <p className="text-xs font-bold text-primary-500 dark:text-primary-400 mt-1 uppercase tracking-tight">
+                              {u.distDisplay} away
                             </p>
                           )}
                         </div>
@@ -429,41 +431,41 @@ const MapPage: React.FC = () => {
                             href={`https://instagram.com/${u.instagramHandle}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-pink-400 hover:text-pink-300 p-1.5 bg-pink-500/10 rounded-lg transition-colors"
+                            className="text-pink-500 hover:text-pink-400 p-2 bg-pink-50 dark:bg-pink-500/10 rounded-xl transition-colors shadow-sm"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <Instagram className="w-4 h-4" />
+                            <Instagram className="w-5 h-5" />
                           </a>
                         )}
                       </div>
 
                       {/* Bio */}
-                      <p className="text-sm text-slate-400 mt-2 line-clamp-2 leading-relaxed">
-                        {u.bio || "No bio available."}
+                      <p className="text-sm text-slate-600 dark:text-slate-400 mt-2.5 line-clamp-2 leading-relaxed italic">
+                        {u.bio || "Searching for connections..."}
                       </p>
 
                       {/* Interests Chips */}
                       {u.interests && u.interests.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mt-3">
-                          {u.interests.slice(0, 3).map((iid) => {
+                        <div className="flex flex-wrap gap-1.5 mt-3.5">
+                          {u.interests.slice(0, 4).map((iid) => {
                             const tag = POPULAR_INTERESTS.find(
                               (p) => p.id === iid,
                             );
                             return (
                               <span
                                 key={iid}
-                                className="inline-flex items-center px-2 py-1 rounded-md bg-slate-800 border border-slate-700 text-[10px] font-medium text-slate-300"
+                                className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-[10px] font-bold text-slate-600 dark:text-slate-300 transition-colors hover:bg-slate-100"
                               >
                                 {tag ? (
-                                  <span className="mr-1">{tag.emoji}</span>
+                                  <span className="mr-1.5">{tag.emoji}</span>
                                 ) : null}
                                 {tag ? tag.label : iid}
                               </span>
                             );
                           })}
-                          {u.interests.length > 3 && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-md bg-slate-800 border border-slate-700 text-[10px] font-medium text-slate-500">
-                              +{u.interests.length - 3}
+                          {u.interests.length > 4 && (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-[10px] font-bold text-slate-400 dark:text-slate-500">
+                              +{u.interests.length - 4}
                             </span>
                           )}
                         </div>
@@ -474,9 +476,9 @@ const MapPage: React.FC = () => {
                   {/* Action Button */}
                   <button
                     onClick={() => navigate(`/app/profile/${u.uid}`)}
-                    className="w-full py-2.5 bg-slate-800 text-white rounded-xl text-xs font-bold shadow-md hover:bg-slate-700 transition-colors flex items-center justify-center gap-1 mt-1 active:scale-[0.98] border border-slate-700"
+                    className="w-full py-3 bg-slate-900 dark:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-md hover:bg-slate-800 dark:hover:bg-slate-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-4 border border-slate-800 dark:border-slate-700"
                   >
-                    View Full Profile <ChevronRight className="w-3 h-3" />
+                    View Full Profile <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
               ))}

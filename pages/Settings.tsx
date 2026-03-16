@@ -9,16 +9,21 @@ import {
   Radar,
   Trash2,
   UserX,
-  Code
+  Code,
+  Moon,
+  Sun,
+  Monitor
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 import { usePushNotifications } from "../hooks/usePushNotifications";
 import { api } from "../services/api";
 
 const Settings: React.FC = () => {
   const { user, logout } = useAuth();
+  const { theme: currentTheme, setTheme, isDark } = useTheme();
   const navigate = useNavigate();
   const { isSupported, isSubscribed, subscribe } = usePushNotifications();
   const [pushEnabled, setPushEnabled] = useState(false);
@@ -145,24 +150,24 @@ const Settings: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-slate-950">
+      <div className="flex items-center justify-center h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
         <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col">
+    <div className={`min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col transition-colors duration-300 ${isDark ? 'dark' : ''}`}>
       {/* Header */}
-      <div className="bg-slate-900/80 backdrop-blur-md px-4 py-3 shadow-sm z-30 sticky top-0 border-b border-slate-800 flex items-center justify-between">
+      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-4 py-3 shadow-sm z-30 sticky top-0 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
         <button
           onClick={() => navigate(-1)}
-          className="p-2 -ml-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-800 transition-colors"
+          className="p-2 -ml-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
         >
           <ChevronLeft className="w-6 h-6" />
         </button>
 
-        <span className="font-bold text-white text-lg">
+        <span className="font-bold text-slate-900 dark:text-white text-lg">
           Settings
         </span>
 
@@ -171,22 +176,64 @@ const Settings: React.FC = () => {
 
       <div className="flex-1 max-w-md mx-auto w-full p-4 space-y-6">
 
+        {/* APPEARANCE */}
+        <section>
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-2">
+            Appearance
+          </h3>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-2 flex gap-1">
+            <button
+              onClick={() => setTheme('light')}
+              className={`flex-1 flex flex-col items-center gap-2 py-3 rounded-xl transition-all ${
+                currentTheme === 'light' 
+                  ? "bg-slate-100 dark:bg-slate-800 text-primary-500 shadow-sm border border-slate-200 dark:border-slate-700" 
+                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+              }`}
+            >
+              <Sun className="w-5 h-5" />
+              <span className="text-[10px] font-bold uppercase tracking-tight">Light</span>
+            </button>
+            <button
+              onClick={() => setTheme('dark')}
+              className={`flex-1 flex flex-col items-center gap-2 py-3 rounded-xl transition-all ${
+                currentTheme === 'dark' 
+                  ? "bg-slate-100 dark:bg-slate-800 text-primary-500 shadow-sm border border-slate-200 dark:border-slate-700" 
+                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+              }`}
+            >
+              <Moon className="w-5 h-5" />
+              <span className="text-[10px] font-bold uppercase tracking-tight">Dark</span>
+            </button>
+            <button
+              onClick={() => setTheme('system')}
+              className={`flex-1 flex flex-col items-center gap-2 py-3 rounded-xl transition-all ${
+                currentTheme === 'system' 
+                  ? "bg-slate-100 dark:bg-slate-800 text-primary-500 shadow-sm border border-slate-200 dark:border-slate-700" 
+                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+              }`}
+            >
+              <Monitor className="w-5 h-5" />
+              <span className="text-[10px] font-bold uppercase tracking-tight">System</span>
+            </button>
+          </div>
+        </section>
+
         {/* NOTIFICATIONS */}
         <section>
           <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-2">
             Notifications
           </h3>
 
-          <div className="bg-slate-900 rounded-2xl border border-slate-800 p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
             <div className="flex items-center gap-4">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${pushEnabled ? "bg-primary-500 text-white" : "bg-slate-800 text-slate-400"
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${pushEnabled ? "bg-primary-500 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
                 }`}>
                 {pushLoading
                   ? <Loader2 className="w-5 h-5 animate-spin" />
                   : <Bell className="w-5 h-5" />}
               </div>
               <div className="flex-1">
-                <h4 className="text-white font-bold text-base">Push Notifications</h4>
+                <h4 className="text-slate-900 dark:text-white font-bold text-base">Push Notifications</h4>
                 <p className="text-xs text-slate-400 mt-0.5">
                   {!isSupported
                     ? "Not supported on this device"
@@ -221,20 +268,20 @@ const Settings: React.FC = () => {
             Discovery Settings
           </h3>
 
-          <div className="bg-slate-900 rounded-2xl border border-slate-800 p-4 mb-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 mb-4">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
                 <Radar className="w-6 h-6" />
               </div>
               <div className="flex-1">
-                <h4 className="text-white font-bold text-base">
+                <h4 className="text-slate-900 dark:text-white font-bold text-base">
                   Discovery Radius
                 </h4>
                 <p className="text-xs text-slate-400 mt-0.5">
                   Show users & posts within {discoveryRadius}km
                 </p>
               </div>
-              <span className="font-bold text-white bg-slate-800 px-3 py-1 rounded-lg border border-slate-700">
+              <span className="font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700">
                 {discoveryRadius}km
               </span>
             </div>
@@ -247,17 +294,17 @@ const Settings: React.FC = () => {
               onChange={handleRadiusChange}
               onMouseUp={saveRadius}
               onTouchEnd={saveRadius}
-              className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+              className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
             />
           </div>
 
-          <div className="bg-slate-900 rounded-2xl border border-slate-800 p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
             <div className="flex items-center gap-4">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${!isDiscoverable ? "bg-orange-500 text-white" : "bg-slate-800 text-slate-400"}`}>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${!isDiscoverable ? "bg-orange-500 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-400"}`}>
                 <PauseCircle className="w-6 h-6" />
               </div>
               <div className="flex-1">
-                <h4 className="text-white font-bold text-base">
+                <h4 className="text-slate-900 dark:text-white font-bold text-base">
                   Pause Discoverability
                 </h4>
                 <p className="text-xs text-slate-400">
@@ -283,25 +330,25 @@ const Settings: React.FC = () => {
             Account
           </h3>
 
-          <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
             <button
               onClick={() => navigate("/app/edit-profile")}
-              className="w-full p-4 text-slate-300 flex justify-between hover:bg-slate-800/50"
+              className="w-full p-4 text-slate-700 dark:text-slate-300 flex justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50"
             >
               Edit Profile
-              <ArrowRight className="w-4 h-4 text-slate-500" />
+              <ArrowRight className="w-4 h-4 text-slate-400 dark:text-slate-500" />
             </button>
 
             <button
               onClick={handleLogout}
-              className="w-full p-4 text-red-400 flex justify-between hover:bg-slate-800/50 border-t border-slate-800"
+              className="w-full p-4 text-red-500 dark:text-red-400 flex justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800"
             >
               Sign Out
             </button>
 
             <button
               onClick={() => setConfirmDeleteOpen(true)}
-              className="w-full p-4 text-red-500 font-bold border-t border-slate-800 hover:bg-red-500/10 flex items-center gap-2"
+              className="w-full p-4 text-red-600 dark:text-red-500 font-bold border-t border-slate-100 dark:border-slate-800 hover:bg-red-500/10 flex items-center gap-2"
             >
               <Trash2 className="w-4 h-4" />
               Delete Account
@@ -315,17 +362,17 @@ const Settings: React.FC = () => {
             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-2">
               Blocked Users
             </h3>
-            <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden divide-y divide-slate-800">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
               {blockedUsers.map(u => (
                 <div key={u.uid} className="flex items-center gap-3 p-4">
-                  <div className="w-10 h-10 rounded-full bg-slate-800 overflow-hidden shrink-0 border border-slate-700 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 flex items-center justify-center">
                     {u.photoURL ? (
                       <img src={u.photoURL} className="w-full h-full object-cover" alt={u.displayName} />
                     ) : (
-                      <UserX className="w-5 h-5 text-slate-500" />
+                      <UserX className="w-5 h-5 text-slate-400 dark:text-slate-500" />
                     )}
                   </div>
-                  <span className="flex-1 text-white font-semibold text-sm truncate">{u.displayName}</span>
+                  <span className="flex-1 text-slate-900 dark:text-white font-semibold text-sm truncate">{u.displayName}</span>
                   <button
                     onClick={() => handleUnblock(u.uid)}
                     disabled={unblockingUid === u.uid}
@@ -346,16 +393,16 @@ const Settings: React.FC = () => {
           <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-2">
             About
           </h3>
-          <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
             <button
               onClick={() => navigate("/app/developer")}
-              className="w-full p-4 text-slate-300 flex justify-between items-center hover:bg-slate-800/50"
+              className="w-full p-4 text-slate-700 dark:text-slate-300 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-800/50"
             >
               <div className="flex items-center gap-3">
                 <Code className="w-5 h-5 text-primary-500" />
                 <span>Developer Profile</span>
               </div>
-              <ArrowRight className="w-4 h-4 text-slate-500" />
+              <ArrowRight className="w-4 h-4 text-slate-400 dark:text-slate-500" />
             </button>
           </div>
         </section>

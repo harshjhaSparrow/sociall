@@ -20,6 +20,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import { calculateDistance } from "../util/location";
 import { useUserLocation } from "./LocationGuard";
+import { useTheme } from "../context/ThemeContext";
 
 const PostItem: React.FC<any> = ({
   post,
@@ -31,6 +32,7 @@ const PostItem: React.FC<any> = ({
 }) => {
   const navigate = useNavigate();
   const { location: myLocation } = useUserLocation();
+  const { isDark } = useTheme();
   const [showAllComments, setShowAllComments] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
@@ -91,7 +93,7 @@ const PostItem: React.FC<any> = ({
 
   return (
     <div
-      className={`bg-slate-900 rounded-3xl shadow-sm border overflow-hidden relative ${isMeetup ? "border-primary-900/50" : "border-slate-800"}`}
+      className={`bg-white dark:bg-slate-900 rounded-3xl shadow-sm border overflow-hidden relative transition-colors duration-300 ${isMeetup ? "border-primary-900/50" : "border-slate-200 dark:border-slate-800"}`}
     >
       {/* Meetup Badge */}
       {isMeetup && (
@@ -105,7 +107,7 @@ const PostItem: React.FC<any> = ({
           to={`/profile/${post?.uid}`}
           className="flex items-center gap-3 group"
         >
-          <div className="w-10 h-10 rounded-full bg-slate-800 overflow-hidden ring-2 ring-transparent group-hover:ring-primary-500/50 transition-all">
+          <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden ring-2 ring-transparent group-hover:ring-primary-500/50 transition-all">
             {post?.authorPhoto ? (
               <img
                 src={post?.authorPhoto}
@@ -113,16 +115,16 @@ const PostItem: React.FC<any> = ({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full bg-slate-800 flex items-center justify-center text-primary-500 font-bold">
+              <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-primary-500 font-bold">
                 {post?.authorName?.[0] || "U"}
               </div>
             )}
           </div>
           <div>
-            <h3 className="font-bold text-sm text-slate-200 group-hover:text-primary-400 transition-colors">
+            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-200 group-hover:text-primary-400 transition-colors">
               {post?.authorName}
             </h3>
-            <div className="flex items-center gap-2 text-xs text-slate-500">
+            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-500">
               <span>{new Date(post.createdAt).toLocaleDateString()}</span>
               {post?.location && (
                 <>
@@ -186,11 +188,11 @@ const PostItem: React.FC<any> = ({
             </div>
           )}
 
-          <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700/50 relative overflow-hidden">
+          <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-200 dark:border-slate-700/50 relative overflow-hidden">
             {/* Decorative background circle */}
             <div className="absolute -right-10 -top-10 w-32 h-32 bg-primary-500/10 rounded-full blur-2xl"></div>
 
-            <h2 className="text-xl font-bold text-white mb-1">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">
               {post?.meetupDetails?.title}
             </h2>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-700/50 text-primary-400 text-xs font-bold mb-4 border border-slate-700">
@@ -202,7 +204,7 @@ const PostItem: React.FC<any> = ({
                 <div className="p-1.5 bg-slate-700 rounded-lg text-slate-400">
                   <Calendar className="w-4 h-4" />
                 </div>
-                <span className="font-medium">
+                <span className="font-medium text-slate-700 dark:text-slate-300">
                   {new Date(post.meetupDetails!.date).toLocaleDateString(
                     undefined,
                     { month: "short", day: "numeric" },
@@ -222,7 +224,7 @@ const PostItem: React.FC<any> = ({
                 <div className="p-1.5 bg-slate-700 rounded-lg text-slate-400">
                   <DollarSign className="w-4 h-4" />
                 </div>
-                <span className="font-medium truncate">
+                <span className="font-medium truncate text-slate-700 dark:text-slate-300">
                   {post?.meetupDetails?.feeType} {post?.meetupDetails?.feeAmount ? `(${post.meetupDetails.feeAmount})` : ''}
                 </span>
               </div>
@@ -238,7 +240,7 @@ const PostItem: React.FC<any> = ({
               )}
             </div>
 
-            <p className="text-slate-400 text-sm leading-relaxed mb-4 border-t border-slate-700/50 pt-3">
+            <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-4 border-t border-slate-200 dark:border-slate-700/50 pt-3">
               {post?.content}
             </p>
 
@@ -314,7 +316,7 @@ const PostItem: React.FC<any> = ({
             </div>
           )}
           <div className="p-4">
-            <p className="text-slate-300 text-sm leading-relaxed mb-3">
+            <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed mb-3">
               {post?.content}
             </p>
           </div>
@@ -324,7 +326,7 @@ const PostItem: React.FC<any> = ({
       {/* Common Footer Actions */}
       <div className="px-4 pb-4">
         <div
-          className={`flex items-center gap-4 pt-2 ${isMeetup ? "" : "border-t border-slate-800"}`}
+          className={`flex items-center gap-4 pt-2 ${isMeetup ? "" : "border-t border-slate-100 dark:border-slate-800"}`}
         >
           <button
             onClick={() => onLike(post)}
@@ -351,7 +353,7 @@ const PostItem: React.FC<any> = ({
           {!showAllComments && commentCount > 1 && (
             <button
               onClick={() => setShowAllComments(true)}
-              className="text-slate-500 text-xs font-semibold hover:text-slate-300 ml-1"
+              className="text-slate-400 dark:text-slate-500 text-xs font-semibold hover:text-primary-500 ml-1 transition-colors"
             >
               View all {commentCount} comments
             </button>
@@ -361,24 +363,24 @@ const PostItem: React.FC<any> = ({
             <div className="space-y-3">
               {commentsToShow.map((comment: any, idx: any) => (
                 <div key={idx} className="flex gap-2.5 animate-fade-in">
-                  <Link to={`/app/profile/${comment?.uid}`} className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden shrink-0 mt-0.5 border border-slate-700 block cursor-pointer hover:opacity-80 transition-opacity">
-                    {comment?.authorPhoto ? (
-                      <img
-                        src={comment?.authorPhoto}
-                        alt={comment?.authorName}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-500">
-                        {comment?.authorName?.[0]}
-                      </div>
-                    )}
-                  </Link>
-                  <div className="bg-slate-800/80 px-4 py-2.5 rounded-2xl text-sm border border-slate-800 flex-1">
-                    <Link to={`/app/profile/${comment?.uid}`} className="font-bold text-slate-200 text-xs mr-2 block mb-0.5 hover:text-primary-400 transition-colors inline-block">
+                    <Link to={`/app/profile/${comment?.uid}`} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0 mt-0.5 border border-slate-200 dark:border-slate-700 block cursor-pointer hover:opacity-80 transition-opacity">
+                      {comment?.authorPhoto ? (
+                        <img
+                          src={comment?.authorPhoto}
+                          alt={comment?.authorName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-400 dark:text-slate-500">
+                          {comment?.authorName?.[0]}
+                        </div>
+                      )}
+                    </Link>
+                  <div className="bg-slate-50 dark:bg-slate-800/80 px-4 py-2.5 rounded-2xl text-sm border border-slate-200 dark:border-slate-800 flex-1">
+                    <Link to={`/app/profile/${comment?.uid}`} className="font-bold text-slate-900 dark:text-slate-200 text-xs mr-2 block mb-0.5 hover:text-primary-500 transition-colors inline-block">
                       {comment?.authorName}
                     </Link>
-                    <span className="text-slate-400 text-xs leading-relaxed">
+                    <span className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
                       {comment?.text}
                     </span>
                   </div>
@@ -392,7 +394,7 @@ const PostItem: React.FC<any> = ({
               value={commentText}
               onChange={(e) => setCommentText(e?.target?.value)}
               placeholder={isMeetup ? "Ask a question..." : "Add a comment..."}
-              className="flex-1 bg-transparent border-b border-slate-800 py-2 text-sm text-white focus:border-primary-500 outline-none placeholder-slate-600 transition-colors"
+              className="flex-1 bg-transparent border-b border-slate-200 dark:border-slate-800 py-2 text-sm text-slate-900 dark:text-white focus:border-primary-500 outline-none placeholder-slate-400 dark:placeholder-slate-600 transition-colors"
               onKeyDown={(e) => {
                 if (e?.key === "Enter" && !e?.shiftKey) {
                   e.preventDefault();

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { api } from './services/api';
 import AuthPage from './pages/Auth';
 import Onboarding from './pages/Onboarding';
@@ -65,7 +66,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   if (status === 'loading' || (status === 'authenticated' && !profileChecked)) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-slate-950">
+      <div className="h-screen w-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
         <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
       </div>
     );
@@ -90,10 +91,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 const AppRoutes = () => {
   const { status } = useAuth();
+  const { isDark } = useTheme();
 
   return (
     <NotificationProvider>
-      <div className="antialiased text-slate-900">
+      <div className={`antialiased ${isDark ? 'dark' : ''} bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 min-h-screen`}>
         <Routes>
           {/* Public landing — always root */}
           <Route path="/" element={<DesktopLanding />} />
@@ -180,9 +182,11 @@ const AppRoutes = () => {
 const App: React.FC = () => {
   return (
     <AuthProvider>
-      <Router>
-        <AppRoutes />
-      </Router>
+      <ThemeProvider>
+        <Router>
+          <AppRoutes />
+        </Router>
+      </ThemeProvider>
     </AuthProvider>
   );
 };

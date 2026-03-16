@@ -6,6 +6,7 @@ import { useUserLocation } from '../components/LocationGuard';
 import { calculateDistance } from '../util/location';
 import { POPULAR_INTERESTS, UserProfile } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 /* ──────────────────────────────────────────────────────────────────────────
    Swipeable card — pure pointer-events, no library required
@@ -19,6 +20,7 @@ interface SwipeableCardProps {
 }
 
 const SwipeableCard: React.FC<SwipeableCardProps> = ({ profile, distText, onSwipe, onNavigate, isTop }) => {
+    const { isDark } = useTheme();
     const cardRef = useRef<HTMLDivElement>(null);
     const startX = useRef(0);
     const currentX = useRef(0);
@@ -79,7 +81,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profile, distText, onSwip
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
         >
-            <div className="w-full h-full bg-slate-900 rounded-[2rem] border border-slate-800 shadow-2xl overflow-hidden flex flex-col" style={{ backgroundColor: swipeColor !== 'transparent' ? undefined : undefined }}>
+            <div className={`w-full h-full bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col transition-colors duration-300`}>
                 {/* Swipe Hint Overlays */}
                 {transform.x > 40 && (
                     <div className="absolute top-6 left-6 z-20 border-4 border-green-500 text-green-500 font-black text-2xl px-4 py-2 rounded-xl rotate-[-20deg]">LIKE 💚</div>
@@ -89,50 +91,57 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profile, distText, onSwip
                 )}
 
                 {/* Photo */}
-                <div className="h-3/5 bg-slate-800 relative" onClick={onNavigate}>
+                <div className="h-3/5 bg-slate-100 dark:bg-slate-800 relative group" onClick={onNavigate}>
                     {profile.photoURL ? (
-                        <img src={profile.photoURL} alt={profile.displayName} draggable={false} className="w-full h-full object-cover pointer-events-none" />
+                        <img src={profile.photoURL} alt={profile.displayName} draggable={false} className="w-full h-full object-cover pointer-events-none transition-transform duration-500 group-hover:scale-110" />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center pointer-events-none">
-                            <UserIcon className="w-20 h-20 text-slate-600" />
+                            <UserIcon className="w-20 h-20 text-slate-300 dark:text-slate-600" />
                         </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-80 pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-slate-900 via-transparent to-transparent opacity-80 pointer-events-none" />
                 </div>
 
                 {/* Info */}
                 <div className="p-6 flex-1 flex flex-col justify-center">
-                    <h2 className="text-2xl font-bold text-white mb-2">{profile.displayName}</h2>
-                    <div className="flex items-center gap-3 mb-3 flex-wrap">
+                    <div className="flex items-baseline gap-2 mb-1">
+                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{profile.displayName}</h2>
+                        {profile.dob && (
+                            <span className="text-xl font-medium text-slate-500 dark:text-slate-400">
+                                {Math.floor((new Date().getTime() - new Date(profile.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000))}
+                            </span>
+                        )}
+                    </div>
+                    
+                    <div className="flex items-center gap-2 mb-3 flex-wrap">
                         {profile.jobRole && (
-                            <div className="flex items-center gap-1.5 bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700">
-                                <Briefcase className="w-4 h-4 text-slate-400" />
-                                <span className="text-sm font-medium text-slate-200">{profile.jobRole}</span>
+                            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700">
+                                <Briefcase className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{profile.jobRole}</span>
                             </div>
                         )}
                         <div className="flex items-center gap-1.5 bg-primary-500/10 px-2.5 py-1 rounded-lg border border-primary-500/20">
-                            <MapPin className="w-4 h-4 text-primary-400" />
-                            <span className="text-sm font-bold text-primary-300">{distText}</span>
+                            <MapPin className="w-3.5 h-3.5 text-primary-500 dark:text-primary-400" />
+                            <span className="text-xs font-bold text-primary-600 dark:text-primary-300">{distText}</span>
                         </div>
                     </div>
+
                     {profile.bio && (
-                        <p className="text-sm text-slate-400 line-clamp-2 mb-3 leading-relaxed">{profile.bio}</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mb-4 leading-relaxed italic">
+                            "{profile.bio}"
+                        </p>
                     )}
+
                     {profile.interests && profile.interests.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-auto">
-                            {profile.interests.slice(0, 3).map(id => {
+                        <div className="flex flex-wrap gap-1.5 mt-auto">
+                            {profile.interests.slice(0, 4).map(id => {
                                 const tag = POPULAR_INTERESTS.find(i => i.id === id);
                                 return (
-                                    <span key={id} className="text-[11px] font-bold text-slate-300 bg-slate-800 px-2.5 py-1.5 rounded-lg border border-slate-700">
+                                    <span key={id} className="text-[10px] font-bold text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
                                         {tag ? `${tag.emoji} ${tag.label}` : id}
                                     </span>
                                 );
                             })}
-                            {profile.interests.length > 3 && (
-                                <span className="text-[11px] font-bold text-slate-500 bg-slate-800 px-2.5 py-1.5 rounded-lg border border-slate-700">
-                                    +{profile.interests.length - 3}
-                                </span>
-                            )}
                         </div>
                     )}
                 </div>
@@ -146,6 +155,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profile, distText, onSwip
    ────────────────────────────────────────────────────────────────────────── */
 export default function Discover() {
     const { user } = useAuth();
+    const { isDark } = useTheme();
     const navigate = useNavigate();
     const { location: myLocation } = useUserLocation();
 
@@ -249,9 +259,9 @@ export default function Discover() {
     if (visibleProfiles.length === 0) {
         return (
             <div className="flex-1 flex flex-col justify-center items-center min-h-[60vh] text-center px-6">
-                <SearchX className="w-16 h-16 text-slate-700 mb-4" />
-                <h2 className="text-xl font-bold text-slate-200 mb-2">No one nearby.</h2>
-                <p className="text-slate-400 text-sm">Try expanding your discovery radius in Settings.</p>
+                <SearchX className="w-16 h-16 text-slate-300 dark:text-slate-700 mb-4" />
+                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-200 mb-2">No one nearby.</h2>
+                <p className="text-slate-500 dark:text-slate-400 text-sm">Try expanding your discovery radius in Settings.</p>
             </div>
         );
     }
@@ -259,8 +269,8 @@ export default function Discover() {
     return (
         <div className="flex flex-col pb-24">
             <div className="px-6 pt-6 mb-4">
-                <h1 className="text-3xl font-bold text-white mb-0.5 tracking-tight">Discover</h1>
-                <p className="text-slate-400 text-xs font-medium">Swipe Right to Add Friend · Left to Pass</p>
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-0.5 tracking-tight">Discover</h1>
+                <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">Swipe Right to Add Friend · Left to Pass</p>
             </div>
 
             {/* Card Stack */}
@@ -301,13 +311,13 @@ export default function Discover() {
             <div className="flex justify-center gap-8 mt-4 pt-2">
                 <button
                     onClick={() => handleSwipe(topIndex, 'left')}
-                    className="w-16 h-16 rounded-full bg-slate-900 border-2 border-red-500/50 flex items-center justify-center text-red-400 hover:bg-red-500/10 active:scale-95 transition-all shadow-xl"
+                    className="w-16 h-16 rounded-full bg-white dark:bg-slate-900 border-2 border-red-500/30 dark:border-red-500/50 flex items-center justify-center text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 active:scale-95 transition-all shadow-xl"
                 >
                     <X className="w-7 h-7" />
                 </button>
                 <button
                     onClick={() => handleSwipe(topIndex, 'right')}
-                    className="w-16 h-16 rounded-full bg-slate-900 border-2 border-green-500/50 flex items-center justify-center text-green-400 hover:bg-green-500/10 active:scale-95 transition-all shadow-xl"
+                    className="w-16 h-16 rounded-full bg-white dark:bg-slate-900 border-2 border-green-500/30 dark:border-green-500/50 flex items-center justify-center text-green-500 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/10 active:scale-95 transition-all shadow-xl"
                 >
                     <Heart className="w-7 h-7" />
                 </button>
