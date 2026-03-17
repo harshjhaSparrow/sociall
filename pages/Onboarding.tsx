@@ -10,7 +10,7 @@ import { compressImage } from '../util/ImageCompression';
 
 
 
-const STEPS = ['Legal', 'Basic Info', 'Socials', 'Interests'];
+const STEPS = ['Legal', 'Basic Info', "That's Me", 'Socials', 'Interests'];
 
 const Onboarding: React.FC = () => {
   const { user } = useAuth();
@@ -32,6 +32,7 @@ const Onboarding: React.FC = () => {
   const [instagram, setInstagram] = useState('');
   const [bio, setBio] = useState('');
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [thatsMePhotos, setThatsMePhotos] = useState<string[]>([]);
 
   useEffect(() => {
     if (user?.email && !displayName) {
@@ -43,18 +44,38 @@ const Onboarding: React.FC = () => {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Increased limit for input because we compress it anyway
       if (file.size > 10 * 1024 * 1024) {
         setError("Image too large (Max 10MB).");
         return;
       }
-
       try {
         setLoading(true);
         setError(null);
-        // Optimize for profile picture: 800px max width, 0.8 quality
         const compressed = await compressImage(file, 800, 0.8);
         setPhotoURL(compressed);
+      } catch (err: any) {
+        setError(err.message || "Failed to process image.");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleThatsMeUpload = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        setError("Image too large (Max 10MB).");
+        return;
+      }
+      try {
+        setLoading(true);
+        setError(null);
+        // Optimize for profile display: 1080px height max (4:5 aspect ratio expected)
+        const compressed = await compressImage(file, 1080, 0.7);
+        const newPhotos = [...thatsMePhotos];
+        newPhotos[index] = compressed;
+        setThatsMePhotos(newPhotos);
       } catch (err: any) {
         setError(err.message || "Failed to process image.");
       } finally {
@@ -101,6 +122,10 @@ const Onboarding: React.FC = () => {
 
     // Step 1: Basic Info
     if (currentStep === 1) {
+      if (!photoURL) {
+        setError("Profile photo is required.");
+        return;
+      }
       if (!displayName.trim()) {
         setError("Please enter your name.");
         return;
@@ -116,8 +141,17 @@ const Onboarding: React.FC = () => {
       }
     }
 
-    // Step 2: Socials
-    if (currentStep === 2 && instagram.trim()) {
+    // Step 2: That's Me
+    if (currentStep === 2) {
+      const photoCount = thatsMePhotos.filter(p => !!p).length;
+      if (photoCount < 3) {
+        setError("Please upload all 3 pictures for 'That's me'.");
+        return;
+      }
+    }
+
+    // Step 3: Socials
+    if (currentStep === 3 && instagram.trim()) {
       const instagramRegex = /^[a-zA-Z0-9._]+$/;
       if (!instagramRegex.test(instagram)) {
         setError("Invalid Instagram handle. Use only letters, numbers, periods, and underscores.");
@@ -148,6 +182,7 @@ const Onboarding: React.FC = () => {
         instagramHandle: instagram,
         bio: bio.trim(),
         interests: selectedInterests,
+        thatsMePhotos: thatsMePhotos,
         createdAt: Date.now(),
       };
 
@@ -296,7 +331,39 @@ const Onboarding: React.FC = () => {
           </div>
         );
 
-      case 2: // Socials
+      case 2: // That's Me
+        return (
+          <div className="space-y-8 animate-fade-in">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-bold text-white">That's Me</h3>
+              <p className="text-slate-400 text-base">Upload 3 photos that best represent you</p>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-4">
+              {[0, 1, 2].map((i) => (
+                <label key={i} className="relative aspect-[4/5] bg-slate-900 rounded-2xl border-2 border-slate-800 border-dashed flex flex-col items-center justify-center cursor-pointer hover:bg-slate-800 transition-colors overflow-hidden group">
+                  {thatsMePhotos[i] ? (
+                    <>
+                      <img src={thatsMePhotos[i]} alt={`That's me ${i+1}`} className="w-full h-full object-cover" />
+                      <div className="absolute top-2 right-2 p-1 bg-primary-500 rounded-full">
+                        <CheckCircle className="w-3 h-3 text-white" />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="w-8 h-8 text-slate-600 mb-2 group-hover:text-primary-500 transition-colors" />
+                      <span className="text-xs font-bold text-slate-500">Photo {i + 1}</span>
+                    </>
+                  )}
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleThatsMeUpload(e, i)} />
+                </label>
+              ))}
+            </div>
+            <p className="text-xs text-center text-slate-500 italic mt-4">These photos will be featured on your profile!</p>
+          </div>
+        );
+
+      case 3: // Socials
         return (
           <div className="space-y-8 animate-fade-in pt-4">
             <div className="text-center space-y-4 mb-8">
@@ -319,7 +386,7 @@ const Onboarding: React.FC = () => {
           </div>
         );
 
-      case 3: // Interests
+      case 4: // Interests
         return (
           <div className="space-y-6 animate-fade-in">
             <div className="text-center mb-6">

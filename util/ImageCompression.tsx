@@ -1,28 +1,5 @@
-import "@tensorflow/tfjs";
-import * as nsfwjs from "nsfwjs";
-
-// Cache model instance
-let nsfwModel: Awaited<ReturnType<typeof nsfwjs.load>> | null = null;
-
 /**
- * Load NSFW model (cached)
- */
-const loadNSFWModel = async () => {
-  if (nsfwModel) return nsfwModel;
-
-  try {
-    nsfwModel = await nsfwjs.load(
-      "https://nsfw-model.s3.us-east-2.amazonaws.com/model/"
-    );
-    return nsfwModel;
-  } catch (error) {
-    console.error("Failed to load NSFW model", error);
-    return null;
-  }
-};
-
-/**
- * Compress image + NSFW detect
+ * Simple image compression utility
  */
 export const compressImage = (
   file: File,
@@ -35,45 +12,9 @@ export const compressImage = (
 
     reader.onload = (event) => {
       const img = new Image();
-      img.crossOrigin = "anonymous";
       img.src = event.target?.result as string;
 
-      img.onload = async () => {
-        try {
-          // =====================
-          // NSFW CHECK
-          // =====================
-          const model = await loadNSFWModel();
-
-          if (model) {
-            const predictions = await model.classify(img);
-
-            const explicit = predictions.find(
-              (p: any) =>
-                (p.className === "Porn" && p.probability > 0.55) ||
-                (p.className === "Hentai" && p.probability > 0.55) ||
-                (p.className === "Sexy" && p.probability > 0.85)
-            );
-
-            if (explicit) {
-              reject(
-                new Error(
-                  `Upload failed: Inappropriate content detected (${explicit.className})`
-                )
-              );
-              return;
-            }
-          }
-        } catch (err) {
-          console.warn(
-            "NSFW check failed, allowing upload (fail-open mode)",
-            err
-          );
-        }
-
-        // =====================
-        // IMAGE COMPRESSION
-        // =====================
+      img.onload = () => {
         let width = img.width;
         let height = img.height;
 

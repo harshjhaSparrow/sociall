@@ -39,6 +39,8 @@ const getBaseUrl = () => {
 
 
 const API_BASE = getBaseUrl();
+export const CURRENT_APP_VERSION = "1.0.0";
+
 
 
 // const API_BASE = getBaseUrl();
@@ -552,4 +554,46 @@ export const api = {
       return await response.json();
     },
   },
+  util: {
+    getStories: async (viewerUid: string) => {
+      const response = await fetch(`${API_BASE}/stories?viewerUid=${viewerUid}`);
+      if (!response.ok) return [];
+      return await response.json();
+    },
+    createStory: async (storyData: any) => {
+      const response = await fetch(`${API_BASE}/stories`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(storyData),
+      });
+      if (!response.ok) throw new Error("Failed to create story");
+      return await response.json();
+    },
+    viewStory: async (storyId: string, uid: string) => {
+      const response = await fetch(`${API_BASE}/stories/${storyId}/view`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uid }),
+      });
+      if (!response.ok) throw new Error("Failed to record view");
+      return await response.json();
+    },
+    deleteStory: async (storyId: string, uid: string) => {
+      const response = await fetch(`${API_BASE}/stories/${storyId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uid }),
+      });
+      if (!response.ok) throw new Error("Failed to delete story");
+      return await response.json();
+    },
+  },
+  config: {
+    getVersion: async () => {
+      const response = await fetch(`${API_BASE}/config/version`);
+      if (!response.ok) throw new Error("Failed to fetch version config");
+      return await response.json(); // { minAppVersion: string, updateUrl: string }
+    }
+  }
 };
+

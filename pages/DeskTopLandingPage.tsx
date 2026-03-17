@@ -525,7 +525,7 @@ const DesktopLanding: React.FC = () => {
             {[
               {
                 q: "Is Orbyt free to use?",
-                a: "Yes! Orbyt is completely free to download and use. We may introduce premium features in the future, but the core experience will always be free.",
+                a: "Yes! Orbyt is completely free to download and use. Every feature is unlocked for everyone by default. We may introduce optional enhancements in the future, but the core experience will always remain accessible.",
               },
               {
                 q: "How does the location privacy work?",

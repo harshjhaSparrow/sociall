@@ -1,5 +1,6 @@
 import cors from "cors";
 import dotenv from "dotenv";
+import { Expo } from 'expo-server-sdk';
 import express from "express";
 import http from "http";
 import { MongoClient, ObjectId, ServerApiVersion } from "mongodb";
@@ -7,7 +8,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 import webpush from "web-push";
 import WebSocket, { WebSocketServer } from "ws";
-import { Expo } from 'expo-server-sdk';
 
 const expo = new Expo();
 
@@ -455,6 +455,16 @@ app.post('/api/cleanup', async (req, res) => {
   if (!db) return res.status(503).json({ error: "Database not connected" });
   await cleanupOrphanedData();
   res.json({ success: true, message: "Database cleanup completed" });
+});
+
+// App Version Configuration
+const APP_CONFIG = {
+  minAppVersion: "1.0.0",
+  updateUrl: "https://play.google.com/store/apps/details?id=com.socially.orbyt" // Placeholder Play Store link
+};
+
+app.get('/api/config/version', (req, res) => {
+  res.json(APP_CONFIG);
 });
 
 app.post('/api/push/subscribe', async (req, res) => {
@@ -1173,26 +1183,26 @@ app.post('/api/chat/send', async (req, res) => {
       const groupTitle = post.meetupDetails?.title || "Meetup Group";
       newMessage.groupId = String(groupId); // Force string for consistency
       newMessage.groupTitle = groupTitle;
-      
+
       const result = await messages.insertOne(newMessage);
       const fullMessage = { ...newMessage, _id: result.insertedId };
       const recipients = new Set([...(post.attendees || []), post.uid]);
-      
+
       // Dispatch WebSockets & Push
       const expoPayload = { title: groupTitle, body: `${authorName}: ${text}`, data: { url: `/chat/group/${groupId}` } };
       const webPayloadStr = JSON.stringify({ title: groupTitle, body: `${authorName}: ${text}`, icon: authorPhoto || "/pwa-192x192.png", data: { url: `/chat/group/${groupId}` } });
-      
+
       recipients.forEach(uid => {
         sendToUser(uid, fullMessage);
         if (uid !== fromUid) sendPushNotification(uid, webPayloadStr, expoPayload);
       });
-      
+
       return res.json(fullMessage);
     } else {
       newMessage.toUid = toUid;
       const result = await messages.insertOne(newMessage);
       const fullMessage = { ...newMessage, _id: result.insertedId };
-      
+
       sendToUser(toUid, fullMessage);
       sendToUser(fromUid, fullMessage);
 
@@ -1200,7 +1210,7 @@ app.post('/api/chat/send', async (req, res) => {
       const expoPayload = { title: authorName, body: text, data: { url: `/chat/${fromUid}` } };
       const webPayloadStr = JSON.stringify({ title: authorName, body: text, icon: authorPhoto || "/pwa-192x192.png", data: { url: `/chat/${fromUid}` } });
       sendPushNotification(toUid, webPayloadStr, expoPayload);
-      
+
       return res.json(fullMessage);
     }
   } catch (error) {
@@ -1368,6 +1378,119 @@ app.get('/api/chat/unread-count/:uid', async (req, res) => {
     res.json({ count });
   } catch (e) {
     res.status(500).json({ error: "Failed to get unread count" });
+  }
+});
+
+// =====================
+// STORIES (MOMENTS)
+// =====================
+app.post('/api/stories', async (req, res) => {
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { uid, authorName, authorPhoto, imageURL, location } = req.body;
+    if (!uid || !imageURL) return res.status(400).json({ error: "Missing required fields" });
+
+    const newStory = {
+      uid,
+      authorName,
+      authorPhoto,
+      imageURL,
+      location, // { lat, lng, name }
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+      views: [] // Track uids of viewers
+    };
+
+    const result = await db.collection('stories').insertOne(newStory);
+    res.json({ ...newStory, _id: result.insertedId });
+  } catch (error) {
+    console.error("Create Story Error:", error);
+    res.status(500).json({ error: "Failed to create story" });
+  }
+});
+
+app.get('/api/stories', async (req, res) => {
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { viewerUid } = req.query;
+    const profile = viewerUid ? await db.collection('profiles').findOne({ uid: viewerUid }) : null;
+    const myLocation = profile?.lastLocation;
+    const radius = profile?.discoveryRadius || 10; // km
+
+    const now = Date.now();
+    const query = { expiresAt: { $gt: now } };
+
+    const stories = await db.collection('stories').find(query).sort({ createdAt: -1 }).toArray();
+
+    // Group by User
+    const groupedStories = stories.reduce((acc, story) => {
+      // Geo-filtering
+      if (myLocation && story.location && story.uid !== viewerUid) {
+        const R = 6371; // km
+        const dLat = (story.location.lat - myLocation.lat) * Math.PI / 180;
+        const dLon = (story.location.lng - myLocation.lng) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(myLocation.lat * Math.PI / 180) * Math.cos(story.location.lat * Math.PI / 180) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const dist = R * c;
+        if (dist > radius) return acc;
+      }
+
+      if (!acc[story.uid]) {
+        acc[story.uid] = {
+          uid: story.uid,
+          authorName: story.authorName,
+          authorPhoto: story.authorPhoto,
+          stories: []
+        };
+      }
+      acc[story.uid].stories.push(story);
+      return acc;
+    }, {});
+
+    res.json(Object.values(groupedStories));
+  } catch (error) {
+    console.error("Get Stories Error:", error);
+    res.status(500).json({ error: "Failed to fetch stories" });
+  }
+});
+
+app.post('/api/stories/:storyId/view', async (req, res) => {
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { storyId } = req.params;
+    const { uid } = req.body;
+    if (!uid) return res.status(400).json({ error: "Missing uid" });
+
+    await db.collection('stories').updateOne(
+      { _id: new ObjectId(storyId) },
+      { $addToSet: { views: uid } }
+    );
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to record view" });
+  }
+});
+
+app.delete('/api/stories/:storyId', async (req, res) => {
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { storyId } = req.params;
+    const { uid } = req.body; // Owner UID for verification
+
+    const result = await db.collection('stories').deleteOne({
+      _id: new ObjectId(storyId),
+      uid: uid
+    });
+
+    if (result.deletedCount === 1) {
+      res.json({ success: true });
+    } else {
+      res.status(403).json({ error: "Story not found or unauthorized" });
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete story" });
   }
 });
 

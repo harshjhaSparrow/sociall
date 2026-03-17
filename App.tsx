@@ -31,6 +31,8 @@ import CookiePolicy from './pages/CookiePolicy';
 import About from './pages/About';
 import Blog from './pages/Blog';
 import Contact from './pages/Contact';
+import VersionGuard from './components/VersionGuard';
+
 
 // Guard component to protect routes and check profile existence
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -145,6 +147,8 @@ const AppRoutes = () => {
             </ProtectedRoute>
           } />
 
+
+
           {/* Developer Profile - Isolated */}
           <Route path="/app/developer" element={
             <ProtectedRoute>
@@ -184,8 +188,11 @@ const App: React.FC = () => {
     <AuthProvider>
       <ThemeProvider>
         <Router>
-          <AppRoutes />
+          <VersionGuard>
+            <AppRoutes />
+          </VersionGuard>
         </Router>
+
       </ThemeProvider>
     </AuthProvider>
   );

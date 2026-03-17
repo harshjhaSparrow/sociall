@@ -1,6 +1,7 @@
 import {
   Ban,
   Briefcase,
+  Camera,
   Check,
   ChevronRight,
   Edit2,
@@ -9,6 +10,7 @@ import {
   Instagram,
   Loader2,
   LogOut,
+  Lock,
   Mail,
   MapPin,
   MessageCircle,
@@ -40,12 +42,13 @@ export default function Profile() {
   const { location: myLocation } = useUserLocation();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("regular"); // "regular" or "meetup"
   const [myPosts, setMyPosts] = useState<Post[]>([]);
-const filteredPosts = useMemo(() => {
+  const filteredPosts = useMemo(() => {
     return myPosts?.filter(post => post?.type === activeTab);
-}, [myPosts, activeTab]);
+  }, [myPosts, activeTab]);
 
   // Location Name State
   const [locationName, setLocationName] = useState<string>("Unknown Location");
@@ -100,6 +103,9 @@ const filteredPosts = useMemo(() => {
             if (user && user?.uid !== targetUid) {
               // Check if I blocked them
               const myProfile = await api.profile.get(user?.uid);
+              if (myProfile) {
+                setCurrentUserProfile(myProfile);
+              }
               if (myProfile?.blockedUsers?.includes(targetUid)) {
                 setIsBlocked(true);
                 setProfile({
@@ -260,16 +266,16 @@ const filteredPosts = useMemo(() => {
         setProfile((prev) =>
           prev
             ? {
-                ...prev,
-                incomingRequests: prev?.incomingRequests?.filter(
-                  (id) => id !== requesterUid,
-                ),
-                friends: [...(prev?.friends || []), requesterUid],
-                friendRequestMessages: {
-                  ...prev?.friendRequestMessages,
-                  [requesterUid]: undefined,
-                } as any,
-              }
+              ...prev,
+              incomingRequests: prev?.incomingRequests?.filter(
+                (id) => id !== requesterUid,
+              ),
+              friends: [...(prev?.friends || []), requesterUid],
+              friendRequestMessages: {
+                ...prev?.friendRequestMessages,
+                [requesterUid]: undefined,
+              } as any,
+            }
             : null,
         );
       } else {
@@ -287,7 +293,7 @@ const filteredPosts = useMemo(() => {
     try {
       // Withdrawing a sent request is technically rejecting it as the requester
       await api.friends.rejectRequest(targetUserId, user?.uid);
-      
+
       if (isOwnProfile) {
         setSentRequestsList((prev) => prev.filter((r) => r?.uid !== targetUserId));
         setProfile((prev) => prev ? {
@@ -314,15 +320,15 @@ const filteredPosts = useMemo(() => {
         setProfile((prev) =>
           prev
             ? {
-                ...prev,
-                incomingRequests: prev?.incomingRequests?.filter(
-                  (id) => id !== requesterUid,
-                ),
-                friendRequestMessages: {
-                  ...prev?.friendRequestMessages,
-                  [requesterUid]: undefined,
-                } as any,
-              }
+              ...prev,
+              incomingRequests: prev?.incomingRequests?.filter(
+                (id) => id !== requesterUid,
+              ),
+              friendRequestMessages: {
+                ...prev?.friendRequestMessages,
+                [requesterUid]: undefined,
+              } as any,
+            }
             : null,
         );
       } else {
@@ -523,11 +529,11 @@ const filteredPosts = useMemo(() => {
   const distance =
     profile?.lastLocation && myLocation
       ? calculateDistance(
-          myLocation?.lat,
-          myLocation?.lng,
-          profile?.lastLocation?.lat,
-          profile?.lastLocation?.lng,
-        )
+        myLocation?.lat,
+        myLocation?.lng,
+        profile?.lastLocation?.lat,
+        profile?.lastLocation?.lng,
+      )
       : null;
 
   return (
@@ -658,17 +664,15 @@ const filteredPosts = useMemo(() => {
 
             {/* Actions */}
             <div className="flex flex-wrap gap-3 justify-center mt-6">
-              {profile?.instagramHandle && (
-                <a
-                  href={`https://instagram.com/${profile?.instagramHandle}`}
-                  target="_blank"
-                  rel="noreferrer"
+                <button
+                  onClick={() => {
+                    window.open(`https://instagram.com/${profile?.instagramHandle}`, '_blank');
+                  }}
                   className="inline-flex items-center gap-2 px-5 py-3 bg-pink-500/10 text-pink-400 rounded-2xl font-semibold text-sm hover:bg-pink-500/20 transition-colors active:scale-95 border border-pink-500/20"
                 >
                   <Instagram className="w-5 h-5" />
                   Instagram
-                </a>
-              )}
+                </button>
 
               {isOwnProfile ? (
                 <button
@@ -733,7 +737,9 @@ const filteredPosts = useMemo(() => {
                         Friends
                       </button>
                       <button
-                        onClick={() => navigate(`/app/chat/${profile?.uid}`)}
+                        onClick={() => {
+                          navigate(`/app/chat/${profile?.uid}`);
+                        }}
                         className="inline-flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-2xl font-semibold text-sm hover:bg-blue-500 transition-colors active:scale-95 shadow-lg shadow-blue-500/20"
                       >
                         <MessageCircle className="w-5 h-5" />
@@ -833,6 +839,37 @@ const filteredPosts = useMemo(() => {
 
           <div className="h-px bg-slate-800 mx-6" />
 
+          {/* That's me Section */}
+          {profile?.thatsMePhotos && profile.thatsMePhotos.length > 0 && (
+            <div className="p-6 relative group/carousel">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Camera className="w-5 h-5 text-primary-500" />
+                  <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">
+                    That's Me
+                  </h2>
+                </div>
+              </div>
+              <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x snap-mandatory relative">
+                {profile.thatsMePhotos.map((photo, i) => (
+                  <div key={i} className="relative min-w-[260px] aspect-[4/5] rounded-3xl overflow-hidden border border-slate-800 shadow-xl group snap-center">
+                    <img 
+                      src={photo} 
+                      alt={`That's me ${i + 1}`} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                    />
+                    <div className="absolute bottom-4 right-4 px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-[10px] font-bold text-white border border-white/10">
+                      {i + 1} / {profile.thatsMePhotos.length}
+                    </div>
+                  </div>
+                ))}
+
+              </div>
+            </div>
+          )}
+
+          <div className="h-px bg-slate-800 mx-6" />
+
           {/* Interests Section */}
           <div className="p-6 bg-slate-900/50 rounded-b-[2rem]">
             <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-4">
@@ -876,11 +913,10 @@ const filteredPosts = useMemo(() => {
                 <button
                   key={type}
                   onClick={() => setActiveTab(type)}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    activeTab === type
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${activeTab === type
                       ? "bg-primary-500 text-white shadow-lg"
                       : "text-slate-400 hover:text-slate-200"
-                  }`}
+                    }`}
                 >
                   {type.charAt(0).toUpperCase() + type.slice(1)}s
                 </button>

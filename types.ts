@@ -37,6 +37,7 @@ export interface UserProfile {
 
   isDiscoverable?: boolean;
   discoveryRadius?: number; // in km
+  thatsMePhotos?: string[];
 }
 
 export interface Comment {

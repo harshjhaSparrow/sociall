@@ -18,6 +18,9 @@ import { useNotifications } from "../context/NotificationContext";
 import { usePushNotifications } from "../hooks/usePushNotifications";
 import { api } from "../services/api";
 import { Notification, Post, UserProfile } from "../types";
+import StoryBar from "../components/StoryBar";
+import StoryViewer from "../components/StoryViewer";
+import { compressImage } from "../util/ImageCompression";
 import { triggerHaptic } from "../util/haptics";
 import { MainLogo } from "../util/Images";
 
@@ -63,6 +66,9 @@ const Feed: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [stories, setStories] = useState<any[]>([]);
+  const [selectedStoryGroup, setSelectedStoryGroup] = useState<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Notification State
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -105,12 +111,14 @@ const Feed: React.FC = () => {
     try {
       if (!user) return;
 
-      const [allPosts, profile] = await Promise.all([
+      const [allPosts, profile, moments] = await Promise.all([
         api.posts.getAll(user.uid),
         api.profile.get(user.uid),
+        api.util.getStories(user.uid)
       ]);
 
       setUserProfile(profile);
+      setStories(moments);
 
       // Filter based on discovery radius if location is available
       let filteredPosts = allPosts;
@@ -140,6 +148,28 @@ const Feed: React.FC = () => {
       setPosts(filteredPosts);
     } catch (error) {
       console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddStory = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user || !userProfile) return;
+
+    try {
+      setLoading(true);
+      const base64 = await compressImage(file, 1080, 0.7);
+      await api.util.createStory({
+        uid: user.uid,
+        authorName: userProfile.displayName,
+        authorPhoto: userProfile.photoURL,
+        imageURL: base64,
+        location: myLocation ? { ...myLocation, name: 'Nearby' } : undefined
+      });
+      fetchPosts();
+    } catch (err) {
+      console.error("Create Story Error:", err);
     } finally {
       setLoading(false);
     }
@@ -472,6 +502,20 @@ const Feed: React.FC = () => {
         className="p-4 space-y-4 max-w-lg mx-auto pb-24 relative transition-transform duration-300 ease-out"
         style={{ transform: `translateY(${pullY}px)` }}
       >
+        <StoryBar 
+          stories={stories} 
+          userProfile={userProfile} 
+          onAddStory={() => fileInputRef.current?.click()}
+          onViewStory={(group) => setSelectedStoryGroup(group)}
+        />
+        <input 
+          type="file" 
+          hidden 
+          ref={fileInputRef} 
+          onChange={handleAddStory}
+          accept="image/*"
+        />
+
         {loading ? (
           <div className="space-y-6 animate-fade-in">
             <PostSkeleton />
@@ -573,6 +617,14 @@ const Feed: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+      {/* Scroll to Top Button */}
+      {selectedStoryGroup && (
+        <StoryViewer 
+          group={selectedStoryGroup} 
+          onClose={() => setSelectedStoryGroup(null)} 
+          currentUserId={user?.uid}
+        />
       )}
       {/* Scroll to Top Button */}
       {showScrollTop && (

@@ -13,6 +13,7 @@ const Chat: React.FC = () => {
     const navigate = useNavigate();
 
     const [friend, setFriend] = useState<UserProfile | null>(null);
+    const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [text, setText] = useState('');
     const [loading, setLoading] = useState(true);
@@ -70,12 +71,17 @@ const Chat: React.FC = () => {
 
                 } else if (uid) {
                     // 1:1 Mode
-                    const friendProfile = await api.profile.get(uid);
+                    const [friendProfile, myProfile] = await Promise.all([
+                        api.profile.get(uid),
+                        api.profile.get(user.uid)
+                    ]);
+
                     if (!friendProfile) {
                         navigate('/app');
                         return;
                     }
                     setFriend(friendProfile);
+                    setCurrentUser(myProfile);
                     const history = await api.chat.getHistory(user.uid, uid);
                     setMessages(history);
                     await api.chat.markRead(user.uid, uid);
@@ -121,6 +127,7 @@ const Chat: React.FC = () => {
 
     const handleSend = async () => {
         if (!text.trim() || !user) return;
+
         setSending(true);
         const msgText = text.trim();
         setText(''); // Optimistic clear
