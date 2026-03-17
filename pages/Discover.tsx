@@ -187,7 +187,7 @@ export default function Discover() {
                     ...(myProf?.outgoingRequests || []),
                     ...(myProf?.incomingRequests || []),
                     ...(myProf?.blockedUsers || []),
-                    ...localSwiped,
+                    ...(myProf?.passedUsers || []),
                 ]);
 
                 const filtered = allUsers.filter((u: any) => {
@@ -230,17 +230,11 @@ export default function Discover() {
             });
         }
         
-        // Save to local storage to never see them again
+        // Sync to server
         if (user) {
-            try {
-                const key = `swipedUsers_${user.uid}`;
-                const stored = localStorage.getItem(key);
-                const swipedIds = stored ? JSON.parse(stored) : [];
-                swipedIds.push(targetUid);
-                localStorage.setItem(key, JSON.stringify(swipedIds));
-            } catch (e) {
-                console.error("Failed to save swipe locally", e);
-            }
+            api.profile.pass(user.uid, targetUid).catch(e => {
+                console.error("Failed to sync pass", e);
+            });
         }
         
         setTopIndex(i => i + 1);

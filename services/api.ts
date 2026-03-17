@@ -154,6 +154,15 @@ export const api = {
         console.error("Failed to record profile view:", e);
       }
     },
+    pass: async (uid: string, targetUid: string) => {
+      try {
+        await fetch(`${API_BASE}/user/pass`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ uid, targetUid }),
+        });
+      } catch (e) {}
+    },
     getViewers: async (uid: string) => {
       try {
         const response = await fetch(`${API_BASE}/profile/views/${uid}`);

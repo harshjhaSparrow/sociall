@@ -123,12 +123,16 @@ const CreatePost: React.FC = () => {
     }
 
     if (postType === "meetup") {
-      if (!meetupTitle.trim() || !date || !startTime || !endTime) {
-        setError("Please fill in all required meetup fields (Title, Date, Time).");
+      if (!meetupTitle.trim()) {
+        setError("Meetup title is required.");
         return;
       }
       if (meetupTitle.trim().length < 5 || meetupTitle.trim().length > 100) {
         setError("Meetup title must be between 5 and 100 characters.");
+        return;
+      }
+      if (!date || !startTime || !endTime) {
+        setError("Please fill in the Date and Time for the meetup.");
         return;
       }
       if (content.trim().length < 20 || content.trim().length > 1000) {
@@ -195,17 +199,7 @@ const CreatePost: React.FC = () => {
   };
 
   const isFormValid = () => {
-    if (loading) return false;
-    if (postType === "regular") {
-      const trimmed = content.trim();
-      return (trimmed.length >= 10 || image) && trimmed.length <= 2000;
-    }
-    if (postType === "meetup") {
-      const titleLen = meetupTitle.trim().length;
-      const descLen = content.trim().length;
-      return titleLen >= 5 && titleLen <= 100 && descLen >= 20 && descLen <= 1000 && date && startTime && endTime;
-    }
-    return false;
+    return !loading;
   };
 
   return (

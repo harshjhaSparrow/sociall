@@ -506,6 +506,7 @@ app.post('/api/auth/signup', async (req, res) => {
       photoURL: "",
       interests: [],
       blockedUsers: [],
+      passedUsers: [],
       isDiscoverable: true,
       discoveryRadius: 10,
       createdAt: Date.now()
@@ -552,6 +553,7 @@ app.post('/api/auth/google', async (req, res) => {
         photoURL: photoURL || "",
         interests: [],
         blockedUsers: [],
+        passedUsers: [],
         isDiscoverable: true,
         discoveryRadius: 10,
         createdAt: Date.now()
@@ -762,6 +764,19 @@ app.post('/api/user/unblock', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: "Failed to unblock user" });
+  }
+});
+
+app.post('/api/user/pass', async (req, res) => {
+  if (!db) return res.status(503).json({ error: "Database not connected" });
+  try {
+    const { uid, targetUid } = req.body;
+    if (!uid || !targetUid) return res.status(400).json({ error: "Missing uid or targetUid" });
+    const profiles = db.collection('profiles');
+    await profiles.updateOne({ uid: uid }, { $addToSet: { passedUsers: targetUid } });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to pass user" });
   }
 });
 

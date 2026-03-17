@@ -33,6 +33,7 @@ export interface UserProfile {
   outgoingRequests?: string[];
   friendRequestMessages?: Record<string, string>; // Map of uid -> message
   blockedUsers?: string[];
+  passedUsers?: string[];
   dob?: string;
 
   isDiscoverable?: boolean;
