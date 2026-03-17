@@ -1,4 +1,4 @@
-import { Battery, Signal, Wifi, LogOut } from 'lucide-react';
+import { Battery, LogOut, Signal, Wifi } from 'lucide-react';
 import React from 'react';
 
 interface DeviceFrameProps {

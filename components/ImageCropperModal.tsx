@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import { Check, X } from 'lucide-react';
+import { useCallback, useState } from 'react';
 import Cropper from 'react-easy-crop';
-import { X, Check } from 'lucide-react';
 
 interface Point {
     x: number;
