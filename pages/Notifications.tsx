@@ -132,8 +132,8 @@ const NotificationsPage: React.FC = () => {
     // Mark all unread as read when this page is opened
     useEffect(() => {
         if (unreadCount > 0) {
-            const unreadIds = notifications.filter(n => !n.read).map(n => n._id);
-            if (unreadIds.length > 0) markRead(unreadIds);
+            const unreadIds = notifications?.filter(n => !n?.read).map(n => n?._id);
+            if (unreadIds?.length > 0) markRead(unreadIds);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -141,7 +141,7 @@ const NotificationsPage: React.FC = () => {
     const groups = groupByDay(notifications);
 
     const handleTap = (n: Notification) => {
-        if (!n.read) markRead([n._id]);
+        if (!n?.read) markRead([n?._id]);
         navigate(getNotifLink(n));
     };
 
@@ -159,7 +159,7 @@ const NotificationsPage: React.FC = () => {
 
                     <h1 className="font-bold text-white text-lg">Notifications</h1>
 
-                    {notifications.some(n => !n.read) ? (
+                    {notifications?.some(n => !n?.read) ? (
                         <button
                             onClick={markAllRead}
                             className="flex items-center gap-1.5 text-xs font-semibold text-primary-400 hover:text-primary-300 transition-colors px-2 py-1.5 rounded-lg hover:bg-primary-500/10"

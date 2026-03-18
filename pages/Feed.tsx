@@ -112,9 +112,9 @@ const Feed: React.FC = () => {
       if (!user) return;
 
       const [allPosts, profile, moments] = await Promise.all([
-        api.posts.getAll(user.uid),
-        api.profile.get(user.uid),
-        api.util.getStories(user.uid)
+        api.posts.getAll(user?.uid),
+        api.profile.get(user?.uid),
+        api.util.getStories(user?.uid)
       ]);
 
       setUserProfile(profile);
@@ -122,22 +122,19 @@ const Feed: React.FC = () => {
 
       // Filter based on discovery radius if location is available
       let filteredPosts = allPosts;
-      if (myLocation && profile && profile.discoveryRadius) {
-        const maxDistMeters = profile.discoveryRadius * 1000;
+      if (myLocation && profile && profile?.discoveryRadius) {
+        const maxDistMeters = profile?.discoveryRadius * 1000;
         filteredPosts = allPosts.filter((p: any) => {
           // Always show own posts
-          if (p.uid === user.uid) return true;
+          if (p?.uid === user?.uid) return true;
 
-          // If post has no location, we might choose to show or hide.
-          // Assuming global posts without location should show? Or hide?
-          // Let's hide if we are strictly filtering by radius, but show if it's a friend?
-          // For simplicity, if post has location, we filter. If not, we show (e.g. global/remote posts).
-          if (p.location) {
+          // If post has location, we filter. If not, we show (e.g. global/remote posts).
+          if (p?.location) {
             const dist = getDistanceMeters(
-              myLocation.lat,
-              myLocation.lng,
-              p.location.lat,
-              p.location.lng,
+              myLocation?.lat,
+              myLocation?.lng,
+              p?.location?.lat,
+              p?.location?.lng,
             );
             return dist <= maxDistMeters;
           }
@@ -161,9 +158,9 @@ const Feed: React.FC = () => {
       setLoading(true);
       const base64 = await compressImage(file, 1080, 0.7);
       await api.util.createStory({
-        uid: user.uid,
-        authorName: userProfile.displayName,
-        authorPhoto: userProfile.photoURL,
+        uid: user?.uid,
+        authorName: userProfile?.displayName,
+        authorPhoto: userProfile?.photoURL,
         imageURL: base64,
         location: myLocation ? { ...myLocation, name: 'Nearby' } : undefined
       });
@@ -178,9 +175,9 @@ const Feed: React.FC = () => {
   const fetchNotifications = async () => {
     if (user) {
       try {
-        const data = await api.notifications.get(user.uid);
+        const data = await api.notifications.get(user?.uid);
         setNotifications(data);
-        setUnreadCount(data.filter((n) => !n.read).length);
+        setUnreadCount(data?.filter((n) => !n?.read).length);
       } catch (e) {
         console.error("Failed to load notifications", e);
       }
@@ -245,32 +242,32 @@ const Feed: React.FC = () => {
   };
 
   const handleLike = async (post: Post) => {
-    if (!user || !post._id) return;
+    if (!user || !post?._id) return;
     triggerHaptic(10); // subtle tick on like
-    const isLiked = post.likedBy?.includes(user.uid);
-    const newLikes = isLiked ? post.likes - 1 : post.likes + 1;
+    const isLiked = post?.likedBy?.includes(user?.uid);
+    const newLikes = isLiked ? post?.likes - 1 : post?.likes + 1;
     const newLikedBy = isLiked
-      ? post.likedBy?.filter((id) => id !== user.uid) || []
-      : [...(post.likedBy || []), user.uid];
+      ? post?.likedBy?.filter((id) => id !== user?.uid) || []
+      : [...(post?.likedBy || []), user?.uid];
 
     setPosts((currentPosts) =>
       currentPosts.map((p) =>
-        p._id === post._id ? { ...p, likes: newLikes, likedBy: newLikedBy } : p,
+        p?._id === post?._id ? { ...p, likes: newLikes, likedBy: newLikedBy } : p,
       ),
     );
 
     try {
-      const updatedData = await api.posts.toggleLike(post._id, user.uid);
+      const updatedData = await api.posts.toggleLike(post?._id, user?.uid);
       setPosts((currentPosts) =>
         currentPosts.map((p) =>
-          p._id === post._id
-            ? { ...p, likes: updatedData.likes, likedBy: updatedData.likedBy }
+          p?._id === post?._id
+            ? { ...p, likes: updatedData?.likes, likedBy: updatedData?.likedBy }
             : p,
         ),
       );
     } catch (error) {
       setPosts((currentPosts) =>
-        currentPosts.map((p) => (p._id === post._id ? post : p)),
+        currentPosts.map((p) => (p?._id === post?._id ? post : p)),
       );
     }
   };
@@ -298,20 +295,20 @@ const Feed: React.FC = () => {
 
   const handleNotificationClick = async (n: Notification) => {
     setShowNotifications(false);
-    if (n.type === "friend_request") {
-      navigate(`/app/profile/${n.fromUid}`);
-    } else if (n.type === "friend_accept") {
-      navigate(`/app/profile/${n.fromUid}`);
-    } else if ((n.type === "like" || n.type === "comment") && n.postId) {
-      navigate(`/app/post/${n.postId}`);
+    if (n?.type === "friend_request") {
+      navigate(`/app/profile/${n?.fromUid}`);
+    } else if (n?.type === "friend_accept") {
+      navigate(`/app/profile/${n?.fromUid}`);
+    } else if ((n?.type === "like" || n?.type === "comment") && n?.postId) {
+      navigate(`/app/post/${n?.postId}`);
     }
   };
 
   const openNotifications = async () => {
     setShowNotifications(true);
     if (unreadCount > 0) {
-      const unreadIds = notifications.filter((n) => !n.read).map((n) => n._id);
-      if (unreadIds.length > 0) {
+      const unreadIds = notifications?.filter((n) => !n?.read).map((n) => n?._id);
+      if (unreadIds?.length > 0) {
         await api.notifications.markRead(unreadIds);
         setUnreadCount(0);
         setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));

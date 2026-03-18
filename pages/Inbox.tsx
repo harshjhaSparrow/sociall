@@ -28,7 +28,7 @@ const Inbox: React.FC = () => {
   const fetchInbox = async () => {
     if (!user) return;
     try {
-      const data = await api.chat.getInbox(user.uid);
+      const data = await api.chat.getInbox(user?.uid);
       setConversations(data);
     } catch (e) {
       console.error("Failed to load inbox", e);
@@ -54,23 +54,23 @@ const Inbox: React.FC = () => {
   useEffect(() => {
     if (!user) return;
 
-    const unsubscribe = api.chat.subscribe(user.uid, (newMsg: Message) => {
+    const unsubscribe = api.chat.subscribe(user?.uid, (newMsg: Message) => {
       setConversations((prev) => {
-        const existingIndex = prev.findIndex(conv => {
-            if (newMsg.groupId) {
-                return conv.type === "group" && conv.groupId === newMsg.groupId;
+        const existingIndex = prev?.findIndex(conv => {
+            if (newMsg?.groupId) {
+                return conv?.type === "group" && conv?.groupId === newMsg?.groupId;
             } else {
-                return conv.type === "direct" && conv.partner && (newMsg.fromUid === conv.partner.uid || newMsg.toUid === conv.partner.uid);
+                return conv?.type === "direct" && conv?.partner && (newMsg?.fromUid === conv?.partner?.uid || newMsg?.toUid === conv?.partner?.uid);
             }
         });
 
         if (existingIndex > -1) {
-            const existingConv = prev[existingIndex];
-            const isIncoming = newMsg.fromUid !== user.uid;
+            const existingConv = prev?.[existingIndex];
+            const isIncoming = newMsg?.fromUid !== user?.uid;
             const updatedConv: InboxItem = {
                 ...existingConv,
                 lastMessage: newMsg,
-                unreadCount: isIncoming ? (existingConv.unreadCount || 0) + 1 : existingConv.unreadCount,
+                unreadCount: isIncoming ? (existingConv?.unreadCount || 0) + 1 : existingConv?.unreadCount,
             };
             const nextConvs = [...prev];
             nextConvs.splice(existingIndex, 1);
@@ -88,28 +88,28 @@ const Inbox: React.FC = () => {
   }, [user]);
 
   const formatTime = (timestamp: number) => {
-    const date = new Date(timestamp);
+    const date = new Date(timestamp || 0);
     const now = new Date();
     const isToday =
-      date.getDate() === now.getDate() &&
-      date.getMonth() === now.getMonth() &&
-      date.getFullYear() === now.getFullYear();
+      date?.getDate() === now?.getDate() &&
+      date?.getMonth() === now?.getMonth() &&
+      date?.getFullYear() === now?.getFullYear();
 
     if (isToday) {
-      return date.toLocaleTimeString([], {
+      return date?.toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
       });
     }
 
     // Check if within this week
-    const diff = now.getTime() - date.getTime();
+    const diff = now?.getTime() - date?.getTime();
     const days = diff / (1000 * 3600 * 24);
     if (days < 7) {
-      return date.toLocaleDateString(undefined, { weekday: "short" });
+      return date?.toLocaleDateString(undefined, { weekday: "short" });
     }
 
-    return date.toLocaleDateString(undefined, {
+    return date?.toLocaleDateString(undefined, {
       month: "short",
       day: "numeric",
     });
@@ -148,7 +148,7 @@ const Inbox: React.FC = () => {
 
           return (
             <div
-              key={isGroup ? conv.groupId : conv.partner!.uid}
+              key={isGroup ? conv?.groupId : conv?.partner?.uid}
               onClick={() => navigate(link)}
               className={`
                                 p-3 rounded-2xl border flex items-center gap-3 active:scale-[0.98] transition-all cursor-pointer hover:bg-slate-800
@@ -161,16 +161,16 @@ const Inbox: React.FC = () => {
                 >
                   {isGroup ? (
                     <Users className="w-6 h-6 text-primary-400" />
-                  ) : conv.partner!.photoURL ? (
+                  ) : conv?.partner?.photoURL ? (
                     <img
                       draggable={false}
-                      src={conv.partner!.photoURL}
-                      alt={conv.partner!.displayName}
+                      src={conv?.partner?.photoURL}
+                      alt={conv?.partner?.displayName}
                       className="w-full h-full object-cover"
                     />
                   ) : (
                     <span className="text-slate-500 font-bold">
-                      {conv.partner!.displayName?.[0]}
+                      {conv?.partner?.displayName?.[0]}
                     </span>
                   )}
                 </div>
@@ -185,36 +185,36 @@ const Inbox: React.FC = () => {
                     className={`text-base truncate ${isUnread ? "font-black text-white" : "font-bold text-slate-200"}`}
                   >
                     {isGroup
-                      ? conv.lastMessage.groupTitle || "Group Chat"
-                      : conv.partner!.displayName || "Unknown User"}
+                      ? conv?.lastMessage?.groupTitle || "Group Chat"
+                      : conv?.partner?.displayName || "Unknown User"}
                   </h3>
                   <span
                     className={`text-[10px] whitespace-nowrap ml-2 ${isUnread ? "text-blue-400 font-bold" : "text-slate-500"}`}
                   >
-                    {formatTime(conv.lastMessage.createdAt)}
+                    {formatTime(conv?.lastMessage?.createdAt || 0)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <p
                     className={`text-sm truncate ${isUnread ? "text-white font-medium" : "text-slate-400"}`}
                   >
-                    {conv.lastMessage.fromUid === user?.uid && (
+                    {conv?.lastMessage?.fromUid === user?.uid && (
                       <span className="text-slate-500 mr-1 font-normal">
                         You:
                       </span>
                     )}
                     {isGroup &&
-                      conv.lastMessage.fromUid !== user?.uid &&
-                      conv.lastMessage.fromUid !== "system" && (
+                      conv?.lastMessage?.fromUid !== user?.uid &&
+                      conv?.lastMessage?.fromUid !== "system" && (
                         <span className="text-slate-500 mr-1 font-normal">
-                          {conv.lastMessage.authorName}:
+                          {conv?.lastMessage?.authorName}:
                         </span>
                       )}
-                    {conv.lastMessage.text}
+                    {conv?.lastMessage?.text}
                   </p>
                   {isUnread && (
                     <span className="ml-2 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                      {conv.unreadCount}
+                      {conv?.unreadCount}
                     </span>
                   )}
                 </div>

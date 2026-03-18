@@ -9,7 +9,7 @@ import { Message, Notification, Post, UserProfile } from "../types";
 const PORT = 5000;
 
 const getBaseUrl = () => {
-  const { protocol, hostname } = window.location;
+  const { protocol, hostname } = window?.location;
 
 
   const isLocal =
@@ -54,7 +54,7 @@ export const api = {
         body: JSON.stringify({ email, password }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Signup failed");
+      if (!response?.ok) throw new Error(data?.error || "Signup failed");
       return data;
     },
 
@@ -65,7 +65,7 @@ export const api = {
         body: JSON.stringify({ email, password }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Login failed");
+      if (!response?.ok) throw new Error(data?.error || "Login failed");
       return data;
     },
 
@@ -80,7 +80,7 @@ export const api = {
         body: JSON.stringify({ email, displayName, photoURL }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Google Login failed");
+      if (!response?.ok) throw new Error(data?.error || "Google Login failed");
       return data;
     },
   },
@@ -89,7 +89,7 @@ export const api = {
     get: async (uid: string) => {
       try {
         const response = await fetch(`${API_BASE}/profile/${uid}`);
-        if (!response.ok) return null;
+        if (!response?.ok) return null;
         return await response.json();
       } catch (error) {
         console.error("Failed to fetch profile:", error);
@@ -104,7 +104,7 @@ export const api = {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ uids }),
         });
-        if (!response.ok) return [];
+        if (!response?.ok) return [];
         return await response.json();
       } catch (error) {
         console.error("Failed to fetch batch profiles:", error);
@@ -120,7 +120,7 @@ export const api = {
           : `${API_BASE}/profiles`;
 
         const response = await fetch(url);
-        if (!response.ok) return [];
+        if (!response?.ok) return [];
         return await response.json();
       } catch (error) {
         console.error("Failed to fetch profiles:", error);
@@ -134,14 +134,14 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!response.ok) throw new Error("Failed to update profile");
+      if (!response?.ok) throw new Error("Failed to update profile");
     },
 
     delete: async (uid: string) => {
       const response = await fetch(`${API_BASE}/profile/${uid}`, {
         method: "DELETE"
       });
-      return response.ok;
+      return response?.ok;
     },
     recordView: async (viewerUid: string, targetUid: string) => {
       try {
@@ -166,7 +166,7 @@ export const api = {
     getViewers: async (uid: string) => {
       try {
         const response = await fetch(`${API_BASE}/profile/views/${uid}`);
-        if (!response.ok) return [];
+        if (!response?.ok) return [];
         return await response.json();
       } catch (e) {
         console.error("Failed to fetch profile viewers:", e);
@@ -182,7 +182,7 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid, targetUid }),
       });
-      if (!response.ok) throw new Error("Failed to block user");
+      if (!response?.ok) throw new Error("Failed to block user");
     },
     unblock: async (uid: string, targetUid: string) => {
       const response = await fetch(`${API_BASE}/user/unblock`, {
@@ -190,7 +190,7 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid, targetUid }),
       });
-      if (!response.ok) throw new Error("Failed to unblock user");
+      if (!response?.ok) throw new Error("Failed to unblock user");
     },
     report: async (
       reporterUid: string,
@@ -203,7 +203,7 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reporterUid, targetUid, reason, postId }),
       });
-      if (!response.ok) throw new Error("Failed to submit report");
+      if (!response?.ok) throw new Error("Failed to submit report");
     },
   },
 
@@ -214,7 +214,7 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fromUid, toUid, message }),
       });
-      if (!response.ok) throw new Error("Failed to send request");
+      if (!response?.ok) throw new Error("Failed to send request");
     },
     acceptRequest: async (userUid: string, requesterUid: string) => {
       const response = await fetch(`${API_BASE}/friends/accept`, {
@@ -222,7 +222,7 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userUid, requesterUid }),
       });
-      if (!response.ok) throw new Error("Failed to accept request");
+      if (!response?.ok) throw new Error("Failed to accept request");
     },
     rejectRequest: async (userUid: string, requesterUid: string) => {
       const response = await fetch(`${API_BASE}/friends/reject`, {
@@ -230,7 +230,7 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userUid, requesterUid }),
       });
-      if (!response.ok) throw new Error("Failed to reject request");
+      if (!response?.ok) throw new Error("Failed to reject request");
     },
     removeFriend: async (uid1: string, uid2: string) => {
       const response = await fetch(`${API_BASE}/friends/remove`, {
@@ -238,7 +238,7 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid1, uid2 }),
       });
-      if (!response.ok) throw new Error("Failed to remove friend");
+      if (!response?.ok) throw new Error("Failed to remove friend");
     },
   },
 
@@ -249,7 +249,7 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid }),
       });
-      if (!response.ok) throw new Error("Failed to join meetup");
+      if (!response?.ok) throw new Error("Failed to join meetup");
     },
     accept: async (postId: string, hostUid: string, requesterUid: string) => {
       const response = await fetch(`${API_BASE}/meetups/${postId}/accept`, {
@@ -257,7 +257,7 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ hostUid, requesterUid }),
       });
-      if (!response.ok) throw new Error("Failed to accept request");
+      if (!response?.ok) throw new Error("Failed to accept request");
     },
     reject: async (postId: string, hostUid: string, requesterUid: string) => {
       const response = await fetch(`${API_BASE}/meetups/${postId}/reject`, {
@@ -265,7 +265,7 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ hostUid, requesterUid }),
       });
-      if (!response.ok) throw new Error("Failed to reject request");
+      if (!response?.ok) throw new Error("Failed to reject request");
     },
     removeAttendee: async (
       postId: string,
@@ -280,7 +280,7 @@ export const api = {
           body: JSON.stringify({ hostUid, targetUid }),
         },
       );
-      if (!response.ok) throw new Error("Failed to remove attendee");
+      if (!response?.ok) throw new Error("Failed to remove attendee");
     },
   },
 
@@ -297,7 +297,7 @@ export const api = {
         body: JSON.stringify({ fromUid, toUid, groupId, text }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error("Failed to send");
+      if (!response?.ok) throw new Error("Failed to send");
       return data;
     },
     getHistory: async (uid1: string, uid2: string): Promise<Message[]> => {
@@ -305,7 +305,7 @@ export const api = {
         const response = await fetch(
           `${API_BASE}/chat/history/${uid1}/${uid2}`,
         );
-        if (!response.ok) return [];
+        if (!response?.ok) return [];
         return await response.json();
       } catch (error) {
         console.error("Failed to fetch chat history:", error);
@@ -315,7 +315,7 @@ export const api = {
     getGroupHistory: async (groupId: string): Promise<Message[]> => {
       try {
         const response = await fetch(`${API_BASE}/chat/history/${groupId}`);
-        if (!response.ok) return [];
+        if (!response?.ok) return [];
         return await response.json();
       } catch (error) {
         console.error("Failed to fetch group history:", error);
@@ -325,7 +325,7 @@ export const api = {
     getInbox: async (uid: string) => {
       try {
         const response = await fetch(`${API_BASE}/chat/inbox/${uid}`);
-        if (!response.ok) return [];
+        if (!response?.ok) return [];
         return await response.json();
       } catch (e) {
         console.error("Failed to fetch inbox:", e);
@@ -346,15 +346,15 @@ export const api = {
     getUnreadCount: async (uid: string): Promise<number> => {
       try {
         const response = await fetch(`${API_BASE}/chat/unread-count/${uid}`);
-        if (!response.ok) return 0;
+        if (!response?.ok) return 0;
         const data = await response.json();
-        return data.count || 0;
+        return data?.count || 0;
       } catch (e) {
         return 0;
       }
     },
     subscribe: (uid: string, onMessage: (msg: Message) => void) => {
-      const { protocol, hostname, port } = window.location;
+      const { protocol, hostname, port } = window?.location;
 
       const isLocal =
         hostname === "localhost" ||
@@ -393,7 +393,7 @@ export const api = {
 
         socket.onopen = () => {
           keepAliveInterval = setInterval(() => {
-            if (socket?.readyState === WebSocket.OPEN) {
+            if (socket?.readyState === WebSocket?.OPEN) {
               socket.send(JSON.stringify({ type: "ping" }));
             }
           }, 30000);
@@ -401,8 +401,8 @@ export const api = {
 
         socket.onmessage = (event) => {
           try {
-            const data = JSON.parse(event.data);
-            if (data.type === "ping" || data.type === "pong" || data.type === "notification") return;
+            const data = JSON.parse(event?.data);
+            if (data?.type === "ping" || data?.type === "pong" || data?.type === "notification") return;
             onMessage(data);
           } catch (e) {
             console.error("WS Parse Error", e);
@@ -428,7 +428,7 @@ export const api = {
     get: async (uid: string): Promise<Notification[]> => {
       try {
         const response = await fetch(`${API_BASE}/notifications/${uid}`);
-        if (!response.ok) return [];
+        if (!response?.ok) return [];
         return await response.json();
       } catch (error) {
         console.error("Failed to fetch notifications:", error);
@@ -460,9 +460,9 @@ export const api = {
     getUnreadCount: async (uid: string): Promise<number> => {
       try {
         const response = await fetch(`${API_BASE}/notifications/unread-count/${uid}`);
-        if (!response.ok) return 0;
+        if (!response?.ok) return 0;
         const data = await response.json();
-        return data.count || 0;
+        return data?.count || 0;
       } catch (e) {
         return 0;
       }
@@ -476,7 +476,7 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid, subscription }),
       });
-      if (!response.ok) throw new Error("Failed to subscribe to push notifications");
+      if (!response?.ok) throw new Error("Failed to subscribe to push notifications");
     }
   },
 
@@ -487,7 +487,7 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(postData),
       });
-      if (!response.ok) throw new Error("Failed to create post");
+      if (!response?.ok) throw new Error("Failed to create post");
     },
     // Updated: Accept viewerUid to filter blocked content
     getAll: async (viewerUid?: string) => {
@@ -496,7 +496,7 @@ export const api = {
           ? `${API_BASE}/posts?viewerUid=${viewerUid}`
           : `${API_BASE}/posts`;
         const response = await fetch(url);
-        if (!response.ok) return [];
+        if (!response?.ok) return [];
         return await response.json();
       } catch (error) {
         console.error("Failed to fetch posts:", error);
@@ -506,7 +506,7 @@ export const api = {
     getUserPosts: async (uid: string) => {
       try {
         const response = await fetch(`${API_BASE}/posts/user/${uid}`);
-        if (!response.ok) return [];
+        if (!response?.ok) return [];
         return await response.json();
       } catch (error) {
         console.error("Failed to fetch user posts:", error);
@@ -516,7 +516,7 @@ export const api = {
     getPost: async (postId: string) => {
       try {
         const response = await fetch(`${API_BASE}/posts/${postId}`);
-        if (!response.ok) return null;
+        if (!response?.ok) return null;
         return await response.json();
       } catch (error) {
         console.error("Failed to fetch post:", error);
@@ -534,7 +534,7 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid, content, imageURL }),
       });
-      if (!response.ok) throw new Error("Failed to update post");
+      if (!response?.ok) throw new Error("Failed to update post");
     },
     deletePost: async (postId: string, uid: string) => {
       const response = await fetch(`${API_BASE}/posts/${postId}`, {
@@ -542,7 +542,7 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid }),
       });
-      if (!response.ok) throw new Error("Failed to delete post");
+      if (!response?.ok) throw new Error("Failed to delete post");
     },
     toggleLike: async (postId: string, uid: string) => {
       const response = await fetch(`${API_BASE}/posts/${postId}/like`, {
@@ -550,7 +550,7 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid }),
       });
-      if (!response.ok) throw new Error("Failed to toggle like");
+      if (!response?.ok) throw new Error("Failed to toggle like");
       return await response.json();
     },
     addComment: async (postId: string, uid: string, text: string) => {
@@ -559,14 +559,14 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid, text }),
       });
-      if (!response.ok) throw new Error("Failed to add comment");
+      if (!response?.ok) throw new Error("Failed to add comment");
       return await response.json();
     },
   },
   util: {
     getStories: async (viewerUid: string) => {
       const response = await fetch(`${API_BASE}/stories?viewerUid=${viewerUid}`);
-      if (!response.ok) return [];
+      if (!response?.ok) return [];
       return await response.json();
     },
     createStory: async (storyData: any) => {
@@ -575,7 +575,7 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(storyData),
       });
-      if (!response.ok) throw new Error("Failed to create story");
+      if (!response?.ok) throw new Error("Failed to create story");
       return await response.json();
     },
     viewStory: async (storyId: string, uid: string) => {
@@ -584,7 +584,7 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid }),
       });
-      if (!response.ok) throw new Error("Failed to record view");
+      if (!response?.ok) throw new Error("Failed to record view");
       return await response.json();
     },
     deleteStory: async (storyId: string, uid: string) => {
@@ -593,14 +593,14 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid }),
       });
-      if (!response.ok) throw new Error("Failed to delete story");
+      if (!response?.ok) throw new Error("Failed to delete story");
       return await response.json();
     },
   },
   config: {
     getVersion: async () => {
       const response = await fetch(`${API_BASE}/config/version`);
-      if (!response.ok) throw new Error("Failed to fetch version config");
+      if (!response?.ok) throw new Error("Failed to fetch version config");
       return await response.json(); // { minAppVersion: string, updateUrl: string }
     }
   }

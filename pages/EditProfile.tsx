@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { UserProfile, POPULAR_INTERESTS, InterestTag } from '../types';
 import Input from '../components/ui/Input';
-import { Camera, ChevronLeft, Loader2, User as UserIcon, Calendar, Briefcase } from 'lucide-react';
+import { Camera, ChevronLeft, Loader2, User as UserIcon, Calendar, Briefcase, Instagram } from 'lucide-react';
 import { compressImage } from '../util/ImageCompression';
 import ImageCropperModal from '../components/ImageCropperModal';
 import SearchableDropdown from '../components/ui/SearchableDropdown';
@@ -132,9 +132,18 @@ const EditProfile: React.FC = () => {
     }
 
     if (instagram.trim()) {
+      const handle = instagram.trim().toLowerCase();
+      const forbidden = ['none', 'na', 'n/a', 'nothing', 'no', 'null', 'undefined', 'not', 'rubbish', 'asdf', 'test'];
+      if (forbidden.includes(handle) || handle.length < 2) {
+        setError("Please enter a valid Instagram handle or leave it empty.");
+        setLoading(false);
+        return;
+      }
+
       const instagramRegex = /^[a-zA-Z0-9._]+$/;
-      if (!instagramRegex.test(instagram)) {
+      if (!instagramRegex.test(handle)) {
         setError("Invalid Instagram handle. Use only letters, numbers, periods, and underscores.");
+        setLoading(false);
         return;
       }
     }
@@ -258,13 +267,25 @@ const EditProfile: React.FC = () => {
               </div>
             </div>
 
-            <Input
-              label="Instagram"
-              placeholder="@username"
-              icon={<span className="text-slate-500 font-bold">@</span>}
-              value={instagram}
-              onChange={(e) => setInstagram(e.target.value.replace('@', ''))}
-            />
+            <div className="space-y-2">
+              <Input
+                label="Instagram"
+                placeholder="@username"
+                icon={<span className="text-slate-500 font-bold">@</span>}
+                value={instagram}
+                onChange={(e) => setInstagram(e.target.value.replace('@', ''))}
+              />
+              {instagram.trim().length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => window.open(`https://instagram.com/${instagram.trim()}`, '_blank')}
+                  className="w-full py-2.5 px-4 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 text-xs font-bold hover:bg-slate-800 hover:text-white transition-all flex items-center justify-center gap-2 group"
+                >
+                  <Instagram className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                  Verify this handle works
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Interests */}

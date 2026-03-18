@@ -60,14 +60,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         };
 
         const unsubscribe = api.chat.subscribe(user.uid, (data: any) => {
-            if (data.type === 'notification' && data.notification) {
+            if (data?.type === 'notification' && data?.notification) {
                 setNotifications(prev => {
-                    if (prev.find(n => n._id === data.notification._id)) return prev;
+                    if (prev.find(n => n._id === data?.notification?._id)) return prev;
                     playSound('notification');
-                    return [data.notification as Notification, ...prev];
+                    return [data?.notification as Notification, ...prev];
                 });
-            } else if (data.text || data.type === 'message') {
-                if (data.fromUid !== user.uid && data.fromUid !== 'system') {
+            } else if (data?.text || data?.type === 'message') {
+                if (data?.fromUid !== user?.uid && data?.fromUid !== 'system') {
                     playSound('message');
                 }
             }

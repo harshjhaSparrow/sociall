@@ -45,7 +45,7 @@ const PostItem: React.FC<any> = ({
   const commentsToShow = showAllComments
     ? post?.comments
     : hasComments
-      ? [post?.comments!?.[post?.comments!?.length - 1]]
+      ? [post?.comments?.[post?.comments?.length - 1]]
       : [];
 
   const isMeetup = post?.type === "meetup" && post?.meetupDetails;
@@ -125,7 +125,7 @@ const PostItem: React.FC<any> = ({
               {post?.authorName}
             </h3>
             <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-500">
-              <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+              <span>{new Date(post?.createdAt || 0).toLocaleDateString()}</span>
               {post?.location && (
                 <>
                   <span>•</span>
@@ -153,7 +153,7 @@ const PostItem: React.FC<any> = ({
           <div className="flex items-center">
             {onEdit && (
               <button
-                onClick={() => onEdit(post?._id!)}
+                onClick={() => onEdit(post?._id)}
                 className="p-2.5 text-slate-500 hover:text-primary-400 active:bg-slate-800 rounded-full transition-all duration-200"
                 aria-label="Edit Post"
               >
@@ -163,7 +163,7 @@ const PostItem: React.FC<any> = ({
 
             {onDelete && (
               <button
-                onClick={() => onDelete(post?._id!)}
+                onClick={() => onDelete(post?._id)}
                 className="p-2.5 text-slate-500 hover:text-red-500 active:bg-red-500/10 rounded-full transition-all duration-200"
                 aria-label="Delete Post"
               >
@@ -205,7 +205,7 @@ const PostItem: React.FC<any> = ({
                   <Calendar className="w-4 h-4" />
                 </div>
                 <span className="font-medium text-slate-700 dark:text-slate-300">
-                  {new Date(post.meetupDetails!.date).toLocaleDateString(
+                  {new Date(post?.meetupDetails?.date || 0).toLocaleDateString(
                     undefined,
                     { month: "short", day: "numeric" },
                   )}
@@ -225,7 +225,7 @@ const PostItem: React.FC<any> = ({
                   <DollarSign className="w-4 h-4" />
                 </div>
                 <span className="font-medium truncate text-slate-700 dark:text-slate-300">
-                  {post?.meetupDetails?.feeType} {post?.meetupDetails?.feeAmount ? `(${post.meetupDetails.feeAmount})` : ''}
+                  {post?.meetupDetails?.feeType} {post?.meetupDetails?.feeAmount ? `(${post?.meetupDetails?.feeAmount})` : ''}
                 </span>
               </div>
               {post?.meetupDetails?.maxGuests && (

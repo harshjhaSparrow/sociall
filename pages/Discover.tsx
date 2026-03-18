@@ -92,8 +92,8 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profile, distText, onSwip
 
                 {/* Photo */}
                 <div className="h-3/5 bg-slate-100 dark:bg-slate-800 relative group" onClick={onNavigate}>
-                    {profile.photoURL ? (
-                        <img src={profile.photoURL} alt={profile.displayName} draggable={false} className="w-full h-full object-cover pointer-events-none transition-transform duration-500 group-hover:scale-110" />
+                    {profile?.photoURL ? (
+                        <img src={profile?.photoURL} alt={profile?.displayName} draggable={false} className="w-full h-full object-cover pointer-events-none transition-transform duration-500 group-hover:scale-110" />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center pointer-events-none">
                             <UserIcon className="w-20 h-20 text-slate-300 dark:text-slate-600" />
@@ -105,19 +105,19 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profile, distText, onSwip
                 {/* Info */}
                 <div className="p-6 flex-1 flex flex-col justify-center">
                     <div className="flex items-baseline gap-2 mb-1">
-                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{profile.displayName}</h2>
-                        {profile.dob && (
+                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{profile?.displayName}</h2>
+                        {profile?.dob && (
                             <span className="text-xl font-medium text-slate-500 dark:text-slate-400">
-                                {Math.floor((new Date().getTime() - new Date(profile.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000))}
+                                {Math.floor((new Date().getTime() - new Date(profile?.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000))}
                             </span>
                         )}
                     </div>
                     
                     <div className="flex items-center gap-2 mb-3 flex-wrap">
-                        {profile.jobRole && (
+                        {profile?.jobRole && (
                             <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700">
                                 <Briefcase className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{profile.jobRole}</span>
+                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{profile?.jobRole}</span>
                             </div>
                         )}
                         <div className="flex items-center gap-1.5 bg-primary-500/10 px-2.5 py-1 rounded-lg border border-primary-500/20">
@@ -126,15 +126,15 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profile, distText, onSwip
                         </div>
                     </div>
 
-                    {profile.bio && (
+                    {profile?.bio && (
                         <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mb-4 leading-relaxed italic">
-                            "{profile.bio}"
+                            "{profile?.bio}"
                         </p>
                     )}
 
-                    {profile.interests && profile.interests.length > 0 && (
+                    {profile?.interests && profile?.interests?.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mt-auto">
-                            {profile.interests.slice(0, 4).map(id => {
+                            {profile?.interests?.slice(0, 4).map(id => {
                                 const tag = POPULAR_INTERESTS.find(i => i.id === id);
                                 return (
                                     <span key={id} className="text-[10px] font-bold text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
@@ -168,8 +168,8 @@ export default function Discover() {
             if (!user) return;
             try {
                 const [allUsers, myProf] = await Promise.all([
-                    api.profile.getAllWithLocation(user.uid),
-                    api.profile.get(user.uid)
+                    api.profile.getAllWithLocation(user?.uid),
+                    api.profile.get(user?.uid)
                 ]);
 
                 const maxDistanceMeters = (myProf?.discoveryRadius || 10) * 1000;
@@ -177,12 +177,12 @@ export default function Discover() {
                 // Exclude yourself, friends, people you've already sent a request to, and people who sent you one
                 let localSwiped: string[] = [];
                 try {
-                    const stored = localStorage.getItem(`swipedUsers_${user.uid}`);
+                    const stored = localStorage.getItem(`swipedUsers_${user?.uid}`);
                     if (stored) localSwiped = JSON.parse(stored);
                 } catch (e) { }
 
                 const excluded = new Set<string>([
-                    user.uid,
+                    user?.uid,
                     ...(myProf?.friends || []),
                     ...(myProf?.outgoingRequests || []),
                     ...(myProf?.incomingRequests || []),
@@ -191,13 +191,13 @@ export default function Discover() {
                 ]);
 
                 const filtered = allUsers.filter((u: any) => {
-                    if (excluded.has(u.uid)) return false;
-                    if (u.isDiscoverable === false) return false;
-                    if (!u.lastLocation || !myLocation) return false;
+                    if (excluded.has(u?.uid)) return false;
+                    if (u?.isDiscoverable === false) return false;
+                    if (!u?.lastLocation || !myLocation) return false;
                     const R = 6371e3;
                     const rad = Math.PI / 180;
                     const { lat: lat1, lng: lng1 } = myLocation;
-                    const { lat: lat2, lng: lng2 } = u.lastLocation;
+                    const { lat: lat2, lng: lng2 } = u?.lastLocation;
                     const a = Math.sin((lat2 - lat1) * rad / 2) ** 2 + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin((lng2 - lng1) * rad / 2) ** 2;
                     const distMeters = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
                     return distMeters <= maxDistanceMeters;
@@ -222,17 +222,17 @@ export default function Discover() {
     }, [user, myLocation]);
 
     const handleSwipe = useCallback((index: number, dir: 'left' | 'right') => {
-        const targetUid = profiles[index].uid;
+        const targetUid = profiles[index]?.uid;
         if (dir === 'right' && user) {
             // Do not await to avoid blocking the UI swipe update
-            api.friends.sendRequest(user.uid, targetUid).catch(e => {
+            api.friends.sendRequest(user?.uid, targetUid).catch(e => {
                 console.error("Failed to send request", e);
             });
         }
         
         // Sync to server
         if (user) {
-            api.profile.pass(user.uid, targetUid).catch(e => {
+            api.profile.pass(user?.uid, targetUid).catch(e => {
                 console.error("Failed to sync pass", e);
             });
         }

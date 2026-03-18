@@ -53,15 +53,15 @@ const Chat: React.FC = () => {
 
                     if (groupData) {
                         // Fetch members
-                        const allMemberIds = [groupData.uid, ...(groupData.attendees || [])];
+                        const allMemberIds = [groupData?.uid, ...(groupData?.attendees || [])];
                         const uniqueIds = Array.from(new Set(allMemberIds));
                         const profiles = await api.profile.getBatch(uniqueIds);
                         setMembers(profiles);
 
-                        if (groupData.meetupDetails?.title) {
-                            setGroupTitle(groupData.meetupDetails.title);
-                        } else if (history.length > 0 && history[0].groupTitle) {
-                            setGroupTitle(history[0].groupTitle);
+                        if (groupData?.meetupDetails?.title) {
+                            setGroupTitle(groupData?.meetupDetails?.title);
+                        } else if (history?.length > 0 && history?.[0]?.groupTitle) {
+                            setGroupTitle(history?.[0]?.groupTitle);
                         } else {
                             setGroupTitle("Group Chat");
                         }
@@ -73,7 +73,7 @@ const Chat: React.FC = () => {
                     // 1:1 Mode
                     const [friendProfile, myProfile] = await Promise.all([
                         api.profile.get(uid),
-                        api.profile.get(user.uid)
+                        api.profile.get(user?.uid)
                     ]);
 
                     if (!friendProfile) {
@@ -82,9 +82,9 @@ const Chat: React.FC = () => {
                     }
                     setFriend(friendProfile);
                     setCurrentUser(myProfile);
-                    const history = await api.chat.getHistory(user.uid, uid);
+                    const history = await api.chat.getHistory(user?.uid, uid);
                     setMessages(history);
-                    await api.chat.markRead(user.uid, uid);
+                    await api.chat.markRead(user?.uid, uid);
                 }
             } catch (e) {
                 console.error(e);
@@ -133,9 +133,9 @@ const Chat: React.FC = () => {
         setText(''); // Optimistic clear
 
         try {
-            const sentMsg = await api.chat.send(user.uid, uid, msgText, groupId);
+            const sentMsg = await api.chat.send(user?.uid, uid, msgText, groupId);
             setMessages(prev => {
-                if (prev.some(m => m._id === sentMsg._id)) return prev;
+                if (prev?.some(m => m?._id === sentMsg?._id)) return prev;
                 return [...prev, sentMsg];
             });
             triggerHaptic(15); // subtle tick on send
@@ -235,10 +235,10 @@ const Chat: React.FC = () => {
                     ) : (
                         <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 overflow-hidden shrink-0">
                             {friend?.photoURL ? (
-                                <img draggable={false} src={friend.photoURL} alt={friend.displayName} className="w-full h-full object-cover" />
+                                <img draggable={false} src={friend?.photoURL} alt={friend?.displayName} className="w-full h-full object-cover" />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center font-bold text-slate-500">
-                                    {friend?.displayName[0]}
+                                    {friend?.displayName?.[0] || 'U'}
                                 </div>
                             )}
                         </div>
@@ -283,11 +283,11 @@ const Chat: React.FC = () => {
                                         {!isMe && (
                                             <div className="w-6 h-6 rounded-full bg-slate-800 overflow-hidden shrink-0 mb-1 opacity-80 border border-slate-700">
                                                 {showAvatar && (
-                                                    (isGroup ? msg.authorPhoto : friend?.photoURL) ? (
-                                                        <img draggable={false} src={isGroup ? msg.authorPhoto : friend?.photoURL} className="w-full h-full object-cover" />
+                                                    (isGroup ? msg?.authorPhoto : friend?.photoURL) ? (
+                                                        <img draggable={false} src={isGroup ? msg?.authorPhoto : friend?.photoURL} className="w-full h-full object-cover" />
                                                     ) : (
                                                         <div className="w-full h-full flex items-center justify-center text-[8px] font-bold text-slate-500">
-                                                            {(isGroup ? msg.authorName : friend?.displayName)?.[0] || '?'}
+                                                            {(isGroup ? msg?.authorName : friend?.displayName)?.[0] || '?'}
                                                         </div>
                                                     )
                                                 )}
@@ -300,7 +300,7 @@ const Chat: React.FC = () => {
                                                 ? 'bg-primary-600 text-white rounded-br-none'
                                                 : 'bg-slate-800 text-slate-200 rounded-bl-none border border-slate-700'}
                                       `}>
-                                            {msg.text}
+                                            {msg?.text}
                                         </div>
                                     </div>
                                 </div>

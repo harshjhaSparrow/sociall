@@ -56,15 +56,15 @@ const Settings: React.FC = () => {
       if (!user) return;
 
       try {
-        const profile = await api.profile.get(user.uid);
+        const profile = await api.profile.get(user?.uid);
         if (profile) {
-          setIsDiscoverable(profile.isDiscoverable !== false);
-          setDiscoveryRadius(profile.discoveryRadius || 10);
+          setIsDiscoverable(profile?.isDiscoverable !== false);
+          setDiscoveryRadius(profile?.discoveryRadius || 10);
 
           // Load blocked users
-          if (profile.blockedUsers && profile.blockedUsers.length > 0) {
-            const batchProfiles = await api.profile.getBatch(profile.blockedUsers);
-            setBlockedUsers(batchProfiles.map((p: any) => ({ uid: p.uid, displayName: p.displayName, photoURL: p.photoURL })));
+          if (profile?.blockedUsers && profile?.blockedUsers?.length > 0) {
+            const batchProfiles = await api.profile.getBatch(profile?.blockedUsers);
+            setBlockedUsers(batchProfiles?.map((p: any) => ({ uid: p?.uid, displayName: p?.displayName, photoURL: p?.photoURL })));
           }
         }
       } catch (e) {
@@ -139,8 +139,8 @@ const Settings: React.FC = () => {
     if (!user) return;
     setUnblockingUid(targetUid);
     try {
-      await api.userAction.unblock(user.uid, targetUid);
-      setBlockedUsers(prev => prev.filter(u => u.uid !== targetUid));
+      await api.userAction.unblock(user?.uid, targetUid);
+      setBlockedUsers(prev => prev.filter(u => u?.uid !== targetUid));
     } catch (e) {
       alert("Failed to unblock user");
     } finally {

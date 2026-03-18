@@ -181,7 +181,7 @@ export default function Profile() {
     if (isOwnProfile && user) {
       setViewersLoading(true);
       api.profile
-        .getViewers(user.uid)
+        .getViewers(user?.uid)
         .then(setViewers)
         .catch(console.error)
         .finally(() => setViewersLoading(false));
@@ -199,11 +199,11 @@ export default function Profile() {
       } else if (profile?.lastLocation?.lat && profile?.lastLocation?.lng) {
         // Fallback: Fetch name using lat/lng
         fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${profile.lastLocation.lat}&lon=${profile.lastLocation.lng}`,
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${profile?.lastLocation?.lat}&lon=${profile?.lastLocation?.lng}`,
         )
           .then((res) => res.json())
           .then((data) => {
-            const addr = data.address;
+            const addr = data?.address;
             const city =
               addr?.city || addr?.town || addr?.village || addr?.county;
             const state = addr?.state;
@@ -603,7 +603,7 @@ export default function Profile() {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-slate-800 text-primary-500 text-3xl font-bold">
-                    {profile.displayName.charAt(0).toUpperCase()}
+                    {profile?.displayName?.charAt(0)?.toUpperCase() || "U"}
                   </div>
                 )}
               </div>
@@ -840,18 +840,17 @@ export default function Profile() {
           <div className="h-px bg-slate-800 mx-6" />
 
           {/* That's me Section */}
-          {profile?.thatsMePhotos && profile.thatsMePhotos.length > 0 && (
+          {profile?.thatsMePhotos && profile?.thatsMePhotos?.length > 0 && (
             <div className="p-6 relative group/carousel">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <Camera className="w-5 h-5 text-primary-500" />
                   <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">
                     That's Me
                   </h2>
                 </div>
               </div>
               <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x snap-mandatory relative">
-                {profile.thatsMePhotos.map((photo, i) => (
+                {profile?.thatsMePhotos?.map((photo, i) => (
                   <div key={i} className="relative min-w-[260px] aspect-[4/5] rounded-3xl overflow-hidden border border-slate-800 shadow-xl group snap-center">
                     <img 
                       src={photo} 
@@ -859,11 +858,10 @@ export default function Profile() {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                     />
                     <div className="absolute bottom-4 right-4 px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-[10px] font-bold text-white border border-white/10">
-                      {i + 1} / {profile.thatsMePhotos.length}
+                      {i + 1} / {profile?.thatsMePhotos?.length}
                     </div>
                   </div>
                 ))}
-
               </div>
             </div>
           )}
@@ -876,7 +874,7 @@ export default function Profile() {
               Interests
             </h2>
             <div className="flex flex-wrap gap-2.5">
-              {(profile.interests || []).map((interestId) => {
+              {(profile?.interests || []).map((interestId) => {
                 const tagInfo = POPULAR_INTERESTS.find(
                   (i) => i?.id === interestId,
                 );
@@ -1238,7 +1236,7 @@ export default function Profile() {
                             {viewer?.displayName}
                           </h4>
                           <p className="text-xs text-slate-400 truncate">
-                            {new Date(viewer.viewedAt).toLocaleDateString([], {
+                            {new Date(viewer?.viewedAt || 0).toLocaleDateString([], {
                               month: "short",
                               day: "numeric",
                               hour: "2-digit",
