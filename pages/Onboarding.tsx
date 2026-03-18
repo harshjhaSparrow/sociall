@@ -7,6 +7,8 @@ import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import { Camera, Instagram, Sparkles, ChevronLeft, User as UserIcon, Calendar, Shield, MapPin, CheckCircle, FileText, Briefcase } from 'lucide-react';
 import { compressImage } from '../util/ImageCompression';
+import SearchableDropdown from '../components/ui/SearchableDropdown';
+import { PROFESSIONS } from '../constants/professions';
 
 
 
@@ -296,12 +298,13 @@ const Onboarding: React.FC = () => {
                 onChange={(e) => setDisplayName(e.target.value)}
               />
 
-              <Input
+              <SearchableDropdown
                 label="Job Role / Profession"
-                placeholder="e.g. Designer, Student, Engineer"
-                icon={<Briefcase className="w-5 h-5" />}
+                placeholder="Select your profession"
+                options={PROFESSIONS}
                 value={jobRole}
-                onChange={(e) => setJobRole(e.target.value)}
+                onSelect={setJobRole}
+                icon={<Briefcase className="w-5 h-5" />}
               />
 
               <div>

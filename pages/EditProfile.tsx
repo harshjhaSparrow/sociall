@@ -7,6 +7,8 @@ import Input from '../components/ui/Input';
 import { Camera, ChevronLeft, Loader2, User as UserIcon, Calendar, Briefcase } from 'lucide-react';
 import { compressImage } from '../util/ImageCompression';
 import ImageCropperModal from '../components/ImageCropperModal';
+import SearchableDropdown from '../components/ui/SearchableDropdown';
+import { PROFESSIONS } from '../constants/professions';
 
 
 const EditProfile: React.FC = () => {
@@ -217,17 +219,20 @@ const EditProfile: React.FC = () => {
 
           {/* Basic Fields */}
           <div className="space-y-6">
+
             <Input
               label="Display Name"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
             />
 
-            <Input
+            <SearchableDropdown
               label="Job Role / Profession"
+              placeholder="Select your profession"
+              options={PROFESSIONS}
               value={jobRole}
+              onSelect={setJobRole}
               icon={<Briefcase className="w-5 h-5" />}
-              onChange={(e) => setJobRole(e.target.value)}
             />
 
             <Input
