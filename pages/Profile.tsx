@@ -287,6 +287,21 @@ export default function Profile() {
     setActionLoading(false);
   };
 
+  const handleReportSubmit = async () => {
+    if (!user || !profile || !reportReason) return;
+    setActionLoading(true);
+    try {
+      await api.userAction.report(user?.uid, profile?.uid, reportReason);
+      setReportModalOpen(false);
+      setReportReason("");
+      alert("User has been reported. Thank you for helping keep our community safe.");
+    } catch (e) {
+      console.error(e);
+      alert("Failed to submit report. Please try again.");
+    }
+    setActionLoading(false);
+  };
+
   const handleWithdrawRequest = async (targetUserId: string) => {
     if (!user) return;
     setActionLoading(true);
@@ -1032,6 +1047,51 @@ export default function Profile() {
                   className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium text-sm hover:bg-red-500 disabled:opacity-50"
                 >
                   Submit Report
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Report Modal */}
+        {reportModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in">
+            <div
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setReportModalOpen(false)}
+            ></div>
+            <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[2rem] shadow-2xl relative z-10 p-6 animate-slide-up border border-slate-100 dark:border-slate-800">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold dark:text-white">Report User</h3>
+                <button onClick={() => setReportModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-slate-500 text-sm">Why are you reporting this user?</p>
+                <div className="grid gap-2">
+                  {["Spam", "Harassment", "Inappropriate Content", "Fake Profile", "Other"].map((reason) => (
+                    <button
+                      key={reason}
+                      onClick={() => setReportReason(reason)}
+                      className={`w-full text-left px-4 py-3 rounded-xl border transition-all ${
+                        reportReason === reason
+                          ? "bg-primary-500/10 border-primary-500 text-primary-500 font-bold"
+                          : "bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300"
+                      }`}
+                    >
+                      {reason}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={handleReportSubmit}
+                  disabled={!reportReason || actionLoading}
+                  className="w-full py-4 bg-primary-500 text-white rounded-2xl font-bold shadow-lg shadow-primary-500/30 hover:bg-primary-600 transition-all disabled:opacity-50 disabled:shadow-none mt-4"
+                >
+                  {actionLoading ? "Submitting..." : "Submit Report"}
                 </button>
               </div>
             </div>

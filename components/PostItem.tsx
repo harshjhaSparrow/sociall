@@ -104,7 +104,7 @@ const PostItem: React.FC<any> = ({
 
       <div className="p-4 flex items-center justify-between">
         <Link
-          to={`/profile/${post?.uid}`}
+          to={`/app/profile/${post?.uid}`}
           className="flex items-center gap-3 group"
         >
           <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden ring-2 ring-transparent group-hover:ring-primary-500/50 transition-all">
@@ -292,7 +292,7 @@ const PostItem: React.FC<any> = ({
               </>
             ) : (
               <button
-                onClick={() => navigate(`/post/${post?._id}`)}
+                onClick={() => navigate(`/app/post/${post?._id}`)}
                 className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors border border-slate-600"
               >
                 Manage Guests{" "}

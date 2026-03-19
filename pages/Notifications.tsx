@@ -40,9 +40,9 @@ function getNotifMeta(type: Notification['type']) {
 
 function getNotifLink(n: Notification): string {
     if (['like', 'comment', 'meetup_request', 'meetup_accept'].includes(n.type) && n.postId) {
-        return `/post/${n.postId}`;
+        return `/app/post/${n.postId}`;
     }
-    return `/profile/${n.fromUid}`;
+    return `/app/profile/${n.fromUid}`;
 }
 
 /* ---------- Card ---------- */

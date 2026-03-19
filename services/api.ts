@@ -129,6 +129,11 @@ export const api = {
     },
 
     createOrUpdate: async (uid: string, data: Partial<UserProfile>) => {
+      // Fuzz location for privacy before sending to server
+      if (data?.lastLocation?.lat && data?.lastLocation?.lng) {
+        data.lastLocation.lat = parseFloat(data.lastLocation.lat.toFixed(3));
+        data.lastLocation.lng = parseFloat(data.lastLocation.lng.toFixed(3));
+      }
       const response = await fetch(`${API_BASE}/profile/${uid}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

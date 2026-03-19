@@ -1,4 +1,4 @@
-import { ChevronLeft, Crown, Loader2, Send, Trash2, User as UserIcon, Users, X } from 'lucide-react';
+import { Ban, ChevronLeft, Crown, Flag, Loader2, Send, Trash2, User as UserIcon, Users, X } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ConfirmModal from '../components/ui/ConfirmModal';
@@ -24,6 +24,9 @@ const Chat: React.FC = () => {
     const [groupPost, setGroupPost] = useState<Post | null>(null);
     const [members, setMembers] = useState<UserProfile[]>([]);
     const [showGroupInfo, setShowGroupInfo] = useState(false);
+    const [reportModalOpen, setReportModalOpen] = useState(false);
+    const [reportingMsg, setReportingMsg] = useState<Message | null>(null);
+    const [reportReason, setReportReason] = useState("");
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -195,6 +198,36 @@ const Chat: React.FC = () => {
         });
     };
 
+    const handleReportMessage = (msg: Message) => {
+        setReportingMsg(msg);
+        setReportModalOpen(true);
+    };
+
+    const handleReportSubmit = async () => {
+        if (!user || !reportingMsg || !reportReason) return;
+        try {
+            await api.userAction.report(user.uid, reportingMsg.fromUid, `Message Report: ${reportReason}`, reportingMsg._id);
+            setReportModalOpen(false);
+            setReportingMsg(null);
+            setReportReason("");
+            alert("Message has been reported. Thank you.");
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const handleBlockUser = async () => {
+        if (!user || !uid) return;
+        if (window.confirm("Are you sure you want to block this user? You will no longer see each other's messages or profile.")) {
+            try {
+                await api.userAction.block(user.uid, uid);
+                navigate('/app');
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    };
+
 
 
     if (loading) {
@@ -253,6 +286,16 @@ const Chat: React.FC = () => {
                         </p>
                     </div>
                 </div>
+
+                {!isGroup && (
+                    <button
+                        onClick={handleBlockUser}
+                        className="p-2 text-slate-500 hover:text-red-500 transition-colors"
+                        title="Block User"
+                    >
+                        <Ban className="w-5 h-5" />
+                    </button>
+                )}
             </div>
 
             {/* Messages Area */}
@@ -295,12 +338,22 @@ const Chat: React.FC = () => {
                                         )}
 
                                         <div className={`
-                                          px-4 py-2.5 rounded-2xl text-sm leading-relaxed break-words shadow-sm
+                                          group relative px-4 py-2.5 rounded-2xl text-sm leading-relaxed break-words shadow-sm
                                           ${isMe
                                                 ? 'bg-primary-600 text-white rounded-br-none'
                                                 : 'bg-slate-800 text-slate-200 rounded-bl-none border border-slate-700'}
                                       `}>
                                             {msg?.text}
+                                            
+                                            {!isMe && (
+                                                <button
+                                                    onClick={() => handleReportMessage(msg)}
+                                                    className="absolute -right-8 top-1/2 -translate-y-1/2 p-1 text-slate-600 hover:text-yellow-500 opacity-0 group-hover:opacity-100 transition-all"
+                                                    title="Report Message"
+                                                >
+                                                    <Flag className="w-3.5 h-3.5" />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -444,6 +497,38 @@ const Chat: React.FC = () => {
                 confirmText="Remove"
                 danger
             />
+
+            {/* Report Modal */}
+            {reportModalOpen && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 animate-fade-in">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setReportModalOpen(false)}></div>
+                    <div className="bg-slate-900 w-full max-w-xs rounded-2xl shadow-2xl relative z-10 p-5 animate-slide-up border border-slate-800">
+                        <h3 className="text-lg font-bold text-white mb-4 text-center">Report Message</h3>
+                        <div className="space-y-2">
+                            {["Spam", "Harassment", "Inappropriate", "Fake Profile", "Other"].map(reason => (
+                                <button
+                                    key={reason}
+                                    onClick={() => setReportReason(reason)}
+                                    className={`w-full text-left px-4 py-2.5 rounded-xl text-sm transition-colors ${
+                                        reportReason === reason 
+                                        ? "bg-primary-600 text-white" 
+                                        : "bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white"
+                                    }`}
+                                >
+                                    {reason}
+                                </button>
+                            ))}
+                        </div>
+                        <button
+                            onClick={handleReportSubmit}
+                            disabled={!reportReason}
+                            className="w-full mt-6 py-3 bg-primary-600 text-white rounded-xl font-bold disabled:opacity-50 hover:bg-primary-500 transition-colors"
+                        >
+                            Submit Report
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
