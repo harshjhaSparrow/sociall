@@ -75,7 +75,7 @@ const AuthPage: React.FC = () => {
       const apiResponse = await api.auth.googleLogin(
         payload.email,
         payload.name,
-        payload.picture
+        ""
       );
       login(apiResponse.user);
     } catch {
