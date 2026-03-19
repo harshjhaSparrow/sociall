@@ -28,7 +28,7 @@ const getBaseUrl = () => {
 
   // 2️⃣ If frontend is deployed on Vercel
   if (isVercel) {
-    const vercelUrl = "https://backend.strangerchat.space/api";
+    const vercelUrl = "https://orbyt.strangerchat.space/api";
     return vercelUrl;
   }
 

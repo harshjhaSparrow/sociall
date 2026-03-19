@@ -161,7 +161,8 @@ const CreatePost: React.FC = () => {
         location:
           gpsLocation
             ? {
-              ...gpsLocation,
+              lat: parseFloat(gpsLocation.lat.toFixed(3)),
+              lng: parseFloat(gpsLocation.lng.toFixed(3)),
               name: locationName,
             }
             : undefined,

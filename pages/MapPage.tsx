@@ -239,10 +239,7 @@ const MapPage: React.FC = () => {
         className="w-full h-full"
       >
         <TileLayer
-          url={isDark 
-            ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-          }
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           updateWhenIdle={false}
         />
         <ResizeMap />

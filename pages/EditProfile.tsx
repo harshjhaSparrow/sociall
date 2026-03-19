@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { UserProfile, POPULAR_INTERESTS, InterestTag } from '../types';
 import Input from '../components/ui/Input';
-import { Camera, ChevronLeft, Loader2, User as UserIcon, Calendar, Briefcase, Instagram } from 'lucide-react';
+import { Camera, ChevronLeft, Loader2, User as UserIcon, Calendar, Briefcase, Instagram, CheckCircle } from 'lucide-react';
 import { compressImage } from '../util/ImageCompression';
 import ImageCropperModal from '../components/ImageCropperModal';
 import SearchableDropdown from '../components/ui/SearchableDropdown';
@@ -25,6 +25,7 @@ const EditProfile: React.FC = () => {
   const [dob, setDob] = useState('');
   const [jobRole, setJobRole] = useState('');
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [thatsMePhotos, setThatsMePhotos] = useState<string[]>([]);
 
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
@@ -42,6 +43,7 @@ const EditProfile: React.FC = () => {
             setDob(profile.dob || '');
             setJobRole(profile.jobRole || '');
             setSelectedInterests(profile.interests || []);
+            setThatsMePhotos(profile.thatsMePhotos || []);
           }
         } catch (err) {
           console.error(err);
@@ -96,6 +98,27 @@ const EditProfile: React.FC = () => {
     setSelectedInterests(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
+  };
+  
+  const handleThatsMeUpload = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        setError("Image too large (Max 10MB).");
+        return;
+      }
+      try {
+        setLoading(true);
+        const compressed = await compressImage(file, 800, 0.8);
+        const newPhotos = [...thatsMePhotos];
+        newPhotos[index] = compressed;
+        setThatsMePhotos(newPhotos);
+      } catch (err) {
+        setError("Failed to process image.");
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   const calculateAge = (dateString: string) => {
@@ -162,6 +185,7 @@ const EditProfile: React.FC = () => {
         dob,
         jobRole: jobRole.trim(),
         interests: selectedInterests,
+        thatsMePhotos: thatsMePhotos,
       };
 
       await api.profile.createOrUpdate(user.uid, profileData);
@@ -285,6 +309,35 @@ const EditProfile: React.FC = () => {
                   Verify this handle works
                 </button>
               )}
+            </div>
+
+            {/* That's Me */}
+            <div className="space-y-4 pt-4 border-t border-slate-900">
+              <label className="block text-sm font-semibold text-slate-300 ml-1">
+                THAT&apos;S ME
+              </label>
+              <p className="text-xs text-slate-500 ml-1 -mt-2">Upload 3 photos that best represent you</p>
+
+              <div className="grid grid-cols-3 gap-3">
+                {[0, 1, 2].map((i) => (
+                  <label key={i} className="relative aspect-[4/5] bg-slate-900 rounded-2xl border-2 border-slate-800 border-dashed flex flex-col items-center justify-center cursor-pointer hover:bg-slate-800 transition-colors overflow-hidden group">
+                    {thatsMePhotos[i] ? (
+                      <>
+                        <img src={thatsMePhotos[i]} alt={`That's me ${i + 1}`} className="w-full h-full object-cover" />
+                        <div className="absolute top-2 right-2 p-1 bg-primary-500 rounded-full">
+                          <CheckCircle className="w-3 h-3 text-white" />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="w-8 h-8 text-slate-600 mb-2 group-hover:text-primary-500 transition-colors" />
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">Photo {i + 1}</span>
+                      </>
+                    )}
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleThatsMeUpload(e, i)} />
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
 
